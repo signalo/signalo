@@ -1,0 +1,6 @@
+[package]
+name = "signalo"
+version = "0.1.0"
+authors = ["Vincent Esche <regexident@gmail.com>"]
+
+[dependencies]
