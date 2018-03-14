@@ -67,7 +67,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn integer() {
+    fn fixed_point() {
         let filter = Debounce::new(3, 1, [0, 1]);
         let input = vec![0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1];
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {

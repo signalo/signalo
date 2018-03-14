@@ -37,7 +37,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn integer() {
+    fn fixed_point() {
         let filter = Sub::new(42);
         let input = vec![42, 43, 49, 44, 47, 50, 58, 45, 61, 48, 56, 51, 51, 59, 59, 46, 54, 62, 62, 49];
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[test]
-    fn float() {
+    fn floating_point() {
         let filter = Sub::new(4.2);
         let input = vec![4.2, 5.2, 11.2, 6.2, 9.2, 12.2, 20.2, 7.2, 23.2, 10.2, 18.2, 13.2, 13.2, 21.2, 21.2, 8.2, 16.2, 24.2, 24.2, 11.2];
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
