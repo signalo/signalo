@@ -8,7 +8,7 @@ use filter::Filter;
 
 // static itg_t m_itg = { .max = 20, .acc = 0, .output = 0 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Debounce<T, U> {
     /// Threshold of how long input must remain same to be accepted
     threshold: usize,

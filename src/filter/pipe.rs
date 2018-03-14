@@ -28,7 +28,7 @@ macro_rules! impl_pipe {
     };
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Pipe<T, U> {
     lhs: T,
     rhs: U,

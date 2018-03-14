@@ -4,7 +4,7 @@ use std::ops::Mul as StdMul;
 use filter::pipe::Pipe;
 use filter::Filter;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Mul<T> {
     value: T
 }

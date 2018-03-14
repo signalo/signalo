@@ -4,7 +4,7 @@ use std::cmp::{PartialOrd, PartialEq};
 use filter::pipe::Pipe;
 use filter::Filter;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Schmitt<T, U> {
     /// [low, high] input thresholds
     thresholds: [T; 2],

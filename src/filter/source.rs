@@ -2,7 +2,7 @@ use std::ops::BitOr;
 
 use filter::pipe::Pipe;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Source<I> {
     iter: I,
 }

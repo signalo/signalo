@@ -4,7 +4,7 @@ use std::cmp::PartialOrd;
 use filter::pipe::Pipe;
 use filter::Filter;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Threshold<T, U> {
     /// input threshold
     threshold: T,

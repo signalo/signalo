@@ -4,7 +4,7 @@ use std::ops::Div as StdDiv;
 use filter::pipe::Pipe;
 use filter::Filter;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Div<T> {
     value: T
 }

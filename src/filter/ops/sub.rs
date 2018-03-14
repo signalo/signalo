@@ -5,7 +5,7 @@ use std::ops::Sub as StdSub;
 use filter::pipe::Pipe;
 use filter::Filter;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Sub<T> {
     value: T
 }

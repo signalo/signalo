@@ -4,7 +4,7 @@ use std::ops::Add as StdAdd;
 use filter::pipe::Pipe;
 use filter::Filter;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Add<T> {
     value: T
 }
