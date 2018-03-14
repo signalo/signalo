@@ -1,6 +1,7 @@
 mod pipe;
 mod source;
 mod identity;
+mod differentiate;
 
 pub mod ops;
 pub mod dichotomy;
@@ -8,6 +9,7 @@ pub mod dichotomy;
 pub use self::pipe::Pipe;
 pub use self::source::Source;
 pub use self::identity::Identity;
+pub use self::differentiate::Differentiate;
 
 pub trait LinearPhase {
     fn phase_shift() -> isize {
