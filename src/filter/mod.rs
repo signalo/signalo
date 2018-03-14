@@ -5,6 +5,7 @@ mod differentiate;
 
 pub mod ops;
 pub mod dichotomy;
+pub mod mean;
 
 pub use self::pipe::Pipe;
 pub use self::source::Source;
