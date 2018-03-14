@@ -3,6 +3,7 @@ mod source;
 mod identity;
 
 pub mod ops;
+pub mod dichotomy;
 
 pub use self::pipe::Pipe;
 pub use self::source::Source;
