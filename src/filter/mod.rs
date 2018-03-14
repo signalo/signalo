@@ -2,6 +2,8 @@ mod pipe;
 mod source;
 mod identity;
 
+pub mod ops;
+
 pub use self::pipe::Pipe;
 pub use self::source::Source;
 pub use self::identity::Identity;
