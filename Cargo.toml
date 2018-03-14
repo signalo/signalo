@@ -1,6 +1,11 @@
 [package]
+authors = ["Vincent Esche <regexident@gmail.com>"]
 name = "signalo"
 version = "0.1.0"
-authors = ["Vincent Esche <regexident@gmail.com>"]
 
 [dependencies]
+num-integer = "0.1.36"
+num-traits = "0.2.1"
+
+[dev-dependencies]
+nearly_eq = "0.2.3"
