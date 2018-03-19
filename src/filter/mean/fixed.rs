@@ -38,15 +38,13 @@ where
 
     #[inline]
     fn apply(&mut self, input: T) -> Self::Output {
+        let input = input << self.shift;
         let state = match self.state.clone() {
             None => {
-                input << self.shift
+                input
             },
             Some(mut state) => {
-                state = (state.clone() << self.beta) - state;
-                state = state + (input << self.shift);
-                state = state >> self.beta;
-                state
+                state.clone() + ((input - state) >> self.beta)
             },
         };
         self.state = Some(state.clone());
