@@ -68,12 +68,12 @@ mod tests {
 
     #[test]
     fn fixed() {
-        let filter = Mean::new(1, 0);
+        let filter = Mean::new(2, 0);
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
+        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7, 7, 15, 15, 10, 23, 10, 111, 18, 18, 18, 106, 5, 26, 13, 13, 21, 21, 21, 34, 8, 109, 8, 29, 16, 16, 16, 104, 11, 24, 24];
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
             Some(filter.apply(input))
         }).collect();
-        assert_eq!(output, vec![0, 0, 3, 2, 3, 5, 10, 6, 12, 9, 11, 10, 9, 13, 15, 9, 10, 15, 17, 12]);
+        assert_eq!(output, vec![0, 0, 1, 1, 2, 3, 6, 5, 8, 7, 8, 8, 8, 10, 11, 9, 9, 11, 13, 11, 10, 11, 12, 11, 14, 13, 37, 32, 28, 25, 45, 35, 32, 27, 23, 22, 21, 21, 24, 20, 42, 33, 32, 28, 25, 22, 42, 34, 31, 29]);
     }
 }
