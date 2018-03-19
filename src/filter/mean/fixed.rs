@@ -18,6 +18,14 @@ impl<T> Mean<T> {
     pub fn new(beta: usize, shift: usize) -> Self {
         Mean { beta, shift, state: None }
     }
+
+    pub fn beta(&self) -> usize {
+        self.beta
+    }
+
+    pub fn shift(&self) -> usize {
+        self.shift
+    }
 }
 
 impl_pipe!(Mean<T>);

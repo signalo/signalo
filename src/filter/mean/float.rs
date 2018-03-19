@@ -12,10 +12,17 @@ pub struct Mean<T> {
     state: Option<T>,
 }
 
-impl<T> Mean<T> {
+impl<T> Mean<T>
+where
+    T: Clone
+{
     #[inline]
     pub fn new(beta: T) -> Self {
         Mean { beta, state: None }
+    }
+
+    pub fn beta(&self) -> T {
+        self.beta.clone()
     }
 }
 
