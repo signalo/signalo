@@ -1,5 +1,13 @@
+#![feature(try_from)]
+
 extern crate num_traits;
 extern crate num_integer;
+
+#[cfg(feature = "fpa")]
+extern crate fpa;
+
+#[cfg(feature = "fpa")]
+extern crate typenum;
 
 #[cfg(test)]
 #[macro_use]

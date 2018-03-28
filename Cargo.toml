@@ -5,7 +5,19 @@ version = "0.1.0"
 
 [dependencies]
 num-integer = "0.1.36"
-num-traits = "0.2.1"
+num-traits = ">=0.2.1"
 
-[dev-dependencies]
-nearly_eq = "0.2.3"
+[dependencies.fpa]
+optional = true
+fpa = "^0.1.0"
+features = ["try-from"]
+
+[dependencies.typenum]
+optional = true
+version = ">=1.10.0"
+
+[dev-dependencies.nearly_eq]
+nearly_eq = "^0.2.3"
+
+[features]
+fixed-point = ["fpa", "typenum", "nearly_eq/use_fpa"]
