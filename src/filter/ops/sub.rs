@@ -21,14 +21,14 @@ impl_pipe!(Sub<T>);
 
 impl<T, U> Filter<U> for Sub<T>
 where
-    T: Clone,
+    T: Copy,
     U: StdSub<T>,
 {
     type Output = <U as StdSub<T>>::Output;
 
     #[inline]
     fn apply(&mut self, input: U) -> Self::Output {
-        input - self.value.clone()
+        input - self.value
     }
 }
 

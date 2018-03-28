@@ -20,14 +20,14 @@ impl_pipe!(Mul<T>);
 
 impl<T, U> Filter<U> for Mul<T>
 where
-    T: Clone,
+    T: Copy,
     U: StdMul<T>,
 {
     type Output = <U as StdMul<T>>::Output;
 
     #[inline]
     fn apply(&mut self, input: U) -> Self::Output {
-        input * self.value.clone()
+        input * self.value
     }
 }
 

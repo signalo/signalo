@@ -20,14 +20,14 @@ impl_pipe!(Div<T>);
 
 impl<T, U> Filter<U> for Div<T>
 where
-    T: Clone,
+    T: Copy,
     U: StdDiv<T>,
 {
     type Output = <U as StdDiv<T>>::Output;
 
     #[inline]
     fn apply(&mut self, input: U) -> Self::Output {
-        input / self.value.clone()
+        input / self.value
     }
 }
 
