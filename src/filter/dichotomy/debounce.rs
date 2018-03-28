@@ -20,7 +20,10 @@ pub struct Debounce<T, U> {
     counter: usize,
 }
 
-impl<T, U> Debounce<T, U> where T: Clone + Zero {
+impl<T, U> Debounce<T, U>
+where
+    T: Copy + Zero
+{
     #[inline]
     pub fn new(threshold: usize, predicate: T, output: [U; 2]) -> Self {
         Debounce { threshold, output, predicate, counter: 0 }
@@ -31,30 +34,19 @@ impl_pipe!(Debounce<T, U>);
 
 impl<T, U> Filter<T> for Debounce<T, U>
 where
-    T: Clone + PartialEq<T>,
-    U: Clone,
+    T: Copy + PartialEq<T>,
+    U: Copy,
 {
     type Output = U;
 
     #[inline]
     fn apply(&mut self, input: T) -> Self::Output {
-        // let mut prev = Some(input.clone());
-        // mem::swap(&mut self.prev, &mut prev);
-        // if let Some(prev) = prev {
-        //     if prev == input {
-        //         self.counter = (self.counter + 1).min(self.threshold);
-        //     } else {
-        //         self.counter = 1;
-        //     }
-        // }
-
         if input == self.predicate {
             self.counter = (self.counter + 1).min(self.threshold);
         } else {
             self.counter = 0;
         }
-
-        self.output[(self.counter >= self.threshold) as usize].clone()
+        self.output[(self.counter >= self.threshold) as usize]
     }
 
     fn reset(&mut self) {
