@@ -32,18 +32,22 @@ where
         }
     }
 
+    #[inline]
     pub fn r(&self) -> &T {
         &self.r
     }
 
+    #[inline]
     pub fn q(&self) -> &T {
         &self.q
     }
 
+    #[inline]
     pub fn a(&self) -> &T {
         &self.a
     }
 
+    #[inline]
     pub fn c(&self) -> &T {
         &self.c
     }

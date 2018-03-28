@@ -14,6 +14,11 @@ impl<T> Mul<T> {
     pub fn new(value: T) -> Self {
         Mul { value }
     }
+
+    #[inline]
+    pub fn value(&self) -> &T {
+        &self.value
+    }
 }
 
 impl_pipe!(Mul<T>);

@@ -14,6 +14,11 @@ impl<T> Add<T> {
     pub fn new(value: T) -> Self {
         Add { value }
     }
+
+    #[inline]
+    pub fn value(&self) -> &T {
+        &self.value
+    }
 }
 
 impl_pipe!(Add<T>);

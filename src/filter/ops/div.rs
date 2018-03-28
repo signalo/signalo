@@ -14,6 +14,11 @@ impl<T> Div<T> {
     pub fn new(value: T) -> Self {
         Div { value }
     }
+
+    #[inline]
+    pub fn value(&self) -> &T {
+        &self.value
+    }
 }
 
 impl_pipe!(Div<T>);

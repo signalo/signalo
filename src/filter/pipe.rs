@@ -11,8 +11,8 @@ macro_rules! impl_pipe {
             type Output = Pipe<Self, Rhs>;
 
             #[inline]
-            fn bitor(self, rhs: Rhs) -> Self::Output {
-                Pipe::new(self, rhs)
+            fn bitor(self, filter: Rhs) -> Self::Output {
+                Pipe::new(self, filter)
             }
         }
     };
@@ -21,8 +21,8 @@ macro_rules! impl_pipe {
             type Output = Pipe<Self, Rhs>;
 
             #[inline]
-            fn bitor(self, rhs: Rhs) -> Self::Output {
-                Pipe::new(self, rhs)
+            fn bitor(self, filter: Rhs) -> Self::Output {
+                Pipe::new(self, filter)
             }
         }
     };
@@ -30,14 +30,14 @@ macro_rules! impl_pipe {
 
 #[derive(Clone, Debug)]
 pub struct Pipe<T, U> {
-    lhs: T,
-    rhs: U,
+    signal: T,
+    filter: U,
 }
 
 impl<T, U> Pipe<T, U> {
     #[inline]
-    pub fn new(lhs: T, rhs: U) -> Self {
-        Pipe { lhs, rhs }
+    pub fn new(signal: T, filter: U) -> Self {
+        Pipe { signal, filter }
     }
 }
 
@@ -52,11 +52,11 @@ where
 
     #[inline]
     fn apply(&mut self, input: I) -> Self::Output {
-        self.rhs.apply(self.lhs.apply(input))
+        self.filter.apply(self.signal.apply(input))
     }
 
     fn phase_shift(&self) -> isize {
-        self.lhs.phase_shift() + self.rhs.phase_shift()
+        self.signal.phase_shift() + self.filter.phase_shift()
     }
 }
 
@@ -69,6 +69,6 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.lhs.next().map(|input| self.rhs.apply(input))
+        self.signal.next().map(|input| self.filter.apply(input))
     }
 }

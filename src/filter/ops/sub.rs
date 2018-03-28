@@ -15,6 +15,11 @@ impl<T> Sub<T> {
     pub fn new(value: T) -> Self {
         Sub { value }
     }
+
+    #[inline]
+    pub fn value(&self) -> &T {
+        &self.value
+    }
 }
 
 impl_pipe!(Sub<T>);

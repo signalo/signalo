@@ -32,10 +32,22 @@ where
         Median { beta, mean, state: None }
     }
 
+    #[inline]
+    pub fn alpha(&self) -> &T {
+        self.mean.0.beta()
+    }
+
+    #[inline]
     pub fn beta(&self) -> &T {
         &self.beta
     }
 
+    #[inline]
+    pub fn gamma(&self) -> &T {
+        &self.mean.1.beta()
+    }
+
+    #[inline]
     pub fn mean(&self) -> &(Mean<T>, Mean<T>) {
         &self.mean
     }

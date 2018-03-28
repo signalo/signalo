@@ -22,6 +22,7 @@ where
         Mean { beta, state: None }
     }
 
+    #[inline]
     pub fn beta(&self) -> &T {
         &self.beta
     }
