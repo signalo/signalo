@@ -16,14 +16,14 @@ impl_pipe!(Differentiate<T>);
 
 impl<T> Filter<T> for Differentiate<T>
 where
-    T: Clone + StdSub<T>,
+    T: Copy + StdSub<T>,
     <T as StdSub<T>>::Output: Zero
 {
     type Output = <T as StdSub<T>>::Output;
 
     #[inline]
     fn apply(&mut self, input: T) -> Self::Output {
-        let mut prev = Some(input.clone());
+        let mut prev = Some(input);
         mem::swap(&mut self.prev, &mut prev);
         if let Some(prev) = prev {
             input - prev
