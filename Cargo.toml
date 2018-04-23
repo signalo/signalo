@@ -21,3 +21,6 @@ nearly_eq = "^0.2.3"
 
 [features]
 fixed-point = ["fpa", "typenum", "nearly_eq/use_fpa"]
+default = ["std"]
+std = []
+nightly = []
