@@ -28,7 +28,14 @@ where
     }
 }
 
-impl_pipe!(Mean<T>);
+impl<T, Rhs> BitOr<Rhs> for Mean<T> {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<T> Filter<T> for Mean<T>
 where

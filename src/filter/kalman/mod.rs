@@ -62,7 +62,14 @@ where
     }
 }
 
-impl_pipe!(Kalman<T>);
+impl<T, Rhs> BitOr<Rhs> for Kalman<T> {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<T> Filter<T> for Kalman<T>
 where

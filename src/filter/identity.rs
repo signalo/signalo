@@ -6,7 +6,14 @@ use filter::Filter;
 #[derive(Default, Clone)]
 pub struct Identity;
 
-impl_pipe!(Identity);
+impl<Rhs> BitOr<Rhs> for Identity {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<T> Filter<T> for Identity {
     type Output = T;

@@ -12,7 +12,14 @@ pub struct Differentiate<T> {
     prev: Option<T>,
 }
 
-impl_pipe!(Differentiate<T>);
+impl<T, Rhs> BitOr<Rhs> for Differentiate<T> {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<T> Filter<T> for Differentiate<T>
 where

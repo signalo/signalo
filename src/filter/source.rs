@@ -7,7 +7,14 @@ pub struct Source<I> {
     iter: I,
 }
 
-impl_pipe!(Source<I>);
+impl<I, Rhs> BitOr<Rhs> for Source<I> {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<I> From<I> for Source<I> where I: Iterator {
     fn from(iter: I) -> Self {

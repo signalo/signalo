@@ -21,7 +21,14 @@ impl<T, U> Schmitt<T, U> where U: Clone {
     }
 }
 
-impl_pipe!(Schmitt<T, U>);
+impl<T, U, Rhs> BitOr<Rhs> for Schmitt<T, U> {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<T, U> Filter<T> for Schmitt<T, U>
 where

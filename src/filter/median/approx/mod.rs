@@ -53,7 +53,14 @@ where
     }
 }
 
-impl_pipe!(Median<T>);
+impl<T, Rhs> BitOr<Rhs> for Median<T> {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<T> Filter<T> for Median<T>
 where

@@ -19,7 +19,14 @@ impl<T, U> Threshold<T, U> where U: Clone {
     }
 }
 
-impl_pipe!(Threshold<T, U>);
+impl<T, U, Rhs> BitOr<Rhs> for Threshold<T, U> {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<T, U> Filter<T> for Threshold<T, U>
 where

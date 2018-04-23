@@ -21,7 +21,14 @@ impl<T> Add<T> {
     }
 }
 
-impl_pipe!(Add<T>);
+impl<T, Rhs> BitOr<Rhs> for Add<T> {
+    type Output = Pipe<Self, Rhs>;
+
+    #[inline]
+    fn bitor(self, filter: Rhs) -> Self::Output {
+        Pipe::new(self, filter)
+    }
+}
 
 impl<T, U> Filter<U> for Add<T>
 where
