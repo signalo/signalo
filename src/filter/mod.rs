@@ -7,11 +7,12 @@ pub mod dichotomy;
 pub mod mean;
 pub mod median;
 pub mod kalman;
-pub mod convolution;
+pub mod convolve;
 
 pub use self::pipe::Pipe;
 pub use self::identity::Identity;
 pub use self::differentiate::Differentiate;
+pub use self::convolve::Convolve;
 
 pub trait LinearPhase {
     fn phase_shift() -> isize {
