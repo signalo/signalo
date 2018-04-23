@@ -4,7 +4,7 @@ use std::ops::{Add, Mul, Div};
 use arraydeque::{Array, ArrayDeque, Wrapping};
 use num_traits::Zero;
 
-use filter::pipe::Pipe;
+use filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone)]

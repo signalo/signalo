@@ -3,7 +3,7 @@ use std::ops::{Sub, Add, Mul, Div};
 
 use num_traits::{Zero, One};
 
-use filter::pipe::Pipe;
+use filter::Pipe;
 use filter::Filter;
 
 use filter::mean::approx::Mean;

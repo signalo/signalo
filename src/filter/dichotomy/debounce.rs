@@ -3,7 +3,7 @@ use std::cmp::PartialEq;
 
 use num_traits::Zero;
 
-use filter::pipe::Pipe;
+use filter::Pipe;
 use filter::Filter;
 
 // static itg_t m_itg = { .max = 20, .acc = 0, .output = 0 };

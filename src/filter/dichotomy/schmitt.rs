@@ -1,7 +1,7 @@
 use std::ops::BitOr;
 use std::cmp::{PartialOrd, PartialEq};
 
-use filter::pipe::Pipe;
+use filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]

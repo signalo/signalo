@@ -1,7 +1,7 @@
 use std::ops::BitOr;
 use std::ops::Mul;
 
-use filter::pipe::Pipe;
+use filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
