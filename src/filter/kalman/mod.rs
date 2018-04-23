@@ -153,6 +153,7 @@ mod tests {
         assert_nearly_eq!(output, get_output(), 0.001);
     }
 
+    #[cfg(feature = "fpa")]
     #[test]
     fn fixed_point() {
         use std::convert::TryFrom;
