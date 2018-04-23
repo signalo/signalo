@@ -1,5 +1,4 @@
 mod pipe;
-mod source;
 mod identity;
 mod differentiate;
 
@@ -8,9 +7,9 @@ pub mod dichotomy;
 pub mod mean;
 pub mod median;
 pub mod kalman;
+pub mod convolution;
 
 pub use self::pipe::Pipe;
-pub use self::source::Source;
 pub use self::identity::Identity;
 pub use self::differentiate::Differentiate;
 
