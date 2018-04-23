@@ -13,6 +13,8 @@ extern crate fpa;
 #[cfg(feature = "fpa")]
 extern crate typenum;
 
+extern crate arraydeque;
+
 #[cfg(test)]
 #[macro_use]
 extern crate nearly_eq;
