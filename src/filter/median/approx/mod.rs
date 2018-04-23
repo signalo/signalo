@@ -152,7 +152,6 @@ mod tests {
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let float_input = get_input();
-        println!("input: {:?}", float_input);
 
         let input: Vec<_> = float_input.into_iter().map(|float| {
             Fixed::try_from(float).unwrap()
@@ -164,7 +163,6 @@ mod tests {
         let float_output: Vec<_> = output.into_iter().map(|fixed| {
             f32::try_from(fixed).unwrap()
         }).collect();
-        println!("output: {:?}", float_output);
 
         assert_nearly_eq!(float_output, get_output(), 0.001);
     }
