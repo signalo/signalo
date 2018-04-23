@@ -20,10 +20,3 @@ extern crate nearly_eq;
 pub mod source;
 pub mod filter;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
