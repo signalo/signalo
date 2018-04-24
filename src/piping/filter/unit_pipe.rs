@@ -3,7 +3,7 @@ use std::ops::BitOr;
 use filter::Filter;
 use piping::filter::Pipe;
 
-/// A `UnitPipe` is a simple container wrapping a simple `Filter`
+/// A `UnitPipe` is a simple container wrapping a `Filter`
 ///
 /// ```plain
 /// ════════════
@@ -19,8 +19,7 @@ pub struct UnitPipe<T> {
     filter: T,
 }
 
-impl<T> UnitPipe<T>
-{
+impl<T> UnitPipe<T> {
     #[inline]
     pub fn new(filter: T) -> Self {
         UnitPipe { filter }

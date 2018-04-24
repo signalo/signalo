@@ -2,7 +2,7 @@ use std::ops::BitOr;
 
 use filter::Filter;
 
-/// A `Pipe` is a simple container joining a pair of `Pipe`s
+/// A `Pipe` is a simple container joining a pair of `Filter`s
 ///
 /// ```plain
 /// ════════════ + ════════════
