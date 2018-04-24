@@ -45,15 +45,15 @@ impl<T, U, Rhs> BitOr<Rhs> for Pipe<T, U> {
     }
 }
 
-impl<T, U> Iterator for Pipe<T, U>
+impl<T, U> Source for Pipe<T, U>
 where
     T: Source,
     U: Filter<T::Output>,
 {
-    type Item = U::Output;
+    type Output = U::Output;
 
     #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
+    fn source(&mut self) -> Option<Self::Output> {
         self.lhs.source().map(|input| self.rhs.filter(input))
     }
 }

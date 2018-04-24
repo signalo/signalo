@@ -57,15 +57,3 @@ where
         self.source.source()
     }
 }
-
-impl<T> Iterator for UnitPipe<T>
-where
-    T: Source,
-{
-    type Item = T::Output;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.source.source()
-    }
-}
