@@ -1,7 +1,7 @@
 use std::ops::BitOr;
 
 use filter::Filter;
-use assembly::filter::Pipe;
+use piping::filter::Pipe;
 
 /// A `UnitPipe` is a simple container wrapping a simple `Filter`
 ///

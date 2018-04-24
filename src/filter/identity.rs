@@ -1,6 +1,6 @@
 use std::ops::BitOr;
 
-use assembly::filter::Pipe;
+use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Default, Clone)]
