@@ -51,8 +51,8 @@ where
     type Output = U::Output;
 
     #[inline]
-    fn apply(&mut self, input: I) -> Self::Output {
-        self.rhs.apply(self.lhs.apply(input))
+    fn filter(&mut self, input: I) -> Self::Output {
+        self.rhs.filter(self.lhs.filter(input))
     }
 
     fn phase_shift(&self) -> isize {
@@ -69,6 +69,6 @@ where
 //
 //     #[inline]
 //     fn next(&mut self) -> Option<Self::Item> {
-//         self.lhs.next().map(|input| self.rhs.apply(input))
+//         self.lhs.next().map(|input| self.rhs.filter(input))
 //     }
 // }

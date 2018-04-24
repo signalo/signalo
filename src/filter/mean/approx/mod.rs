@@ -44,7 +44,7 @@ where
     type Output = T;
 
     #[inline]
-    fn apply(&mut self, input: T) -> Self::Output {
+    fn filter(&mut self, input: T) -> Self::Output {
         let state = match self.state {
             None => {
                 input
@@ -95,7 +95,7 @@ mod tests {
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.apply(input))
+            Some(filter.filter(input))
         }).collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
@@ -118,7 +118,7 @@ mod tests {
             Fixed::try_from(float).unwrap()
         }).collect();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.apply(input))
+            Some(filter.filter(input))
         }).collect();
 
         let float_output: Vec<_> = output.into_iter().map(|fixed| {

@@ -43,8 +43,8 @@ where
     type Output = T::Output;
 
     #[inline]
-    fn apply(&mut self, input: I) -> Self::Output {
-        self.filter.apply(input)
+    fn filter(&mut self, input: I) -> Self::Output {
+        self.filter.filter(input)
     }
 
     fn phase_shift(&self) -> isize {

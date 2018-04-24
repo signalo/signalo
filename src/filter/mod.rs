@@ -21,7 +21,7 @@ pub trait LinearPhase {
 pub trait Filter<Input>: Sized {
     type Output;
 
-    fn apply(&mut self, input: Input) -> Self::Output;
+    fn filter(&mut self, input: Input) -> Self::Output;
 
     fn reset(&mut self) {
         // specialize for stateful filter types
@@ -38,7 +38,7 @@ where
 {
     type Output = U;
 
-    fn apply(&mut self, input: T) -> Self::Output {
+    fn filter(&mut self, input: T) -> Self::Output {
         self(input)
     }
 }

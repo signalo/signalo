@@ -47,7 +47,7 @@ where
     type Output = U;
 
     #[inline]
-    fn apply(&mut self, input: T) -> Self::Output {
+    fn filter(&mut self, input: T) -> Self::Output {
         if input == self.predicate {
             self.counter = (self.counter + 1).min(self.threshold);
         } else {
@@ -70,7 +70,7 @@ mod tests {
         let filter = Debounce::new(3, 1, [0, 1]);
         let input = vec![0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1];
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.apply(input))
+            Some(filter.filter(input))
         }).collect();
         assert_eq!(output, vec![0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
     }

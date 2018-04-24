@@ -69,9 +69,9 @@ where
     type Output = T;
 
     #[inline]
-    fn apply(&mut self, input: T) -> Self::Output {
+    fn filter(&mut self, input: T) -> Self::Output {
         // We calculate the mean and use it as an estimate of the median:
-        let mean = self.mean.0.apply(input);
+        let mean = self.mean.0.filter(input);
         // We then calculate the approximate of the median:
         let median = match self.state {
             None => {
@@ -83,7 +83,7 @@ where
         };
         // The approximated median tends to oscillate,
         // so we apply another mean to smoothen those out:
-        let state = self.mean.1.apply(median);
+        let state = self.mean.1.filter(median);
         // And we're done. Store a copy and return the result:
         self.state = Some(state);
         state
@@ -133,7 +133,7 @@ mod tests {
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.apply(input))
+            Some(filter.filter(input))
         }).collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
@@ -157,7 +157,7 @@ mod tests {
             Fixed::try_from(float).unwrap()
         }).collect();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.apply(input))
+            Some(filter.filter(input))
         }).collect();
 
         let float_output: Vec<_> = output.into_iter().map(|fixed| {

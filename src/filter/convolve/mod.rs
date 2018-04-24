@@ -72,7 +72,7 @@ where
     type Output = T;
 
     #[inline]
-    fn apply(&mut self, input: T) -> Self::Output {
+    fn filter(&mut self, input: T) -> Self::Output {
         loop {
             if self.state.push_back(input).is_some() {
                 break;
@@ -127,7 +127,7 @@ mod tests {
         let filter = Convolve::new([1.000, -1.000]);
         let input = get_input();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.apply(input))
+            Some(filter.filter(input))
         }).collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
