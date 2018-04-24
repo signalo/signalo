@@ -27,6 +27,16 @@ impl<T> UnitPipe<T>
     }
 }
 
+impl<T> From<T> for UnitPipe<T>
+where
+    T: Source,
+{
+    #[inline]
+    fn from(source: T) -> Self {
+        Self::new(source)
+    }
+}
+
 impl<T, Rhs> BitOr<Rhs> for UnitPipe<T> {
     type Output = Pipe<Self, Rhs>;
 
