@@ -1,7 +1,7 @@
 use std::ops::BitOr;
 use std::ops::Div as StdDiv;
 
-use assembly::Pipe;
+use assembly::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]

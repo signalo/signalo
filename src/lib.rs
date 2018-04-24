@@ -30,6 +30,6 @@ pub mod prelude {
     pub use filter::Filter;
 
     pub use assembly::{
-        Pipe,
+        filter::{UnitPipe, Pipe},
     };
 }

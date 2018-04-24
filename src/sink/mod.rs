@@ -10,8 +10,8 @@ pub trait Sink<T>: Sized {
     where
         S: Source<Output=T>,
     {
-        while let Some(input) = source.next() {
-            self.consume(input);
+        while let Some(input) = source.source() {
+            self.sink(input);
         }
         self.finalize()
     }

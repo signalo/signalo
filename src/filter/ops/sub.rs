@@ -2,7 +2,7 @@ use std::ops::BitOr;
 use std::ops::Sub as StdSub;
 
 
-use assembly::Pipe;
+use assembly::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
