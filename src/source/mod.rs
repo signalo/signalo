@@ -1,4 +1,4 @@
-pub trait Source {
+pub trait Source: Sized {
     type Output;
 
     fn source(&mut self) -> Option<Self::Output>;
