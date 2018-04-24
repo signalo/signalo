@@ -1,7 +1,7 @@
-pub trait Source: Iterator {
+pub trait Source {
     type Output;
 
-    fn next(&mut self) -> Self::Output;
+    fn source(&mut self) -> Option<Self::Output>;
 
     fn reset(&mut self) {
         // specialize for stateful source types
