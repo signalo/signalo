@@ -4,7 +4,7 @@ use std::mem;
 
 use num_traits::Zero;
 
-use filter::Pipe;
+use assembly::Pipe;
 use filter::Filter;
 
 #[derive(Default, Clone)]

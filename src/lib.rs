@@ -21,4 +21,5 @@ extern crate nearly_eq;
 
 pub mod source;
 pub mod filter;
+pub mod assembly;
 

@@ -3,7 +3,7 @@ use std::ops::{Sub, Add, Mul, Div};
 
 use num_traits::{Zero, One};
 
-use filter::Pipe;
+use assembly::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
