@@ -29,8 +29,8 @@ impl<T, U> Pipe<T, U>
 
 impl<T, U> From<(T, U)> for Pipe<T, U> {
     #[inline]
-    fn from(filters: (T, U)) -> Self {
-        let (lhs, rhs) = filters;
+    fn from(parts: (T, U)) -> Self {
+        let (lhs, rhs) = parts;
         Self::new(lhs, rhs)
     }
 }
