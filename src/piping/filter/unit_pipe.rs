@@ -22,7 +22,7 @@ pub struct UnitPipe<T> {
 impl<T> UnitPipe<T> {
     #[inline]
     pub fn new(filter: T) -> Self {
-        UnitPipe { filter }
+        Self { filter }
     }
 }
 

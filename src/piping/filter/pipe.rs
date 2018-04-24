@@ -23,7 +23,7 @@ impl<T, U> Pipe<T, U>
 {
     #[inline]
     pub fn new(lhs: T, rhs: U) -> Self {
-        Pipe { lhs, rhs }
+        Self { lhs, rhs }
     }
 }
 

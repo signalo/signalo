@@ -23,7 +23,7 @@ impl<T> UnitPipe<T>
 {
     #[inline]
     pub fn new(source: T) -> Self {
-        UnitPipe { source }
+        Self { source }
     }
 }
 
