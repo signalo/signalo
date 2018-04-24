@@ -1,7 +1,5 @@
-use std::ops::BitOr;
 use std::ops::Mul as StdMul;
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
@@ -18,15 +16,6 @@ impl<T> Mul<T> {
     #[inline]
     pub fn value(&self) -> &T {
         &self.value
-    }
-}
-
-impl<T, Rhs> BitOr<Rhs> for Mul<T> {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 

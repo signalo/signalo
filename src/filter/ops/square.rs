@@ -1,7 +1,5 @@
-use std::ops::BitOr;
 use std::ops::Mul;
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
@@ -11,15 +9,6 @@ impl Square {
     #[inline]
     pub fn new() -> Self {
         Square
-    }
-}
-
-impl<Rhs> BitOr<Rhs> for Square {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 

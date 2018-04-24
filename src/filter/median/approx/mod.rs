@@ -1,9 +1,7 @@
-use std::ops::BitOr;
 use std::ops::{Sub, Add, Mul, Div};
 
 use num_traits::{Zero, One};
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 use filter::mean::approx::Mean;
@@ -50,15 +48,6 @@ where
     #[inline]
     pub fn mean(&self) -> &(Mean<T>, Mean<T>) {
         &self.mean
-    }
-}
-
-impl<T, Rhs> BitOr<Rhs> for Median<T> {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 

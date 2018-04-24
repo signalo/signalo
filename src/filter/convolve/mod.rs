@@ -1,10 +1,8 @@
-use std::ops::BitOr;
 use std::ops::{Add, Mul, Div};
 
 use arraydeque::{Array, ArrayDeque, Wrapping};
 use num_traits::Zero;
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone)]
@@ -48,19 +46,6 @@ where
             *coeff = *coeff / sum;
         }
         Convolve { coefficients, state: ArrayDeque::new() }
-    }
-}
-
-impl<T, A, Rhs> BitOr<Rhs> for Convolve<A>
-where
-    T: Copy,
-    A: Array<Item = T>,
-{
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 

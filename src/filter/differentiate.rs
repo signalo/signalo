@@ -1,24 +1,13 @@
-use std::ops::BitOr;
 use std::ops::Sub as StdSub;
 use std::mem;
 
 use num_traits::Zero;
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Default, Clone)]
 pub struct Differentiate<T> {
     prev: Option<T>,
-}
-
-impl<T, Rhs> BitOr<Rhs> for Differentiate<T> {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
-    }
 }
 
 impl<T> Filter<T> for Differentiate<T>

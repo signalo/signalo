@@ -1,9 +1,7 @@
-use std::ops::BitOr;
 use std::cmp::PartialEq;
 
 use num_traits::Zero;
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 // static itg_t m_itg = { .max = 20, .acc = 0, .output = 0 };
@@ -27,15 +25,6 @@ where
     #[inline]
     pub fn new(threshold: usize, predicate: T, output: [U; 2]) -> Self {
         Debounce { threshold, output, predicate, counter: 0 }
-    }
-}
-
-impl<T, U, Rhs> BitOr<Rhs> for Debounce<T, U> {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 

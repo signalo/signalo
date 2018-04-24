@@ -1,7 +1,5 @@
-use std::ops::BitOr;
 use std::cmp::PartialOrd;
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
@@ -16,15 +14,6 @@ impl<T, U> Threshold<T, U> where U: Clone {
     #[inline]
     pub fn new(threshold: T, output: [U; 2]) -> Self {
         Threshold { threshold, output }
-    }
-}
-
-impl<T, U, Rhs> BitOr<Rhs> for Threshold<T, U> {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 

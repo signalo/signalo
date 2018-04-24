@@ -1,8 +1,5 @@
-use std::ops::BitOr;
 use std::ops::Sub as StdSub;
 
-
-use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
@@ -19,15 +16,6 @@ impl<T> Sub<T> {
     #[inline]
     pub fn value(&self) -> &T {
         &self.value
-    }
-}
-
-impl<T, Rhs> BitOr<Rhs> for Sub<T> {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 

@@ -1,9 +1,7 @@
-use std::ops::BitOr;
 use std::ops::{Sub, Add, Mul, Div};
 
 use num_traits::{Zero, One};
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
@@ -59,15 +57,6 @@ where
 {
     fn default() -> Self {
         Kalman::new(One::one(), One::one(), One::one(), One::one())
-    }
-}
-
-impl<T, Rhs> BitOr<Rhs> for Kalman<T> {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 

@@ -1,7 +1,7 @@
 use std::ops::BitOr;
 
-use piping::sink::Pipe;
 use sink::Sink;
+use piping::sink::Pipe;
 
 /// A `UnitPipe` is a simple container wrapping a `Source`
 ///

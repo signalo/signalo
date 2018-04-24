@@ -1,7 +1,5 @@
-use std::ops::BitOr;
 use std::cmp::{PartialOrd, PartialEq};
 
-use piping::filter::Pipe;
 use filter::Filter;
 
 #[derive(Clone, Debug)]
@@ -18,15 +16,6 @@ impl<T, U> Schmitt<T, U> where U: Clone {
     #[inline]
     pub fn new(thresholds: [T; 2], output: [U; 2]) -> Self {
         Schmitt { thresholds, output, state: false }
-    }
-}
-
-impl<T, U, Rhs> BitOr<Rhs> for Schmitt<T, U> {
-    type Output = Pipe<Self, Rhs>;
-
-    #[inline]
-    fn bitor(self, filter: Rhs) -> Self::Output {
-        Pipe::new(self, filter)
     }
 }
 
