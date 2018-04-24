@@ -52,3 +52,41 @@ where
         self.sink.finalize()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    type Value = usize;
+    
+    struct DummySink {
+        sum: usize
+    }
+
+    impl Sink<Value> for DummySink {
+        type Output = Value;
+
+        #[inline]
+        fn sink(&mut self, input: Value) {
+            self.sum += input;
+        }
+
+        #[inline]
+        fn finalize(self) -> Self::Output {
+            self.sum
+        }
+    }
+
+    #[test]
+    fn sink() {
+        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
+        let sink = DummySink { sum: 0 };
+        let mut pipe = UnitPipe::new(sink);
+        for i in input {
+            pipe.sink(i);
+        }
+        let subject = pipe.finalize();
+        let expected = 196;
+        assert_eq!(subject, expected);
+    }
+}

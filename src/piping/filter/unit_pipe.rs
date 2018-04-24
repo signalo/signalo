@@ -51,3 +51,33 @@ where
         self.filter.phase_shift()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    type Value = usize;
+
+    struct DummyFilter;
+
+    impl Filter<Value> for DummyFilter {
+        type Output = Value;
+
+        #[inline]
+        fn filter(&mut self, input: Value) -> Self::Output {
+            input + 1
+        }
+    }
+
+    #[test]
+    fn filter() {
+        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
+        let filter = DummyFilter;
+        let pipe = UnitPipe::new(filter);
+        let subject: Vec<_> = input.iter().scan(pipe, |pipe, &input| {
+            Some(pipe.filter(input))
+        }).collect();
+        let expected = vec![1, 2, 8, 3, 6, 9, 17, 4, 20, 7, 15, 10, 10, 18, 18, 5, 13, 21, 21, 8];
+        assert_eq!(subject, expected);
+    }
+}

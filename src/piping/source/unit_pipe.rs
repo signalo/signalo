@@ -57,3 +57,32 @@ where
         self.source.source()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALUE: usize = 42;
+
+    struct DummySource;
+
+    impl Source for DummySource {
+        type Output = usize;
+
+        #[inline]
+        fn source(&mut self) -> Option<Self::Output> {
+            Some(VALUE)
+        }
+    }
+
+    #[test]
+    fn source() {
+        const COUNT: usize = 3;
+        let pipe = UnitPipe::new(DummySource);
+        let subject: Vec<_> = (0..COUNT).scan(pipe, |pipe, _| {
+            pipe.source()
+        }).collect();
+        let expected = vec![VALUE; COUNT];
+        assert_eq!(subject, expected);
+    }
+}

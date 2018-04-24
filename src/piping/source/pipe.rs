@@ -57,3 +57,44 @@ where
         self.lhs.source().map(|input| self.rhs.filter(input))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    type Value = usize;
+    const VALUE: Value = 42;
+
+    struct DummySource;
+
+    impl Source for DummySource {
+        type Output = Value;
+
+        #[inline]
+        fn source(&mut self) -> Option<Self::Output> {
+            Some(VALUE)
+        }
+    }
+
+    struct DummyFilter;
+
+    impl Filter<Value> for DummyFilter {
+        type Output = Value;
+
+        #[inline]
+        fn filter(&mut self, input: Value) -> Self::Output {
+            input + 1
+        }
+    }
+
+    #[test]
+    fn source() {
+        const COUNT: usize = 3;
+        let pipe = Pipe::new(DummySource, DummyFilter);
+        let subject: Vec<_> = (0..COUNT).scan(pipe, |pipe, _| {
+            pipe.source()
+        }).collect();
+        let expected = vec![VALUE + 1; COUNT];
+        assert_eq!(subject, expected);
+    }
+}
