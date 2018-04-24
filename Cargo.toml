@@ -1,32 +1,49 @@
 [package]
 authors = ["Vincent Esche <regexident@gmail.com>"]
+categories = ["science"]
+description = "A DSP toolbox with focus on embedded environments."
+documentation = "https://docs.rs/svm"
+keywords = [
+    "no-std",
+    "embedded",
+    "multimedia",
+    "science",
+]
+license = "MPL-2.0"
 name = "signalo"
+readme = "README.md"
+repository = "https://github.com/signalo/signalo"
 version = "0.1.0"
 
 [dependencies]
-num-integer = "0.1.36"
 arraydeque = ">=0.4.2"
+num-integer = ">=0.1.36"
 num-traits = ">=0.2.1"
 
-[dependencies.fpa]
-optional = true
-fpa = "^0.1.0"
-features = ["try-from"]
-
 [dependencies.typenum]
-optional = true
 version = ">=1.10.0"
-
-[dev-dependencies.nearly_eq]
-nearly_eq = "^0.2.3"
+optional = true
 
 [dependencies.missing_mpl]
-version = "0.1.1"
+version = ">=0.1.1"
 optional = true
 
+[dependencies.fpa]
+branch = "experimental"
+features = ["try-from"]
+git = "https://github.com/regexident/fpa.git"
+optional = true
+
+[dev-dependencies.nearly_eq]
+branch = "experimental"
+git = "https://github.com/regexident/rust-nearly-eq.git"
+
 [features]
-fixed-point = ["fpa", "typenum", "nearly_eq/use_fpa"]
 default = ["std"]
 std = []
-nightly = []
+fixed-point = [
+    "fpa",
+    "typenum",
+    "nearly_eq/use_fpa",
+]
 nightly = ["missing_mpl"]
