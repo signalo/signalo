@@ -28,6 +28,7 @@ impl<T, U> Pipe<T, U>
 }
 
 impl<T, U> From<(T, U)> for Pipe<T, U> {
+    #[inline]
     fn from(filters: (T, U)) -> Self {
         let (lhs, rhs) = filters;
         Self::new(lhs, rhs)
@@ -55,6 +56,7 @@ where
         self.rhs.filter(self.lhs.filter(input))
     }
 
+    #[inline]
     fn phase_shift(&self) -> isize {
         self.rhs.phase_shift() + self.lhs.phase_shift()
     }

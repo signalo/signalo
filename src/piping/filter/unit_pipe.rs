@@ -47,6 +47,7 @@ where
         self.filter.filter(input)
     }
 
+    #[inline]
     fn phase_shift(&self) -> isize {
         self.filter.phase_shift()
     }

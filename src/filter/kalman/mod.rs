@@ -77,7 +77,6 @@ where
 {
     type Output = T;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         let (state, cov) = match self.state {
             None => {
@@ -104,10 +103,12 @@ where
         state
     }
 
+    #[inline]
     fn reset(&mut self) {
         self.state = None;
     }
 
+    #[inline]
     fn phase_shift(&self) -> isize {
         0 // FIXME!!!
     }

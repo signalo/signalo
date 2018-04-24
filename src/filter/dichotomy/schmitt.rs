@@ -37,7 +37,6 @@ where
 {
     type Output = U;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         self.state = match self.state {
             false => input > self.thresholds[1],
@@ -46,6 +45,7 @@ where
         self.output[self.state as usize].clone()
     }
 
+    #[inline]
     fn reset(&mut self) {
         self.state = false;
     }

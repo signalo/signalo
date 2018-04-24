@@ -28,7 +28,6 @@ where
 {
     type Output = <T as StdSub<T>>::Output;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         let mut prev = Some(input);
         mem::swap(&mut self.prev, &mut prev);
@@ -39,10 +38,12 @@ where
         }
     }
 
+    #[inline]
     fn reset(&mut self) {
         self.prev = None;
     }
 
+    #[inline]
     fn phase_shift(&self) -> isize {
         1
     }

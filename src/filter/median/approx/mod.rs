@@ -68,7 +68,6 @@ where
 {
     type Output = T;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         // We calculate the mean and use it as an estimate of the median:
         let mean = self.mean.0.filter(input);
@@ -89,12 +88,14 @@ where
         state
     }
 
+    #[inline]
     fn reset(&mut self) {
         self.mean.0.reset();
         self.mean.1.reset();
         self.state = None;
     }
 
+    #[inline]
     fn phase_shift(&self) -> isize {
         0 // FIXME!!!
     }

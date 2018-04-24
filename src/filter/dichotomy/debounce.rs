@@ -46,7 +46,6 @@ where
 {
     type Output = U;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         if input == self.predicate {
             self.counter = (self.counter + 1).min(self.threshold);
@@ -56,6 +55,7 @@ where
         self.output[(self.counter >= self.threshold) as usize]
     }
 
+    #[inline]
     fn reset(&mut self) {
         self.counter = 0;
     }
