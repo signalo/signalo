@@ -23,3 +23,11 @@ pub mod source;
 pub mod filter;
 pub mod assembly;
 
+pub mod prelude {
+    pub use filter::Filter;
+    pub use source::Source;
+
+    pub use assembly::{
+        Pipe,
+    };
+}
