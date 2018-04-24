@@ -61,16 +61,3 @@ where
         self.rhs.phase_shift() + self.lhs.phase_shift()
     }
 }
-
-// impl<T, U> Iterator for Pipe<T, U>
-// where
-//     T: Iterator,
-//     U: Filter<T::Item>,
-// {
-//     type Item = U::Output;
-//
-//     #[inline]
-//     fn next(&mut self) -> Option<Self::Item> {
-//         self.lhs.next().map(|input| self.rhs.filter(input))
-//     }
-// }
