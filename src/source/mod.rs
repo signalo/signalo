@@ -1,7 +1,3 @@
-mod iter;
-
-pub use self::iter::Iter;
-
 pub trait Source: Iterator {
     type Output;
 
