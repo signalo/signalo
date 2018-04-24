@@ -30,6 +30,17 @@ pub mod prelude {
     pub use filter::Filter;
 
     pub use piping::{
-        filter::{UnitPipe, Pipe},
+        source::{
+            UnitPipe as SourceUnitPipe,
+            Pipe as SourcePipe
+        },
+        filter::{
+            UnitPipe as FilterUnitPipe,
+            Pipe as FilterPipe
+        },
+        sink::{
+            UnitPipe as SinkUnitPipe,
+            Pipe as SinkPipe
+        },
     };
 }
