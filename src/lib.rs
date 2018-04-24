@@ -20,12 +20,14 @@ extern crate arraydeque;
 extern crate nearly_eq;
 
 pub mod source;
+pub mod sink;
 pub mod filter;
 pub mod assembly;
 
 pub mod prelude {
-    pub use filter::Filter;
     pub use source::Source;
+    pub use sink::Sink;
+    pub use filter::Filter;
 
     pub use assembly::{
         Pipe,
