@@ -1,8 +1,10 @@
 mod iter;
 mod constant;
+mod increment;
 
 pub use self::iter::Iter;
 pub use self::constant::Constant;
+pub use self::increment::Increment;
 
 pub trait Source: Sized {
     type Output;
