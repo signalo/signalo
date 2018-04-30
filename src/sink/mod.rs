@@ -1,18 +1,21 @@
-use source::Source;
-
 pub trait Sink<T>: Sized {
     type Output;
 
     fn sink(&mut self, input: T);
     fn finalize(self) -> Self::Output;
+}
 
-    fn drain<S>(mut self, mut source: S) -> Self::Output
-    where
-        S: Source<Output=T>,
-    {
-        while let Some(input) = source.source() {
-            self.sink(input);
-        }
-        self.finalize()
+impl<F, T> Sink<T> for F
+where
+    F: FnMut(T) -> (),
+{
+    type Output = ();
+
+    fn sink(&mut self, input: T) {
+        self(input)
+    }
+
+    fn finalize(self) -> Self::Output {
+        ()
     }
 }
