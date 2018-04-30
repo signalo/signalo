@@ -1,3 +1,9 @@
+mod sum;
+mod last;
+
+pub use self::sum::Sum;
+pub use self::last::Last;
+
 pub trait Sink<T>: Sized {
     type Output;
 
