@@ -19,8 +19,7 @@ pub struct Pipe<T, U> {
     rhs: U,
 }
 
-impl<T, U> Pipe<T, U>
-{
+impl<T, U> Pipe<T, U> {
     #[inline]
     pub fn new(lhs: T, rhs: U) -> Self {
         Self { lhs, rhs }

@@ -31,14 +31,17 @@ pub mod prelude {
 
     pub use piping::{
         source::{
+            // macros::*,
             UnitPipe as SourceUnitPipe,
             Pipe as SourcePipe
         },
         filter::{
+            macros::*,
             UnitPipe as FilterUnitPipe,
             Pipe as FilterPipe
         },
         sink::{
+            // macros::*,
             UnitPipe as SinkUnitPipe,
             Pipe as SinkPipe
         },

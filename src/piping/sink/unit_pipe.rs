@@ -58,7 +58,7 @@ mod tests {
     use super::*;
 
     type Value = usize;
-    
+
     struct DummySink {
         sum: usize
     }
