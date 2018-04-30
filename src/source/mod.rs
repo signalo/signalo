@@ -17,7 +17,7 @@ pub trait Source: Sized {
 
     #[inline]
     fn phase_shift(&self) -> isize {
-        0 // specialize for phase-shifting filter types
+        0 // specialize for phase-shifting source types
     }
 }
 
