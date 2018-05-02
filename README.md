@@ -1,4 +1,4 @@
-![jumbotron](../jumbotron.png)
+![jumbotron](./jumbotron.png)
 
 # signalo
 
