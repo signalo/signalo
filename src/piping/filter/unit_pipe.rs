@@ -1,6 +1,9 @@
 use std::ops::BitOr;
 
 use filter::Filter;
+use source::Source;
+use sink::Sink;
+
 use piping::filter::Pipe;
 
 /// A `UnitPipe` is a simple container wrapping a `Filter`
@@ -49,6 +52,35 @@ where
     #[inline]
     fn phase_shift(&self) -> isize {
         self.filter.phase_shift()
+    }
+}
+
+impl<T> Source for UnitPipe<T>
+where
+    T: Filter<()>,
+{
+    type Output = T::Output;
+
+    #[inline]
+    fn source(&mut self) -> Option<Self::Output> {
+        Some(self.filter(()))
+    }
+}
+
+impl<T, I> Sink<I> for UnitPipe<T>
+where
+    T: Filter<I, Output = ()>,
+{
+    type Output = T::Output;
+
+    #[inline]
+    fn sink(&mut self, input: I) {
+        self.filter(input)
+    }
+
+    #[inline]
+    fn finalize(self) -> Self::Output {
+        ()
     }
 }
 

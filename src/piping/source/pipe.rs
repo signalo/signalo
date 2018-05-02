@@ -1,7 +1,7 @@
 use std::ops::BitOr;
 
-use source::Source;
 use filter::Filter;
+use source::Source;
 
 /// A `Pipe` is a simple container joining a pair of a `Source` and a `Filter`
 ///
@@ -54,6 +54,19 @@ where
 
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
+        self.lhs.source().map(|input| self.rhs.filter(input))
+    }
+}
+
+impl<T, U> Filter<()> for Pipe<T, U>
+where
+    T: Source,
+    U: Filter<T::Output>,
+{
+    type Output = Option<U::Output>;
+
+    #[inline]
+    fn filter(&mut self, _input: ()) -> Self::Output {
         self.lhs.source().map(|input| self.rhs.filter(input))
     }
 }

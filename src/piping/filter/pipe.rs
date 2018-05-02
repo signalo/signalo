@@ -1,6 +1,8 @@
 use std::ops::BitOr;
 
 use filter::Filter;
+use source::Source;
+use sink::Sink;
 
 /// A `Pipe` is a simple container joining a pair of `Filter`s
 ///
@@ -58,6 +60,37 @@ where
     #[inline]
     fn phase_shift(&self) -> isize {
         self.rhs.phase_shift() + self.lhs.phase_shift()
+    }
+}
+
+impl<T, U> Source for Pipe<T, U>
+where
+    T: Source,
+    U: Filter<T::Output>,
+{
+    type Output = U::Output;
+
+    #[inline]
+    fn source(&mut self) -> Option<Self::Output> {
+        self.lhs.source().map(|input| self.rhs.filter(input))
+    }
+}
+
+impl<T, U, I> Sink<I> for Pipe<T, U>
+where
+    T: Filter<I>,
+    U: Sink<T::Output>,
+{
+    type Output = U::Output;
+
+    #[inline]
+    fn sink(&mut self, input: I) {
+        self.rhs.sink(self.lhs.filter(input))
+    }
+
+    #[inline]
+    fn finalize(self) -> Self::Output {
+        self.rhs.finalize()
     }
 }
 

@@ -1,5 +1,6 @@
 use std::ops::BitOr;
 
+use filter::Filter;
 use sink::Sink;
 use piping::sink::Pipe;
 
@@ -50,6 +51,18 @@ where
     #[inline]
     fn finalize(self) -> Self::Output {
         self.sink.finalize()
+    }
+}
+
+impl<T, I> Filter<I> for UnitPipe<T>
+where
+    T: Sink<I>,
+{
+    type Output = ();
+
+    #[inline]
+    fn filter(&mut self, input: I) -> Self::Output {
+        self.sink(input)
     }
 }
 

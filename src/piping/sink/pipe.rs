@@ -63,6 +63,19 @@ where
     }
 }
 
+impl<T, U, I> Filter<I> for Pipe<T, U>
+where
+    T: Filter<I>,
+    U: Sink<T::Output>,
+{
+    type Output = ();
+
+    #[inline]
+    fn filter(&mut self, input: I) -> Self::Output {
+        self.rhs.sink(self.lhs.filter(input))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,5 +1,6 @@
 use std::ops::BitOr;
 
+use filter::Filter;
 use source::Source;
 use piping::source::Pipe;
 
@@ -55,6 +56,18 @@ where
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
         self.source.source()
+    }
+}
+
+impl<T> Filter<()> for UnitPipe<T>
+where
+    T: Source,
+{
+    type Output = Option<T::Output>;
+
+    #[inline]
+    fn filter(&mut self, _input: ()) -> Self::Output {
+        self.source()
     }
 }
 
