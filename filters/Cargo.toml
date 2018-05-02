@@ -21,7 +21,7 @@ name = "signalo_filters"
 readme = "README.md"
 repository = "https://github.com/signalo/signalo"
 homepage = "https://github.com/signalo/signalo/tree/master/filters"
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies]
 signalo_traits = "0.1.0"

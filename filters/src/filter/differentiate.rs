@@ -8,7 +8,7 @@ use std::mem;
 use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
-use traits::{Phase, LinearPhase, Stateful};
+use traits::Stateful;
 
 #[derive(Default, Clone)]
 pub struct Differentiate<T> {
@@ -37,20 +37,6 @@ impl<T> Stateful for Differentiate<T> {
     #[inline]
     fn reset(&mut self) {
         self.prev = None;
-    }
-}
-
-impl<T> Phase for Differentiate<T> {
-    #[inline]
-    fn phase_shift(&self) -> isize {
-        Self::linear_phase_shift()
-    }
-}
-
-impl<T> LinearPhase for Differentiate<T> {
-    #[inline]
-    fn linear_phase_shift() -> isize {
-        1
     }
 }
 

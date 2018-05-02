@@ -2,11 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+/// Trait for stateful filters.
 pub trait Stateful {
     fn reset(&mut self);
 }
 
-pub trait Phase: Sized {
+/// Trait for stateful filters.
+pub trait PhaseShift: Sized {
     fn phase_shift(&self) -> isize;
 }
 
@@ -27,7 +29,7 @@ pub trait Phase: Sized {
 ///   input to the system yields a zero output.
 ///
 /// If the above two property are satisfied system is said to be a linear system.
-pub trait LinearPhase: Phase {
+pub trait LinearPhaseShift: PhaseShift {
     fn linear_phase_shift() -> isize;
 }
 
