@@ -6,17 +6,20 @@ use std::ops::Mul as StdMul;
 
 use signalo_traits::filter::Filter;
 
+/// A filter performing multiplication of a signal and a constant value.
 #[derive(Clone, Debug)]
 pub struct Mul<T> {
     value: T
 }
 
 impl<T> Mul<T> {
+    /// Creates a `Mul` filter for a given `value`.
     #[inline]
     pub fn new(value: T) -> Self {
         Mul { value }
     }
 
+    /// Returns the filter's value.
     #[inline]
     pub fn value(&self) -> &T {
         &self.value

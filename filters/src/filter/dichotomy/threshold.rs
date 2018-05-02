@@ -6,18 +6,20 @@ use std::cmp::PartialOrd;
 
 use signalo_traits::filter::Filter;
 
+/// A threshold filter.
 #[derive(Clone, Debug)]
 pub struct Threshold<T, U> {
-    /// input threshold
+    /// input threshold.
     threshold: T,
-    /// [off, on] output
-    output: [U; 2],
+    /// [off, on] outputs.
+    outputs: [U; 2],
 }
 
 impl<T, U> Threshold<T, U> where U: Clone {
+    /// Creates a new `Threshold` filter with given `threshold` and `outputs`.
     #[inline]
-    pub fn new(threshold: T, output: [U; 2]) -> Self {
-        Threshold { threshold, output }
+    pub fn new(threshold: T, outputs: [U; 2]) -> Self {
+        Threshold { threshold, outputs }
     }
 }
 
@@ -30,7 +32,7 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        self.output[(input >= self.threshold) as usize].clone()
+        self.outputs[(input >= self.threshold) as usize].clone()
     }
 }
 

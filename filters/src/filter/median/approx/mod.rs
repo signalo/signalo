@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Approximative median filters.
+
 use std::ops::{Sub, Add, Mul, Div};
 
 use num_traits::{Zero, One};
@@ -11,6 +13,7 @@ use traits::Stateful;
 
 use filter::mean::approx::Mean;
 
+/// A filter producing the approximated moving median over a given signal.
 #[derive(Clone, Debug)]
 pub struct Median<T> {
     beta: T,
@@ -22,10 +25,12 @@ impl<T> Median<T>
 where
     T: PartialOrd + Zero + One
 {
+    /// Creates a new `Median` filter with given `alpha`, `beta` and `gamma` coefficients.
+    ///
     /// Recommended values:
-    // - `alpha`: `beta`
-    // - `beta`: `0.0 .. 1.0`
-    // - `gamma`: `beta * 0.5`
+    /// - `alpha`: `beta`
+    /// - `beta`: `0.0 .. 1.0`
+    /// - `gamma`: `beta * 0.5`
     #[inline]
     pub fn new(alpha: T, beta: T, gamma: T) -> Self {
         assert!(alpha > T::zero() && alpha <= T::one());
@@ -35,24 +40,22 @@ where
         Median { beta, mean, state: None }
     }
 
+    /// Returns the filter's `alpha` coefficient.
     #[inline]
     pub fn alpha(&self) -> &T {
         self.mean.0.beta()
     }
 
+    /// Returns the filter's `beta` coefficient.
     #[inline]
     pub fn beta(&self) -> &T {
         &self.beta
     }
 
+    /// Returns the filter's `gamma` coefficient.
     #[inline]
     pub fn gamma(&self) -> &T {
         &self.mean.1.beta()
-    }
-
-    #[inline]
-    pub fn mean(&self) -> &(Mean<T>, Mean<T>) {
-        &self.mean
     }
 }
 

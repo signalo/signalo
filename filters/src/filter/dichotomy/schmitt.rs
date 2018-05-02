@@ -7,20 +7,22 @@ use std::cmp::{PartialOrd, PartialEq};
 use signalo_traits::filter::Filter;
 use traits::Stateful;
 
+/// A [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger) filter.
 #[derive(Clone, Debug)]
 pub struct Schmitt<T, U> {
-    /// [low, high] input thresholds
+    /// [low, high] input thresholds.
     thresholds: [T; 2],
-    /// [off, on] output
-    output: [U; 2],
-    /// Current internal state
+    /// [off, on] outputs.
+    outputs: [U; 2],
+    /// Current internal state.
     state: bool,
 }
 
 impl<T, U> Schmitt<T, U> where U: Clone {
+    /// Creates a new `Schmitt` filter with given `thresholds` and `outputs`.
     #[inline]
-    pub fn new(thresholds: [T; 2], output: [U; 2]) -> Self {
-        Schmitt { thresholds, output, state: false }
+    pub fn new(thresholds: [T; 2], outputs: [U; 2]) -> Self {
+        Schmitt { thresholds, outputs, state: false }
     }
 }
 
@@ -36,7 +38,7 @@ where
             false => input > self.thresholds[1],
             true => input >= self.thresholds[0],
         };
-        self.output[self.state as usize].clone()
+        self.outputs[self.state as usize].clone()
     }
 }
 

@@ -4,6 +4,7 @@
 
 use signalo_traits::filter::Filter;
 
+/// A filter that simply returns the values it receives.
 #[derive(Default, Clone)]
 pub struct Identity;
 

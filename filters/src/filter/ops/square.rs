@@ -6,10 +6,12 @@ use std::ops::Mul;
 
 use signalo_traits::filter::Filter;
 
+/// A filter performing a squaring operation over a signal.
 #[derive(Clone, Debug)]
 pub struct Square;
 
 impl Square {
+    /// Creates a new `Square` filter.
     #[inline]
     pub fn new() -> Self {
         Square

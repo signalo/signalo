@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Approximative mean filters.
+
 use std::ops::{Sub, Add, Mul, Div};
 
 use num_traits::{Zero, One};
@@ -9,6 +11,7 @@ use num_traits::{Zero, One};
 use signalo_traits::filter::Filter;
 use traits::Stateful;
 
+/// A filter producing the approximated moving median over a given signal.
 #[derive(Clone, Debug)]
 pub struct Mean<T> {
     beta: T,
@@ -19,12 +22,14 @@ impl<T> Mean<T>
 where
     T: PartialOrd + Zero + One
 {
+    /// Creates a new `Mean` filter with `beta = 1.0 / n` with `n` being the filter width.
     #[inline]
     pub fn new(beta: T) -> Self {
         assert!(beta > T::zero() && beta <= T::one());
         Mean { beta, state: None }
     }
 
+    /// Returns the filter's `beta` coefficient.
     #[inline]
     pub fn beta(&self) -> &T {
         &self.beta
@@ -104,7 +109,6 @@ mod tests {
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let float_input = get_input();
-        println!("input: {:?}", float_input);
 
         let input: Vec<_> = float_input.into_iter().map(|float| {
             Fixed::try_from(float).unwrap()
@@ -116,7 +120,6 @@ mod tests {
         let float_output: Vec<_> = output.into_iter().map(|fixed| {
             f32::try_from(fixed).unwrap()
         }).collect();
-        println!("output: {:?}", float_output);
 
         assert_nearly_eq!(float_output, get_output(), 0.001);
     }

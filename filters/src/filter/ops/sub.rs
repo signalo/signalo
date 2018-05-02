@@ -6,17 +6,20 @@ use std::ops::Sub as StdSub;
 
 use signalo_traits::filter::Filter;
 
+/// A filter performing subtraction of a signal and a constant value.
 #[derive(Clone, Debug)]
 pub struct Sub<T> {
     value: T
 }
 
 impl<T> Sub<T> {
+    /// Creates a `Sub` filter for a given `value`.
     #[inline]
     pub fn new(value: T) -> Self {
         Sub { value }
     }
 
+    /// Returns the filter's value.
     #[inline]
     pub fn value(&self) -> &T {
         &self.value

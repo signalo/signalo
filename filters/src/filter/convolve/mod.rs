@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Convolution filters.
+
 use std::ops::{Add, Mul, Div};
 
 use arraydeque::{Array, ArrayDeque, Wrapping};
@@ -10,6 +12,7 @@ use num_traits::Zero;
 use signalo_traits::filter::Filter;
 use traits::Stateful;
 
+/// A convolution filter.
 #[derive(Clone)]
 pub struct Convolve<A>
 where
@@ -25,11 +28,13 @@ where
     T: Copy + PartialOrd + Zero,
     A: Array<Item=T>,
 {
+    /// Creates a new `Convolve` filter with given `coefficients`.
     #[inline]
     pub fn new(coefficients: A) -> Self {
         Convolve { coefficients, state: ArrayDeque::new() }
     }
 
+    /// Returns the filter's coefficients.
     #[inline]
     pub fn coefficients(&self) -> &A {
         &self.coefficients
@@ -41,14 +46,16 @@ where
     T: Copy + PartialOrd + Zero + Div<T, Output = T>,
     A: Array<Item=T>,
 {
+    /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
     #[inline]
     pub fn normalized(mut coefficients: A) -> Self {
         let sum = coefficients.as_slice().iter().fold(T::zero(), |sum, coeff| {
             sum + (*coeff)
         });
-        assert!(sum > T::zero());
-        for coeff in coefficients.as_mut_slice() {
-            *coeff = *coeff / sum;
+        if !sum.is_zero() {
+            for coeff in coefficients.as_mut_slice() {
+                *coeff = *coeff / sum;
+            }
         }
         Convolve { coefficients, state: ArrayDeque::new() }
     }

@@ -4,12 +4,14 @@
 
 use signalo_traits::source::Source;
 
+/// A source that returns an constant value on each call.
 #[derive(Default, Clone)]
 pub struct Constant<T> {
     value: T,
 }
 
 impl<T> Constant<T> {
+    /// Creates a new `Constant` source for a given `value`.
     #[inline]
     pub fn new(value: T) -> Self {
         Constant { value }

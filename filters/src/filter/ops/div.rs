@@ -6,17 +6,20 @@ use std::ops::Div as StdDiv;
 
 use signalo_traits::filter::Filter;
 
+/// A filter performing division of a signal and a constant value.
 #[derive(Clone, Debug)]
 pub struct Div<T> {
     value: T
 }
 
 impl<T> Div<T> {
+    /// Creates a `Div` filter for a given `value`.
     #[inline]
     pub fn new(value: T) -> Self {
         Div { value }
     }
 
+    /// Returns the filter's value.
     #[inline]
     pub fn value(&self) -> &T {
         &self.value

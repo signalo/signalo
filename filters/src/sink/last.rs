@@ -4,11 +4,13 @@
 
 use signalo_traits::sink::Sink;
 
+/// A sink that memorizes the most recently received value of a signal.
 pub struct Last<T> {
     state: Option<T>,
 }
 
 impl<T> Last<T> {
+    /// Creates a new `Last` sink.
     #[inline]
     pub fn new() -> Self {
         Last { state: None }

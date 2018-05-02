@@ -9,15 +9,16 @@ use num_traits::Zero;
 use signalo_traits::filter::Filter;
 use traits::Stateful;
 
+/// A [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter.
 #[derive(Clone, Debug)]
 pub struct Debounce<T, U> {
-    /// Threshold of how long input must remain same to be accepted
+    /// Threshold of how long input must remain same to be accepted.
     threshold: usize,
-    /// [off, on] output
-    output: [U; 2],
-    /// Value to debounce
+    /// [off, on] output.
+    outputs: [U; 2],
+    /// Value to debounce.
     predicate: T,
-    /// Counter of how long input was the same
+    /// Counter of how long input was the same.
     counter: usize,
 }
 
@@ -25,9 +26,10 @@ impl<T, U> Debounce<T, U>
 where
     T: Copy + Zero
 {
+    /// Creates a new `Schmitt` filter with given `threshold`, `predicate` and `outputs`.
     #[inline]
-    pub fn new(threshold: usize, predicate: T, output: [U; 2]) -> Self {
-        Debounce { threshold, output, predicate, counter: 0 }
+    pub fn new(threshold: usize, predicate: T, outputs: [U; 2]) -> Self {
+        Debounce { threshold, outputs, predicate, counter: 0 }
     }
 }
 
@@ -44,7 +46,7 @@ where
         } else {
             self.counter = 0;
         }
-        self.output[(self.counter >= self.threshold) as usize]
+        self.outputs[(self.counter >= self.threshold) as usize]
     }
 }
 
