@@ -8,7 +8,7 @@ use signalo_traits::filter::Filter;
 use signalo_traits::source::Source;
 use signalo_traits::sink::Sink;
 
-use pipe::filter::Pipe;
+use filter::Pipe;
 
 /// A `UnitPipe` is a simple container wrapping a `Filter`
 ///

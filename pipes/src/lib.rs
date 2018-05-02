@@ -9,10 +9,12 @@
 extern crate signalo_traits;
 extern crate signalo_filters;
 
-mod pipe;
+pub mod source;
+pub mod filter;
+pub mod sink;
 
 pub mod prelude {
-    pub use pipe::{
+    pub use {
         source::{
             // macros::*,
             UnitPipe as SourceUnitPipe,

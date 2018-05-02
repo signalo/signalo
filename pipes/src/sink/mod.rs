@@ -8,7 +8,7 @@ pub mod macros {
     macro_rules! sink_pipe {
         ($($filters:expr),*) => ({
             #[allow(unused_imports)]
-            use pipe::sink::{Pipe, UnitPipe};
+            use sink::{Pipe, UnitPipe};
             sink_pipe!(@internal $($filters),*)
         });
         (@internal $lhs:expr, $rhs:expr, $($filter:expr),*) => {

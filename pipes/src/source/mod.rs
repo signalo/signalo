@@ -8,7 +8,7 @@ pub mod macros {
     macro_rules! source_pipe {
         ($($filters:expr),*) => ({
             #[allow(unused_imports)]
-            use pipe::source::{Pipe, UnitPipe};
+            use source::{Pipe, UnitPipe};
             source_pipe!(@internal $($filters),*)
         });
         (@internal $lhs:expr, $rhs:expr, $($filters:expr),*) => {

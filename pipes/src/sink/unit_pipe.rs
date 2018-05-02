@@ -6,7 +6,7 @@ use std::ops::BitOr;
 
 use signalo_traits::filter::Filter;
 use signalo_traits::sink::Sink;
-use pipe::sink::Pipe;
+use sink::Pipe;
 
 /// A `UnitPipe` is a simple container wrapping a `Source`
 ///
