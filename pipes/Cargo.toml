@@ -1,0 +1,37 @@
+[package]
+authors = ["Vincent Esche <regexident@gmail.com>"]
+categories = [
+    "no-std",
+    "embedded",
+    "multimedia",
+    "science",
+    "algorithms",
+]
+description = "A collection of pipes used in 'signalo' umbrella crate."
+documentation = "https://docs.rs/svm"
+keywords = [
+    "dsp",
+    "digital-signal",
+    "signal-processing",
+    "filters",
+    "pipeline",
+]
+license = "MPL-2.0"
+name = "signalo_pipes"
+readme = "README.md"
+repository = "https://github.com/signalo/signalo"
+homepage = "https://github.com/signalo/signalo/tree/master/pipes"
+version = "0.1.0"
+
+[dependencies]
+signalo_traits = "0.1.0"
+signalo_filters = "0.1.0"
+
+[dependencies.missing_mpl]
+version = "~0.1"
+optional = true
+
+[features]
+default = ["std"]
+std = []
+nightly = ["missing_mpl"]

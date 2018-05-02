@@ -1,49 +1,13 @@
-[package]
-authors = ["Vincent Esche <regexident@gmail.com>"]
-categories = ["science"]
-description = "A DSP toolbox with focus on embedded environments."
-documentation = "https://docs.rs/svm"
-keywords = [
-    "no-std",
-    "embedded",
-    "multimedia",
-    "science",
+[workspace]
+
+members = [
+    "signalo",
+    "traits",
+    "filters",
+    "pipes",
 ]
-license = "MPL-2.0"
-name = "signalo"
-readme = "README.md"
-repository = "https://github.com/signalo/signalo"
-version = "0.1.0"
 
-[dependencies]
-arraydeque = ">=0.4.2"
-num-integer = ">=0.1.36"
-num-traits = ">=0.2.1"
-
-[dependencies.typenum]
-version = ">=1.10.0"
-optional = true
-
-[dependencies.missing_mpl]
-version = ">=0.1.1"
-optional = true
-
-[dependencies.fpa]
-branch = "experimental"
-features = ["try-from"]
-git = "https://github.com/regexident/fpa.git"
-optional = true
-
-[dev-dependencies.nearly_eq]
-branch = "experimental"
-git = "https://github.com/regexident/rust-nearly-eq.git"
-
-[features]
-default = ["std"]
-std = []
-fixed-point = [
-    "fpa",
-    "typenum",
-    "nearly_eq/use_fpa",
-]
-nightly = ["missing_mpl"]
+[replace]
+"signalo_traits:0.1.0" = { path = "traits" }
+"signalo_filters:0.1.0" = { path = "filters" }
+"signalo_pipes:0.1.0" = { path = "pipes" }

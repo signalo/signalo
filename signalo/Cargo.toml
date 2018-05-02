@@ -1,0 +1,38 @@
+[package]
+authors = ["Vincent Esche <regexident@gmail.com>"]
+categories = [
+    "no-std",
+    "embedded",
+    "multimedia",
+    "science",
+    "algorithms",
+]
+description = "A DSP toolbox with focus on embedded environments."
+documentation = "https://docs.rs/svm"
+keywords = [
+    "dsp",
+    "digital-signal",
+    "signal-processing",
+    "filters",
+    "pipeline",
+]
+license = "MPL-2.0"
+name = "signalo"
+readme = "../README.md"
+repository = "https://github.com/signalo/signalo"
+homepage = "https://github.com/signalo/signalo/tree/master/signalo"
+version = "0.1.0"
+
+[dependencies]
+signalo_traits = "0.1.0"
+signalo_filters = "0.1.0"
+signalo_pipes = "0.1.0"
+
+[dependencies.missing_mpl]
+version = "~0.1"
+optional = true
+
+[features]
+default = ["std"]
+std = []
+nightly = ["missing_mpl"]
