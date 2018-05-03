@@ -177,8 +177,9 @@ mod tests {
         let r = 0.01; // Process noise
         let q = 1.0; // Measurement noise
         let a = 1.0; // State
+        let b = 0.0; // Control
         let c = 1.0; // Measurement
-        let filter = Kalman::new(r, q, a, c);
+        let filter = Kalman::new(r, q, a, b, c);
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
@@ -199,8 +200,9 @@ mod tests {
         let r = Fixed::try_from(0.01).unwrap(); // Process noise
         let q = Fixed::try_from(1.00).unwrap(); // Measurement noise
         let a = Fixed::try_from(1.00).unwrap(); // State
+        let b = Fixed::try_from(0.00).unwrap(); // Control
         let c = Fixed::try_from(1.00).unwrap(); // Measurement
-        let filter = Kalman::new(r, q, a, c);
+        let filter = Kalman::new(r, q, a, b, c);
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let float_input = get_input();
