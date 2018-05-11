@@ -24,8 +24,8 @@ homepage = "https://github.com/signalo/signalo/tree/master/pipes"
 version = "0.1.1"
 
 [dependencies]
-signalo_traits = "0.1.0"
-signalo_filters = "0.1.0"
+signalo_traits = "~0.1"
+signalo_filters = "~0.1"
 
 [dependencies.missing_mpl]
 version = "~0.1"

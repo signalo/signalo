@@ -21,12 +21,12 @@ name = "signalo"
 readme = "../README.md"
 repository = "https://github.com/signalo/signalo"
 homepage = "https://github.com/signalo/signalo/tree/master/signalo"
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies]
-signalo_traits = "0.1.0"
-signalo_filters = "0.1.0"
-signalo_pipes = "0.1.0"
+signalo_traits = "~0.1.1"
+signalo_filters = "~0.1.2"
+signalo_pipes = "~0.1.1"
 
 [dependencies.missing_mpl]
 version = "~0.1"
