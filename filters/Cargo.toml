@@ -21,16 +21,16 @@ name = "signalo_filters"
 readme = "README.md"
 repository = "https://github.com/signalo/signalo"
 homepage = "https://github.com/signalo/signalo/tree/master/filters"
-version = "0.1.1"
+version = "0.1.2"
 
 [dependencies]
-signalo_traits = "0.1.0"
-arraydeque = ">=0.4.2"
-num-integer = ">=0.1.36"
-num-traits = ">=0.2.1"
+signalo_traits = "~0.1"
+arraydeque = "~0.4"
+num-integer = "~0.1"
+num-traits = "~0.2"
 
 [dependencies.typenum]
-version = ">=1.10.0"
+version = "~1.10"
 optional = true
 
 [dependencies.missing_mpl]
@@ -38,7 +38,8 @@ version = "~0.1"
 optional = true
 
 [dev-dependencies]
-nearly_eq = "~0.2.4"
+nearly_eq = "~0.2"
+rand = "~0.4"
 
 [features]
 default = ["std"]
