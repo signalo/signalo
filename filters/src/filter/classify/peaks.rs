@@ -38,7 +38,7 @@ impl Classification<[Peak; 3]> for Peak {
     }
 }
 
-/// A slope detection filter.
+/// A peak detection filter.
 #[derive(Clone, Debug)]
 pub struct Peaks<T, U> {
     state: (Option<T>, Slope),
