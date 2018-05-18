@@ -26,7 +26,7 @@ impl<T, U> Debounce<T, U>
 where
     T: Copy + Zero
 {
-    /// Creates a new `Schmitt` filter with given `threshold`, `predicate` and `outputs`.
+    /// Creates a new `Schmitt` filter with given `threshold`, `predicate` and `outputs` (`[off, on]`).
     #[inline]
     pub fn new(threshold: usize, predicate: T, outputs: [U; 2]) -> Self {
         Debounce { threshold, outputs, predicate, counter: 0 }
@@ -46,7 +46,8 @@ where
         } else {
             self.counter = 0;
         }
-        self.outputs[(self.counter >= self.threshold) as usize]
+        let index = (self.counter >= self.threshold) as usize;
+        self.outputs[index]
     }
 }
 
@@ -62,7 +63,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn fixed_point() {
+    fn debounce() {
         let filter = Debounce::new(3, 1, [0, 1]);
         let input = vec![0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1];
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
