@@ -11,7 +11,7 @@ use signalo_traits::filter::Filter;
 use traits::Stateful;
 
 /// A filter that produces the derivative of the signal.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Differentiate<T> {
     prev: Option<T>,
 }

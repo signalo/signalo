@@ -5,6 +5,7 @@
 use signalo_traits::sink::Sink;
 
 /// A sink that memorizes the most recently received value of a signal.
+#[derive(Default, Clone, Debug)]
 pub struct Last<T> {
     state: Option<T>,
 }

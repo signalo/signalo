@@ -7,7 +7,7 @@ use std::ops::AddAssign;
 use signalo_traits::source::Source;
 
 /// A source that returns an auto-incremented value on each call.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Increment<T> {
     state: T,
     interval: T,
