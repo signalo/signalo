@@ -4,8 +4,6 @@
 
 //! Filters that map a signal onto two discrete values (on, off, e.g.).
 
-#![macro_use]
-
 use arraydeque::Array;
 
 mod debounce;
@@ -38,7 +36,6 @@ where
     fn classes() -> A;
 }
 
-#[macro_export]
 macro_rules! classification_impl {
     ($head:ty, $($tail:ty),+ => [$a:expr, $b:expr]) => {
         classification_impl!($head => [$a, $b]);
