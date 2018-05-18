@@ -21,7 +21,7 @@ use filter::Pipe;
 /// └─┬────────┘
 ///   └ UnitPipe
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct UnitPipe<T> {
     filter: T,
 }

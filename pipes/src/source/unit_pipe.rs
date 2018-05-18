@@ -19,7 +19,7 @@ use source::Pipe;
 /// └─┬────────┘
 ///   └ UnitPipe
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct UnitPipe<T> {
     source: T,
 }
