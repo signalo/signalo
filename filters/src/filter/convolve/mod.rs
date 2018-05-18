@@ -11,6 +11,8 @@ use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
+pub mod savitzky_golay;
+
 /// A convolution filter.
 #[derive(Clone)]
 pub struct Convolve<A>
