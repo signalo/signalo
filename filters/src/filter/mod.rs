@@ -8,11 +8,11 @@ mod identity;
 mod differentiate;
 
 pub mod ops;
-pub mod dichotomy;
 pub mod mean;
 pub mod median;
 pub mod kalman;
 pub mod convolve;
+pub mod classify;
 
 pub use self::identity::Identity;
 pub use self::differentiate::Differentiate;

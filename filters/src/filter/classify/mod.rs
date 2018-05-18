@@ -4,6 +4,8 @@
 
 //! Filters that map a signal onto two discrete values (on, off, e.g.).
 
+#![macro_use]
+
 mod debounce;
 mod schmitt;
 mod threshold;
