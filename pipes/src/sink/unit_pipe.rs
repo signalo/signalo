@@ -19,7 +19,7 @@ use sink::Pipe;
 /// └─┬────────┘
 ///   └ UnitPipe
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct UnitPipe<T> {
     sink: T,
 }

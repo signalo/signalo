@@ -19,7 +19,7 @@ use signalo_traits::sink::Sink;
 /// └─┬───────────────────────┘
 ///   └ Pipe
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct Pipe<T, U> {
     lhs: T,
     rhs: U,

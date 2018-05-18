@@ -18,7 +18,7 @@ use signalo_traits::source::Source;
 /// └─┬───────────────────────┘
 ///   └ Pipe
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct Pipe<T, U> {
     lhs: T,
     rhs: U,
