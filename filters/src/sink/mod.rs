@@ -6,6 +6,8 @@
 
 mod sum;
 mod last;
+mod mean_variance;
 
 pub use self::sum::Sum;
 pub use self::last::Last;
+pub use self::mean_variance::MeanVariance;
