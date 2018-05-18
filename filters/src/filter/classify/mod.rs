@@ -12,19 +12,22 @@ mod debounce;
 mod schmitt;
 mod threshold;
 
+mod slopes;
+mod peaks;
+
 pub use self::debounce::Debounce;
 pub use self::schmitt::Schmitt;
 pub use self::threshold::Threshold;
 
-// pub use self::slope::{
-//     SlopeKind,
-//     Slope,
-// };
-//
-// pub use self::peak::{
-//     PeakKind,
-//     Peak,
-// };
+pub use self::slopes::{
+    Slope,
+    Slopes,
+};
+
+pub use self::peaks::{
+    Peak,
+    Peaks,
+};
 
 /// A trait describing a classification value.
 pub trait Classification<A>: Sized
