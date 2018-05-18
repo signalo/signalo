@@ -5,6 +5,7 @@
 //! Convolution filters.
 
 use std::ops::{Add, Mul, Div};
+use std::fmt;
 
 use arraydeque::{Array, ArrayDeque, Wrapping};
 use num_traits::Zero;
@@ -58,6 +59,19 @@ where
             }
         }
         Convolve { coefficients, state: ArrayDeque::new() }
+    }
+}
+
+impl<T, A> fmt::Debug for Convolve<A>
+where
+    T: Copy + fmt::Debug,
+    A: Array<Item = T> + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Convolve")
+            .field("coefficients", &self.coefficients)
+            .field("state", &self.state)
+            .finish()
     }
 }
 

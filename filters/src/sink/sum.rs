@@ -9,6 +9,7 @@ use num_traits::Zero;
 use signalo_traits::sink::Sink;
 
 /// A sink that computes the sum of all received values of a signal.
+#[derive(Default, Clone, Debug)]
 pub struct Sum<T> {
     state: T,
 }

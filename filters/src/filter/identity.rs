@@ -5,7 +5,7 @@
 use signalo_traits::filter::Filter;
 
 /// A filter that simply returns the values it receives.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Identity;
 
 impl<T> Filter<T> for Identity {

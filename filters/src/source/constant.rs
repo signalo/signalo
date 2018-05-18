@@ -5,7 +5,7 @@
 use signalo_traits::source::Source;
 
 /// A source that returns an constant value on each call.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Constant<T> {
     value: T,
 }

@@ -5,7 +5,7 @@
 use signalo_traits::source::Source;
 
 /// A wrapper type for turning iterators into sources.
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct Iter<I> {
     iter: I,
 }
