@@ -96,31 +96,4 @@ mod tests {
         }).collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
-
-    #[test]
-    #[cfg(feature = "fpa")]
-    fn fixed_point() {
-        use std::convert::TryFrom;
-        use fpa::I16F16;
-        type Fixed = I16F16;
-
-        let beta = Fixed::try_from(0.25).unwrap();
-        let filter = Mean::new(beta);
-
-        // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let float_input = get_input();
-
-        let input: Vec<_> = float_input.into_iter().map(|float| {
-            Fixed::try_from(float).unwrap()
-        }).collect();
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-
-        let float_output: Vec<_> = output.into_iter().map(|fixed| {
-            f32::try_from(fixed).unwrap()
-        }).collect();
-
-        assert_nearly_eq!(float_output, get_output(), 0.001);
-    }
 }
