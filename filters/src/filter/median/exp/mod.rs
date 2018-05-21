@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Approximative median filters.
+//! Exponential moving median filters.
 
 use std::ops::{Sub, Add, Mul, Div};
 
@@ -11,7 +11,7 @@ use num_traits::{Zero, One};
 use signalo_traits::filter::Filter;
 use traits::Stateful;
 
-use filter::mean::approx::Mean;
+use filter::mean::exp::Mean;
 
 /// A filter producing the approximated moving median over a given signal.
 #[derive(Clone, Debug)]

@@ -4,4 +4,4 @@
 
 //! Median filters.
 
-pub mod approx;
+pub mod exp;
