@@ -5,3 +5,6 @@
 //! Mean (aka "average") filters.
 
 pub mod exp;
+mod mean;
+
+pub use self::mean::Mean;
