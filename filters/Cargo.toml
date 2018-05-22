@@ -9,6 +9,7 @@ categories = [
 ]
 description = "A collection of filters used in 'signalo' umbrella crate."
 documentation = "https://docs.rs/svm"
+homepage = "https://github.com/signalo/signalo/tree/master/filters"
 keywords = [
     "dsp",
     "digital-signal",
@@ -20,22 +21,22 @@ license = "MPL-2.0"
 name = "signalo_filters"
 readme = "README.md"
 repository = "https://github.com/signalo/signalo"
-homepage = "https://github.com/signalo/signalo/tree/master/filters"
 version = "0.1.3"
 
 [dependencies]
-signalo_traits = "~0.1"
 arraydeque = "~0.4"
+median = "0.2.0"
 num-integer = "~0.1"
 num-traits = "~0.2"
-
-[dependencies.typenum]
-version = "~1.10"
-optional = true
+signalo_traits = "~0.1"
 
 [dependencies.missing_mpl]
-version = "~0.1"
 optional = true
+version = "~0.1"
+
+[dependencies.typenum]
+optional = true
+version = "~1.10"
 
 [dev-dependencies]
 nearly_eq = "~0.2"
@@ -43,5 +44,5 @@ rand = "~0.4"
 
 [features]
 default = ["std"]
-std = []
 nightly = ["missing_mpl"]
+std = []
