@@ -19,8 +19,8 @@ pub struct Mean<A>
 where
     A: Array,
 {
-    sum: A::Item,
-    state: ArrayDeque<A, Wrapping>,
+    state: Option<A::Item>,
+    buffer: ArrayDeque<A, Wrapping>,
     weight: A::Item,
 }
 
@@ -46,14 +46,20 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        if let Some(dropped) = self.state.push_back(input) {
-            self.sum = self.sum - dropped;
+        let old_mean = self.state.unwrap_or(input);
+        let old_weight = self.weight;
+        let (mean, weight) = if let Some(old_input) = self.buffer.push_back(input) {
+            let mean = old_mean - old_input + input;
+            (mean, old_weight)
         } else {
-            self.weight = self.weight + T::one();
-        }
-        self.sum = self.sum + input;
+            let mean = old_mean + input;
+            let weight = old_weight + T::one();
+            (mean, weight)
+        };
+        self.state = Some(mean);
+        self.weight = weight;
 
-        self.sum / self.weight
+        mean / weight
     }
 }
 
