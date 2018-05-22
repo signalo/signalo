@@ -32,6 +32,7 @@ where
         f.debug_struct("MeanVariance")
             .field("state", &self.state)
             .field("buffer", &self.buffer)
+            .field("weight", &self.weight)
             .finish()
     }
 }

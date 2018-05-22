@@ -31,8 +31,8 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Mean")
-            .field("sum", &self.sum)
             .field("state", &self.state)
+            .field("buffer", &self.buffer)
             .field("weight", &self.weight)
             .finish()
     }
