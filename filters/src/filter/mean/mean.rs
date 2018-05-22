@@ -30,7 +30,7 @@ where
     A: Array<Item = T> + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Convolve")
+        f.debug_struct("Mean")
             .field("sum", &self.sum)
             .field("state", &self.state)
             .field("weight", &self.weight)
@@ -40,7 +40,7 @@ where
 
 impl<T, A> Filter<T> for Mean<A>
 where
-    T: Copy + fmt::Debug + One + Add<T, Output=T> + Sub<T, Output=T> + Div<T, Output=T>,
+    T: Copy + One + Add<T, Output=T> + Sub<T, Output=T> + Div<T, Output=T>,
     A: Array<Item=T>,
 {
     type Output = T;
@@ -89,7 +89,5 @@ mod tests {
             Some(filter.filter(input))
         }).collect();
         assert_nearly_eq!(output, get_output(), 0.001);
-
-        // panic!();
     }
 }

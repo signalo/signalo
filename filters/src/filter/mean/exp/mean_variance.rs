@@ -4,9 +4,7 @@
 
 //! Exponential moving average & variance filters.
 
-use std::ops::{Sub, Add, Mul, Div};
-
-use num_traits::{Zero, One};
+use num_traits::{One, Zero, Num};
 
 use signalo_traits::filter::Filter;
 use traits::Stateful;
@@ -38,7 +36,7 @@ where
 
 impl<T> Filter<T> for MeanVariance<T>
 where
-    T: Copy + Zero + One + Add<T, Output=T> + Sub<T, Output=T> + Mul<T, Output=T> + Div<T, Output=T>
+    T: Copy + Num,
 {
     /// (mean, variance)
     type Output = (T, T);
@@ -108,11 +106,19 @@ mod tests {
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
+            Some(filter.filter(input).0)
         }).collect();
-        let mean: Vec<_> = output.iter().map(|(mean, _)| mean).collect();
-        let variance: Vec<_> = output.iter().map(|(_, variance)| variance).collect();
-        assert_nearly_eq!(mean, get_mean(), 0.001);
-        assert_nearly_eq!(variance, get_variance(), 0.001);
+        assert_nearly_eq!(output, get_mean(), 0.001);
+    }
+
+    #[test]
+    fn variance() {
+        let filter = MeanVariance::new(0.25);
+        // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
+        let input = get_input();
+        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
+            Some(filter.filter(input).1)
+        }).collect();
+        assert_nearly_eq!(output, get_variance(), 0.001);
     }
 }
