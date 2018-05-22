@@ -122,7 +122,7 @@ mod tests {
     }
 
     #[test]
-    fn floating_point() {
+    fn median() {
         let alpha = 0.5;
         let beta = 0.5;
         let gamma = 0.25;
