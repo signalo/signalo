@@ -7,7 +7,6 @@
 use num_traits::{One, Zero, Num};
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 use super::mean::Mean;
 
@@ -55,15 +54,6 @@ where
         let variance = self.variance.filter(squared);
         self.state = Some(mean);
         (mean, variance)
-    }
-}
-
-impl<T> Stateful for MeanVariance<T> {
-    #[inline]
-    fn reset(&mut self) {
-        self.state = None;
-        self.mean.reset();
-        self.variance.reset();
     }
 }
 

@@ -7,7 +7,6 @@ use std::cmp::PartialEq;
 use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 /// A [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter.
 #[derive(Clone, Debug)]
@@ -48,13 +47,6 @@ where
         }
         let index = (self.counter >= self.threshold) as usize;
         self.outputs[index]
-    }
-}
-
-impl<T, U> Stateful for Debounce<T, U> {
-    #[inline]
-    fn reset(&mut self) {
-        self.counter = 0;
     }
 }
 

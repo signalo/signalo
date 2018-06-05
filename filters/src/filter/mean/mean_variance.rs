@@ -11,7 +11,6 @@ use arraydeque::Array;
 use num_traits::Num;
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 use super::mean::Mean;
 
@@ -83,18 +82,6 @@ where
         let variance = self.variance.filter(squared);
         self.state = Some(mean);
         (mean, variance)
-    }
-}
-
-impl<T, A> Stateful for MeanVariance<A>
-where
-    Mean<A>: Default,
-    A: Array<Item = T> + fmt::Debug,
-{
-    #[inline]
-    fn reset(&mut self) {
-        self.mean.reset();
-        self.variance.reset();
     }
 }
 

@@ -38,9 +38,6 @@ use median::stack::Filter31 as InnerMedian31;
 use median::stack::Filter32 as InnerMedian32;
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
-
-use filter::mean::exp::Mean;
 
 macro_rules! median_def {
     ($n:ident<$t:ident>: $i:ident<$u:ident>) => {
@@ -69,17 +66,6 @@ macro_rules! median_def {
 
             fn filter(&mut self, input: T) -> Self::Output {
                 self.inner.consume(input)
-            }
-        }
-
-        impl<T> Stateful for $n<$t>
-        where
-            T: Copy + PartialOrd,
-            Mean<T>: Stateful,
-        {
-            #[inline]
-            fn reset(&mut self) {
-                self.inner = $i::new();
             }
         }
     }

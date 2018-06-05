@@ -9,7 +9,6 @@
 use num_traits::{Zero, One, Num};
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 /// A 1-dimensional Kalman filter.
 #[derive(Clone, Debug)]
@@ -139,13 +138,6 @@ where
 
     fn filter(&mut self, (input, control): (T, T)) -> Self::Output {
         self.process((input, control))
-    }
-}
-
-impl<T> Stateful for Kalman<T> {
-    #[inline]
-    fn reset(&mut self) {
-        self.x = None;
     }
 }
 

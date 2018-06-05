@@ -8,7 +8,6 @@ use std::mem;
 use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 /// A filter that produces the derivative of the signal.
 #[derive(Default, Clone, Debug)]
@@ -31,13 +30,6 @@ where
         } else {
             <T as StdSub<T>>::Output::zero()
         }
-    }
-}
-
-impl<T> Stateful for Differentiate<T> {
-    #[inline]
-    fn reset(&mut self) {
-        self.prev = None;
     }
 }
 
