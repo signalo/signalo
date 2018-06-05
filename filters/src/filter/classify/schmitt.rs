@@ -5,7 +5,6 @@
 use std::cmp::{PartialOrd, PartialEq};
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 /// A [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger) filter.
 #[derive(Clone, Debug)]
@@ -43,13 +42,6 @@ where
         };
         let index = self.state as usize;
         self.outputs[index].clone()
-    }
-}
-
-impl<T, U> Stateful for Schmitt<T, U> {
-    #[inline]
-    fn reset(&mut self) {
-        self.state = false;
     }
 }
 

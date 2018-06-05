@@ -9,7 +9,6 @@ use std::ops::{Sub, Add, Mul, Div};
 use num_traits::{Zero, One};
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 use filter::mean::exp::Mean;
 
@@ -83,18 +82,6 @@ where
         // And we're done. Store a copy and return the result:
         self.state = Some(state);
         state
-    }
-}
-
-impl<T> Stateful for Median<T>
-where
-    Mean<T>: Stateful,
-{
-    #[inline]
-    fn reset(&mut self) {
-        self.mean.0.reset();
-        self.mean.1.reset();
-        self.state = None;
     }
 }
 

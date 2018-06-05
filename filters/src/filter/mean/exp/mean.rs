@@ -9,7 +9,6 @@ use std::ops::{Sub, Add, Mul, Div};
 use num_traits::{Zero, One};
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 /// A filter producing the exponential moving average over a given signal.
 #[derive(Clone, Debug)]
@@ -53,13 +52,6 @@ where
         };
         self.state = Some(state);
         state
-    }
-}
-
-impl<T> Stateful for Mean<T> {
-    #[inline]
-    fn reset(&mut self) {
-        self.state = None;
     }
 }
 

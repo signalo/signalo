@@ -11,7 +11,6 @@ use arraydeque::{Array, ArrayDeque, Wrapping};
 use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
-use traits::Stateful;
 
 /// A convolution filter.
 #[derive(Clone)]
@@ -98,16 +97,6 @@ where
         });
 
         output
-    }
-}
-
-impl<T, A> Stateful for Convolve<A>
-where
-    T: Copy + Zero + Add<T, Output = T> + Mul<T, Output = T>,
-    A: Array<Item = T>,
-{
-    fn reset(&mut self) {
-        self.state.clear()
     }
 }
 
