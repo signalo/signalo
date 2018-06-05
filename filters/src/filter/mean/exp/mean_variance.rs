@@ -9,28 +9,35 @@ use num_traits::{One, Zero, Num};
 use signalo_traits::filter::Filter;
 use traits::Stateful;
 
-/// A filter producing the approximated moving median over a given signal.
+use super::mean::Mean;
+
+/// A filter producing the exponential moving average and variance over a given signal.
 #[derive(Clone, Debug)]
 pub struct MeanVariance<T> {
-    beta: T,
-    state: Option<(T, T)>,
+    state: Option<T>,
+    mean: Mean<T>,
+    variance: Mean<T>,
 }
 
 impl<T> MeanVariance<T>
 where
-    T: PartialOrd + Zero + One
+    T: Copy + PartialOrd + Zero + One
 {
     /// Creates a new `MeanVariance` filter with `beta = 1.0 / n` with `n` being the filter width.
     #[inline]
     pub fn new(beta: T) -> Self {
         assert!(beta > T::zero() && beta <= T::one());
-        MeanVariance { beta, state: None }
+        MeanVariance {
+            state: None,
+            mean: Mean::new(beta),
+            variance: Mean::new(beta),
+        }
     }
 
     /// Returns the filter's `beta` coefficient.
     #[inline]
     pub fn beta(&self) -> &T {
-        &self.beta
+        self.mean.beta()
     }
 }
 
@@ -42,19 +49,12 @@ where
     type Output = (T, T);
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let state = match self.state {
-            None => {
-                (input, T::zero())
-            },
-            Some((old_mean, old_variance)) => {
-                let delta = (input - old_mean) * self.beta;
-                let mean = old_mean + delta;
-                let variance = (T::one() - self.beta) * (old_variance + (delta * (input - mean)));
-                (mean, variance)
-            },
-        };
-        self.state = Some(state);
-        state
+        let mean_old = self.state.unwrap_or(input);
+        let mean = self.mean.filter(input);
+        let squared = (input - mean_old) * (input - mean);
+        let variance = self.variance.filter(squared);
+        self.state = Some(mean);
+        (mean, variance)
     }
 }
 
@@ -62,6 +62,8 @@ impl<T> Stateful for MeanVariance<T> {
     #[inline]
     fn reset(&mut self) {
         self.state = None;
+        self.mean.reset();
+        self.variance.reset();
     }
 }
 
@@ -90,13 +92,12 @@ mod tests {
 
     fn get_variance() -> Vec<f32> {
         vec![
-            0.0, 0.140625, 6.5126953, 4.885071, 4.969288, 7.6550264, 25.869503, 21.682716,
-            39.953407, 31.464375, 27.93155, 21.047108, 15.840708, 19.852734, 19.373913,
-            25.333334, 19.286137, 26.032684, 26.03156, 28.296118, 26.156588, 21.396917,
-            17.048645, 14.051302, 26.79162, 23.521252, 1348.9042, 1068.0803, 832.7865,
-            642.4359, 1371.7548, 1269.105, 965.8983, 783.5323, 620.89777, 467.42792,
-            351.5579, 264.2236, 216.79709, 205.01526, 1242.1246, 1104.0492, 831.9343,
-            664.34485, 520.9803, 403.51617, 1221.8617, 1063.6779, 815.62573, 621.76965
+            0.000, 0.188, 8.684, 6.513, 6.626, 10.207, 34.493, 28.910, 53.271, 41.953,
+            37.242, 28.063, 21.121, 26.470, 25.832, 33.778, 25.715, 34.710, 34.709,
+            37.728, 34.875, 28.529, 22.732, 18.735, 35.722, 31.362, 1798.539, 1424.107,
+            1110.382, 856.581, 1829.006, 1692.140, 1287.865, 1044.710, 827.864, 623.237,
+            468.744, 352.298, 289.063, 273.354, 1656.166, 1472.066, 1109.246, 885.793,
+            694.640, 538.022, 1629.149, 1418.237, 1087.501, 829.026
         ]
     }
 
