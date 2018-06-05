@@ -12,8 +12,9 @@ use arraydeque::{Array, ArrayDeque, Wrapping};
 use num_traits::One;
 
 use signalo_traits::filter::Filter;
+use traits::Stateful;
 
-/// A filter producing the approximated moving median over a given signal.
+/// A filter producing the moving median over a given signal.
 #[derive(Clone, Default)]
 pub struct Mean<A>
 where
@@ -60,6 +61,17 @@ where
         self.weight = weight;
 
         mean / weight
+    }
+}
+
+impl<T, A> Stateful for Mean<A>
+where
+    Self: Default,
+    A: Array<Item = T> + fmt::Debug,
+{
+    #[inline]
+    fn reset(&mut self) {
+        *self = Self::default();
     }
 }
 

@@ -11,7 +11,7 @@ use num_traits::{Zero, One};
 use signalo_traits::filter::Filter;
 use traits::Stateful;
 
-/// A filter producing the approximated moving median over a given signal.
+/// A filter producing the exponential moving average over a given signal.
 #[derive(Clone, Debug)]
 pub struct Mean<T> {
     beta: T,

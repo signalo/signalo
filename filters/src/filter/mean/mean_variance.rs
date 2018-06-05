@@ -6,21 +6,52 @@
 
 use std::fmt;
 
-use arraydeque::{Array, ArrayDeque, Wrapping};
+use arraydeque::Array;
 
 use num_traits::Num;
 
 use signalo_traits::filter::Filter;
+use traits::Stateful;
 
-/// A filter producing the approximated moving median over a given signal.
-#[derive(Clone, Default)]
+use super::mean::Mean;
+
+/// A filter producing the moving average and variance over a given signal.
+// #[derive(Clone, Default)]
 pub struct MeanVariance<A>
 where
     A: Array,
 {
-    state: Option<(A::Item, A::Item)>,
-    buffer: ArrayDeque<A, Wrapping>,
-    weight: A::Item,
+    state: Option<A::Item>,
+    mean: Mean<A>,
+    variance: Mean<A>,
+}
+
+impl<T, A> Clone for MeanVariance<A>
+where
+    T: Clone,
+    A: Clone + Array<Item = T>,
+{
+    fn clone(&self) -> Self {
+        Self {
+            state: self.state.clone(),
+            mean: self.mean.clone(),
+            variance: self.variance.clone(),
+        }
+    }
+}
+
+impl<T, A> Default for MeanVariance<A>
+where
+    T: Default,
+    A: Default + Array<Item = T>,
+{
+    fn default() -> Self {
+        Self {
+            state: None,
+            mean: Mean::default(),
+            variance: Mean::default(),
+        }
+    }
 }
 
 impl<T, A> fmt::Debug for MeanVariance<A>
@@ -31,39 +62,39 @@ where
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("MeanVariance")
             .field("state", &self.state)
-            .field("buffer", &self.buffer)
-            .field("weight", &self.weight)
+            .field("mean", &self.mean)
+            .field("variance", &self.variance)
             .finish()
     }
 }
 
 impl<T, A> Filter<T> for MeanVariance<A>
 where
-    T: fmt::Debug + Copy + Num,
-    A: fmt::Debug + Array<Item=T>,
+    T: Copy + Num,
+    A: Array<Item = T> + fmt::Debug,
 {
     /// (mean, variance)
     type Output = (T, T);
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let (old_mean, old_variance) = self.state.unwrap_or((input, T::zero()));
-        let old_weight = self.weight;
-        let (mean, weight) = if let Some(old_input) = self.buffer.push_back(input) {
-            let mean = old_mean - old_input + input;
-            (mean, old_weight)
-        } else {
-            let mean = old_mean + input;
-            let weight = old_weight + T::one();
-            (mean, weight)
-        };
-        let old_delta = input - (old_mean / weight);
-        let delta = input - (mean / weight);
-        let variance = (old_variance / weight) + (old_delta * delta);
+        let mean_old = self.state.unwrap_or(input);
+        let mean = self.mean.filter(input);
+        let squared = (input - mean_old) * (input - mean);
+        let variance = self.variance.filter(squared);
+        self.state = Some(mean);
+        (mean, variance)
+    }
+}
 
-        self.state = Some((mean, variance));
-        self.weight = weight;
-
-        (mean / weight, variance / weight)
+impl<T, A> Stateful for MeanVariance<A>
+where
+    Mean<A>: Default,
+    A: Array<Item = T> + fmt::Debug,
+{
+    #[inline]
+    fn reset(&mut self) {
+        self.mean.reset();
+        self.variance.reset();
     }
 }
 
@@ -92,13 +123,12 @@ mod tests {
 
     fn get_variance() -> Vec<f32> {
         vec![
-            0.0, 0.25, 9.685184, 3.5246909, 1.3600823, 3.7866943, 24.484453, 21.494818,
-            28.276049, 16.832756, 7.166475, 3.2777145, 1.4629421, 11.746905, 8.656376,
-            32.73731, 10.690213, 27.563406, 16.298912, 35.284824, 24.280127, 14.611894,
-            9.611373, 5.796383, 24.487686, 16.82923, 2035.6097, 961.8699, 613.40106,
-            204.46703, 1789.0446, 1132.5704, 488.96793, 181.13745, 62.78656, 27.44737,
-            13.889862, 4.629954, 39.09887, 88.14407, 1750.2704, 1058.4976, 435.86954,
-            163.43799, 56.886734, 18.962244, 1727.2098, 949.58844, 462.9369, 122.05304
+            0.000, 0.250, 9.556, 9.852, 9.870, 3.815, 26.741, 39.889, 57.667, 41.852, 30.074,
+            9.852, 2.815, 12.519, 16.370, 45.852, 34.370, 53.630, 30.889, 60.963, 49.481,
+            48.889, 23.778, 13.852, 29.889, 33.815, 2061.222, 2322.000, 2606.111, 576.111,
+            2013.667, 2257.111, 2368.556, 665.815, 132.000, 27.074, 13.667, 11.259, 42.296,
+            112.667, 1833.556, 2271.074, 2279.000, 576.259, 103.593, 20.556, 1723.296,
+            2094.741, 2241.148, 488.000
         ]
     }
 
