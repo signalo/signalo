@@ -10,6 +10,15 @@
 
 #![warn(missing_docs)]
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate core as std;
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate std;
+
 pub mod source;
 pub mod filter;
 pub mod sink;

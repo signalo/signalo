@@ -4,13 +4,22 @@
 
 //! A collection of filters used in 'signalo' umbrella crate.
 
-#![cfg_attr(feature = "nightly", feature(try_from))]
-
 #![cfg_attr(feature = "missing_mpl", feature(plugin))]
 #![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
 #![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
 
+#![cfg_attr(feature = "nightly", feature(try_from))]
+
 #![warn(missing_docs)]
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate core as std;
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate std;
 
 extern crate num_traits;
 extern crate num_integer;

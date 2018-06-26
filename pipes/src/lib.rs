@@ -8,6 +8,17 @@
 #![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
 #![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
 
+#![warn(missing_docs)]
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate core as std;
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate std;
+
 extern crate signalo_traits;
 extern crate signalo_filters;
 
