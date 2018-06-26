@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! The 'signalo' umbrella crate.
+
 #![cfg_attr(feature = "missing_mpl", feature(plugin))]
 #![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
 #![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
