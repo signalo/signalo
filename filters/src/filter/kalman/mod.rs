@@ -4,8 +4,6 @@
 
 //! Kalman filters.
 
-// use std::ops::{Sub, Add, Mul, Div};
-
 use num_traits::{Zero, One, Num};
 
 use signalo_traits::filter::Filter;
