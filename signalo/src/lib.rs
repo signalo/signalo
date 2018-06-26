@@ -10,6 +10,7 @@ extern crate signalo_traits;
 extern crate signalo_filters;
 extern crate signalo_pipes;
 
+/// The crate's prelude.
 pub mod prelude {
     pub use signalo_traits::prelude as traits;
     pub use signalo_filters::prelude as filters;

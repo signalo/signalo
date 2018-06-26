@@ -26,6 +26,7 @@ pub struct Pipe<T, U> {
 }
 
 impl<T, U> Pipe<T, U> {
+    /// Creates a new pipe connecting `lhs` and `rhs`.
     #[inline]
     pub fn new(lhs: T, rhs: U) -> Self {
         Self { lhs, rhs }
