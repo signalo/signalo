@@ -27,6 +27,7 @@ pub struct UnitPipe<T> {
 }
 
 impl<T> UnitPipe<T> {
+    /// Creates a new unit pipe wrapping `filter`.
     #[inline]
     pub fn new(filter: T) -> Self {
         Self { filter }
