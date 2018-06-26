@@ -4,9 +4,7 @@
 
 //! Exponential moving average filters.
 
-use std::ops::{Sub, Add, Mul, Div};
-
-use num_traits::{Zero, One};
+use num_traits::{Zero, One, Num};
 
 use signalo_traits::filter::Filter;
 
@@ -37,7 +35,7 @@ where
 
 impl<T> Filter<T> for Mean<T>
 where
-    T: Copy + Add<T, Output=T> + Sub<T, Output=T> + Mul<T, Output=T> + Div<T, Output=T>
+    T: Copy + Num,
 {
     type Output = T;
 

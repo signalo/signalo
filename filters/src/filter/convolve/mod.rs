@@ -4,11 +4,10 @@
 
 //! Convolution filters.
 
-use std::ops::{Add, Mul, Div};
 use std::fmt;
 
 use arraydeque::{Array, ArrayDeque, Wrapping};
-use num_traits::Zero;
+use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
@@ -25,7 +24,7 @@ where
 
 impl<T, A> Convolve<A>
 where
-    T: Copy + PartialOrd + Zero,
+    T: Copy,
     A: Array<Item=T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`.
@@ -43,7 +42,7 @@ where
 
 impl<T, A> Convolve<A>
 where
-    T: Copy + PartialOrd + Zero + Div<T, Output = T>,
+    T: Copy + PartialOrd + Num,
     A: Array<Item=T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
@@ -76,7 +75,7 @@ where
 
 impl<T, A> Filter<T> for Convolve<A>
 where
-    T: Copy + Zero + Add<T, Output = T> + Mul<T, Output = T>,
+    T: Copy + Num,
     A: Array<Item = T>,
 {
     type Output = T;

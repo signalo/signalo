@@ -4,12 +4,11 @@
 
 //! Moving average filters.
 
-use std::ops::{Sub, Add, Div};
 use std::fmt;
 
 use arraydeque::{Array, ArrayDeque, Wrapping};
 
-use num_traits::One;
+use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
@@ -40,7 +39,7 @@ where
 
 impl<T, A> Filter<T> for Mean<A>
 where
-    T: Copy + One + Add<T, Output=T> + Sub<T, Output=T> + Div<T, Output=T>,
+    T: Copy + Num,
     A: Array<Item=T>,
 {
     type Output = T;
