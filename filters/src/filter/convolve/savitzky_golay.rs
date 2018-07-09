@@ -4,11 +4,11 @@
 
 //! Savitzky-Golay filters.
 
-use signalo_traits::filter::Filter;
-
 use super::Convolve;
 
+/// Trait for Savitzky-Golay convolution filters.
 pub trait SavitzkyGolay: Sized {
+    /// Creates a convolution filter pre-configured with the Savitzky-Golay coefficients.
     fn savitzky_golay() -> Self;
 }
 
@@ -76,6 +76,8 @@ savitzky_golay_impl_float!(13 => [
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use signalo_traits::filter::Filter;
 
     fn get_input() -> Vec<f32> {
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
