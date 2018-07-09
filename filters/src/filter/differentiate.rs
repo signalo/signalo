@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use std::ops::Sub as StdSub;
+use std::ops::Sub;
 use std::mem;
 
 use num_traits::Zero;
@@ -12,24 +12,26 @@ use signalo_traits::filter::Filter;
 /// A filter that produces the derivative of the signal.
 #[derive(Default, Clone, Debug)]
 pub struct Differentiate<T> {
-    prev: Option<T>,
+    state: Option<T>,
 }
 
 impl<T> Filter<T> for Differentiate<T>
 where
-    T: Copy + StdSub<T>,
-    <T as StdSub<T>>::Output: Zero
+    T: Copy + Sub<T, Output = T> + Zero,
 {
-    type Output = <T as StdSub<T>>::Output;
+    type Output = <T as Sub<T>>::Output;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let mut prev = Some(input);
-        mem::swap(&mut self.prev, &mut prev);
-        if let Some(prev) = prev {
-            input - prev
-        } else {
-            <T as StdSub<T>>::Output::zero()
-        }
+        let output = match self.state {
+            None => {
+                T::zero()
+            },
+            Some(state) => {
+                input - state
+            },
+        };
+        self.state = Some(input);
+        output
     }
 }
 
