@@ -7,16 +7,8 @@ use std::ops::Mul;
 use signalo_traits::filter::Filter;
 
 /// A filter performing a squaring operation over a signal.
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct Square;
-
-impl Square {
-    /// Creates a new `Square` filter.
-    #[inline]
-    pub fn new() -> Self {
-        Square
-    }
-}
 
 impl<T> Filter<T> for Square
 where
@@ -34,25 +26,33 @@ where
 mod tests {
     use super::*;
 
-    #[test]
-    fn fixed_point() {
-        let filter = Square::new();
-        // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-        assert_eq!(output, vec![0, 1, 49, 4, 25, 64, 256, 9, 361, 36, 196, 81, 81, 289, 289, 16, 144, 400, 400, 49]);
+    fn get_input() -> Vec<f32> {
+        vec![
+            0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
+            12.0, 20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 18.0, 18.0, 18.0,
+            106.0, 5.0, 26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0,
+            16.0, 16.0, 104.0, 11.0, 24.0, 24.0
+        ]
+    }
+
+    fn get_output() -> Vec<f32> {
+        vec![
+            0.000, 1.000, 49.000, 4.000, 25.000, 64.000, 256.000, 9.000, 361.000, 36.000,
+            196.000, 81.000, 81.000, 289.000, 289.000, 16.000, 144.000, 400.000, 400.000,
+            49.000, 49.000, 225.000, 225.000, 100.000, 529.000, 100.000, 12321.000, 324.000,
+            324.000, 324.000, 11236.000, 25.000, 676.000, 169.000, 169.000, 441.000, 441.000,
+            441.000, 1156.000, 64.000, 11881.000, 64.000, 841.000, 256.000, 256.000, 256.000,
+            10816.000, 121.000, 576.000, 576.000
+        ]
     }
 
     #[test]
-    fn floating_point() {
-        let filter = Square::new();
-        // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0, 20.0, 20.0, 7.0];
+    fn square() {
+        let filter = Square::default();
+        let input = get_input();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
             Some(filter.filter(input))
         }).collect();
-        assert_nearly_eq!(output, vec![0.0, 1.0, 49.0, 4.0, 25.0, 64.0, 256.0, 9.0, 361.0, 36.0, 196.0, 81.0, 81.0, 289.0, 289.0, 16.0, 144.0, 400.0, 400.0, 49.0]);
+        assert_nearly_eq!(output, get_output(), 0.001);
     }
 }
