@@ -8,7 +8,9 @@ mod add;
 mod sub;
 mod mul;
 mod div;
+mod rem;
 
+mod neg;
 mod square;
 
 pub use self::add::Add;
