@@ -10,7 +10,7 @@ mod differentiate;
 pub mod ops;
 pub mod mean;
 pub mod median;
-pub mod kalman;
+pub mod observe;
 pub mod convolve;
 pub mod classify;
 
