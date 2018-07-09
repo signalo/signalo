@@ -11,62 +11,32 @@ use signalo_traits::filter::Filter;
 /// A 1-dimensional Kalman filter.
 #[derive(Clone, Debug)]
 pub struct Kalman<T> {
-    r: T, /// Process noise
-    q: T, /// Measurement noise
-    a: T, /// State
-    b: T, /// Control
+    r: T, /// Process noise covariance
+    q: T, /// Measurement noise covariance
+    a: T, /// State transition
+    b: T, /// Control transition
     c: T, /// Measurement
-    cov: T, /// Uncertainty
+    cov: T, /// Covariance (uncertainty)
     x: Option<T>,
 }
 
 impl<T> Kalman<T>
 where
-    T: Zero + One
+    T: Zero
 {
     /// Creates a new `Kalman` filter with given `r`, `q`, `a`, `b`, and `c` coefficients.
     ///
     /// Coefficients:
-    /// - `r`: process noise covariance
-    /// - `q`: measurement noise covariance
-    /// - `a`: state transition
-    /// - `b`: control transition
-    /// - `c`: measurement
+    /// - `r`: Process noise covariance
+    /// - `q`: Measurement noise covariance
+    /// - `a`: State transition
+    /// - `b`: Control transition
+    /// - `c`: Measurement
     #[inline]
     pub fn new(r: T, q: T, a: T, b: T, c: T) -> Self {
         let cov = T::zero();
         let x = None;
         Kalman { r, q, a, b, c, cov, x }
-    }
-
-    /// Process noise covariance
-    #[inline]
-    pub fn r(&self) -> &T {
-        &self.r
-    }
-
-    /// Measurement noise covariance
-    #[inline]
-    pub fn q(&self) -> &T {
-        &self.q
-    }
-
-    /// State transition
-    #[inline]
-    pub fn a(&self) -> &T {
-        &self.a
-    }
-
-    /// Control transition
-    #[inline]
-    pub fn b(&self) -> &T {
-        &self.b
-    }
-
-    /// Measurement
-    #[inline]
-    pub fn c(&self) -> &T {
-        &self.c
     }
 }
 
@@ -83,14 +53,14 @@ where
                 (x, cov)
             },
             Some(mut x) => {
-                // Compute prediction
+                // Compute prediction:
                 let pred_state = (self.a * x) + (self.b * control);
                 let pred_cov = (self.a * self.cov * self.a) + self.r;
 
-                // Kalman gain
+                // Compute Kalman gain:
                 let k = pred_cov * self.c / ((pred_cov * c_squared) + self.q);
 
-                // Correction
+                // Correction:
                 let x = pred_state + k * (input - (self.c * pred_state));
                 let cov = pred_cov - (k * self.c * pred_cov);
                 (x, cov)
@@ -154,18 +124,18 @@ mod tests {
 
     fn get_output() -> Vec<f32> {
         vec![
-            0.000, 0.502, 2.704, 2.522, 3.047, 3.946, 5.883, 5.463, 7.288, 7.125, 7.951, 8.071,
-            8.175, 9.129, 9.960, 9.342, 9.614, 10.660, 11.591, 11.138, 10.731, 11.148, 11.522,
-            11.375, 12.497, 12.256, 21.739, 21.381, 21.057, 20.765, 28.908, 26.625, 26.566,
-            25.272, 24.103, 23.807, 23.540, 23.298, 24.317, 22.763, 30.971, 28.785, 28.806,
-            27.587, 26.485, 25.487, 32.957, 30.868, 30.215, 29.623
+            0.000, 0.524, 3.012, 2.682, 3.375, 4.693, 7.837, 6.510, 9.912, 8.851, 10.245,
+            9.908, 9.663, 11.646, 13.092, 10.636, 11.004, 13.435, 15.208, 12.991, 11.372,
+            12.352, 13.068, 12.239, 15.146, 13.756, 40.027, 34.076, 29.733, 26.563, 48.024,
+            36.401, 33.591, 28.028, 23.968, 23.166, 22.581, 22.154, 25.354, 20.666, 44.530,
+            34.661, 33.132, 28.503, 25.126, 22.660, 44.635, 35.548, 32.428, 30.151
         ]
     }
 
     #[test]
     fn floating_point() {
-        let r = 0.01; // Process noise
-        let q = 1.0; // Measurement noise
+        let r = 0.0001; // Process noise
+        let q = 0.001; // Measurement noise
         let a = 1.0; // State
         let b = 0.0; // Control
         let c = 1.0; // Measurement
