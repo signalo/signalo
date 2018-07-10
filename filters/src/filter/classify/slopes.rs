@@ -84,7 +84,7 @@ mod tests {
     use filter::classify::Classification;
 
     #[test]
-    fn slope() {
+    fn test() {
         use self::Slope::*;
 
         let filter = Slopes::new(Slope::classes());

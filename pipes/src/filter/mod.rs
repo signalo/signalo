@@ -52,7 +52,7 @@ mod tests {
     }
 
     #[test]
-    fn filter_pipe() {
+    fn test() {
         let _: UnitPipe<_> = filter_pipe!(DummyFilter);
         let _: Pipe<_, _> = filter_pipe!(DummyFilter, DummyFilter);
     }

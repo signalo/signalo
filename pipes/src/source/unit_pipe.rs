@@ -94,7 +94,7 @@ mod tests {
     }
 
     #[test]
-    fn source() {
+    fn test() {
         const COUNT: usize = 3;
         let pipe = UnitPipe::new(DummySource);
         let subject: Vec<_> = (0..COUNT).scan(pipe, |pipe, _| {

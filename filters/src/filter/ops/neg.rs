@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[test]
-    fn neg() {
+    fn test() {
         let filter = Neg::default();
         let input = get_input();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {

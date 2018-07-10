@@ -113,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn filter() {
+    fn test() {
         let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
         let filter = DummyFilterAdd;
         let pipe = UnitPipe::new(filter);
@@ -121,20 +121,6 @@ mod tests {
             Some(pipe.filter(input))
         }).collect();
         let expected = vec![1, 2, 8, 3, 6, 9, 17, 4, 20, 7, 15, 10, 10, 18, 18, 5, 13, 21, 21, 8];
-        assert_eq!(subject, expected);
-    }
-
-    #[test]
-    fn pipe() {
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
-        let unit_pipe = UnitPipe::new(DummyFilterAdd);
-        let filter = DummyFilterMul;
-        let pipe = unit_pipe | filter;
-
-        let subject: Vec<_> = input.iter().scan(pipe, |pipe, &input| {
-            Some(pipe.filter(input))
-        }).collect();
-        let expected = vec![2, 4, 16, 6, 12, 18, 34, 8, 40, 14, 30, 20, 20, 36, 36, 10, 26, 42, 42, 16];
         assert_eq!(subject, expected);
     }
 }

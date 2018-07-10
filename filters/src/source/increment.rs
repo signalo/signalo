@@ -40,7 +40,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn source() {
+    fn test() {
         let source = Increment::new(42, 2);
         let subject: Vec<_> = (0..5).scan(source, |source, _| {
             source.source()

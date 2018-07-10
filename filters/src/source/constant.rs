@@ -42,7 +42,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn source() {
+    fn test() {
         const VALUE: usize = 42;
         const COUNT: usize = 3;
         let source = Constant::new(VALUE);

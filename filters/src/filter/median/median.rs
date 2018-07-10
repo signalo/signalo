@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn median() {
+    fn test() {
         let filter = Median3::new();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();

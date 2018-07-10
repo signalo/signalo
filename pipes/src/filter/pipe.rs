@@ -123,7 +123,7 @@ mod tests {
     }
 
     #[test]
-    fn filter() {
+    fn test() {
         let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
         let filter_add = DummyFilterAdd;
         let filter_mul = DummyFilterMul;

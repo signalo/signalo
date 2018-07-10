@@ -106,7 +106,7 @@ mod tests {
     use filter::classify::Classification;
 
     #[test]
-    fn peak() {
+    fn test() {
         use self::Peak::*;
 
         let filter = Peaks::new(Peak::classes());

@@ -107,7 +107,7 @@ mod tests {
     }
 
     #[test]
-    fn median() {
+    fn test() {
         let alpha = 0.5;
         let beta = 0.5;
         let gamma = 0.25;

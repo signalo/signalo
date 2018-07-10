@@ -125,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    fn floating_point() {
+    fn test() {
         // Effectively calculates the derivative:
         let filter = Convolve::new([1.000, -1.000]);
         let input = get_input();

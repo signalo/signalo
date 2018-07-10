@@ -72,7 +72,6 @@ savitzky_golay_impl_float!(13 => [
     -0.05495, -0.08791, -0.12088
 ]);
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
