@@ -21,6 +21,32 @@ enum PadState<T> {
 }
 
 /// A source that pads an inner source with a specified number of constant values at the edges.
+///
+/// ### Example:
+///
+/// ```
+/// # extern crate signalo_filters;
+/// #
+/// # fn main() {
+/// use signalo_filters::source::Increment;
+/// let increment = Increment::new(0, 1);
+/// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │─▶ ...
+/// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
+///
+/// use signalo_filters::source::Take;
+/// let take = Take::new(increment, 3);
+/// // ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 1 │─▶│ 2 │
+/// // ╰───╯  ╰───╯  ╰───╯
+///
+/// use signalo_filters::source::PadEdge;
+/// let pad_edge: PadEdge<Take<Increment<usize>>, usize> = PadEdge::new(take, 2);
+/// // ╭────╮  ╭────╮  ╭───╮  ╭───╮  ╭───╮  ╭────╮  ╭────╮
+/// // │ 42 │─▶│ 42 │─▶│ 0 │─▶│ 1 │─▶│ 2 │─▶│ 42 │─▶│ 42 │
+/// // ╰────╯  ╰────╯  ╰───╯  ╰───╯  ╰───╯  ╰────╯  ╰────╯
+/// # }
+///```
 #[derive(Clone, Debug)]
 pub struct Pad<S, T> {
     inner: S,

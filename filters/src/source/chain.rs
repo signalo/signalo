@@ -14,6 +14,30 @@ enum ChainState {
 }
 
 /// A source that returns only a specified number of values.
+///
+/// ### Example:
+///
+/// ```
+/// # extern crate signalo_filters;
+/// #
+/// # fn main() {
+/// use signalo_filters::source::Iter;
+/// let front = Iter::from(vec![0, 1, 2]);
+/// // ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 1 │─▶│ 2 │
+/// // ╰───╯  ╰───╯  ╰───╯
+/// let back = Iter::from(vec![3, 4]);
+/// // ╭───╮  ╭───╮
+/// // │ 3 │─▶│ 4 │
+/// // ╰───╯  ╰───╯
+///
+/// use signalo_filters::source::Chain;
+/// let chain = Chain::new(front, back);
+/// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │
+/// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
+/// # }
+/// ```
 #[derive(Clone, Debug)]
 pub struct Chain<F, B> {
     front: F,
