@@ -5,6 +5,27 @@
 use signalo_traits::source::Source;
 
 /// A source that repeats an auto-incremented value on each call.
+///
+/// ### Example:
+///
+/// ```
+/// # extern crate signalo_filters;
+/// #
+/// # fn main() {
+/// use signalo_filters::source::Iter;
+///
+/// let iter = Iter::from(vec![0, 1, 2]);
+/// // ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 1 │─▶│ 2 │
+/// // ╰───╯  ╰───╯  ╰───╯
+///
+/// use signalo_filters::source::Cycle;
+/// let cycle = Cycle::new(iter);
+/// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 0 │─▶│ 1 │─▶│ 2 │─▶ ...
+/// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
+/// # }
+/// ```
 #[derive(Clone, Debug)]
 pub struct Cycle<S> {
     orig: S,

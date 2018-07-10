@@ -5,6 +5,29 @@
 use signalo_traits::source::Source;
 
 /// A source that returns only up to a specified number of values.
+/// A source that returns an auto-incremented value on each call.
+///
+/// ### Example:
+///
+/// ```
+/// # extern crate signalo_filters;
+/// #
+/// # fn main() {
+/// use signalo_filters::source::Increment;
+///
+/// let increment = Increment::new(0, 1);
+/// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │─▶ ...
+/// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
+///
+/// use signalo_filters::source::Skip;
+///
+/// let skip = Skip::new(increment, 2);
+/// // ╭───╮  ╭───╮  ╭───╮
+/// // │ 2 │─▶│ 3 │─▶│ 4 │─▶ ...
+/// // ╰───╯  ╰───╯  ╰───╯
+/// # }
+///```
 #[derive(Clone, Debug)]
 pub struct Skip<S> {
     inner: S,

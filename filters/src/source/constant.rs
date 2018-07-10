@@ -5,6 +5,20 @@
 use signalo_traits::source::Source;
 
 /// A source that returns an constant value on each call.
+///
+/// ### Example:
+///
+/// ```
+/// # extern crate signalo_filters;
+/// #
+/// # fn main() {
+/// use signalo_filters::source::Constant;
+/// let constant = Constant::new(42);
+/// // ╭────╮  ╭────╮  ╭────╮  ╭────╮  ╭────╮
+/// // │ 42 │─▶│ 42 │─▶│ 42 │─▶│ 42 │─▶│ 42 │─▶ ...
+/// // ╰────╯  ╰────╯  ╰────╯  ╰────╯  ╰────╯
+/// # }
+///```
 #[derive(Default, Clone, Debug)]
 pub struct Constant<T> {
     value: T,

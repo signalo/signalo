@@ -5,6 +5,20 @@
 use signalo_traits::source::Source;
 
 /// A wrapper type for turning iterators into sources.
+///
+/// ### Example:
+///
+/// ```
+/// # extern crate signalo_filters;
+/// #
+/// # fn main() {
+/// use signalo_filters::source::Iter;
+/// let iter = Iter::from(vec![0, 1, 2, 3]);
+/// // ╭───╮  ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │
+/// // ╰───╯  ╰───╯  ╰───╯  ╰───╯
+/// # }
+/// ```
 #[derive(Default, Clone, Debug)]
 pub struct Iter<I> {
     iter: I,

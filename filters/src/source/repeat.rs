@@ -8,6 +8,20 @@ use source::take::Take;
 use source::constant::Constant;
 
 /// A source that returns a specified number of constant values.
+///
+/// ### Example:
+///
+/// ```
+/// # extern crate signalo_filters;
+/// #
+/// # fn main() {
+/// use signalo_filters::source::Repeat;
+/// let repeat = Repeat::new(42, 3);
+/// // ╭────╮  ╭────╮  ╭────╮
+/// // │ 42 │─▶│ 42 │─▶│ 42 │
+/// // ╰────╯  ╰────╯  ╰────╯
+/// # }
+///```
 #[derive(Clone, Debug)]
 pub struct Repeat<T> {
     inner: Take<Constant<T>>

@@ -7,6 +7,20 @@ use std::ops::AddAssign;
 use signalo_traits::source::Source;
 
 /// A source that returns an auto-incremented value on each call.
+///
+/// ### Example:
+///
+/// ```
+/// # extern crate signalo_filters;
+/// #
+/// # fn main() {
+/// use signalo_filters::source::Increment;
+/// let increment = Increment::new(0, 2);
+/// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
+/// // │ 0 │─▶│ 2 │─▶│ 4 │─▶│ 6 │─▶│ 8 │─▶ ...
+/// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
+/// # }
+///```
 #[derive(Default, Clone, Debug)]
 pub struct Increment<T> {
     state: T,
