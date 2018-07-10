@@ -3,7 +3,6 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 use std::ops::Sub;
-use std::mem;
 
 use num_traits::Zero;
 
