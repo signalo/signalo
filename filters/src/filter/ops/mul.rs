@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[test]
-    fn div() {
+    fn test() {
         let filter = Mul::default();
         let input = get_input();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {

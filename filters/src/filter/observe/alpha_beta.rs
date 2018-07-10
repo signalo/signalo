@@ -98,7 +98,7 @@ mod tests {
     }
 
     #[test]
-    fn floating_point() {
+    fn test() {
         let alpha = 0.5;
         let beta = 0.125;
         let filter = AlphaBeta::new(alpha, beta);

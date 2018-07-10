@@ -69,7 +69,7 @@ mod tests {
     }
 
     #[test]
-    fn sink_pipe() {
+    fn test() {
         let _: UnitPipe<_> = sink_pipe!(DummySink);
         let _: Pipe<_, _> = sink_pipe!(DummyFilter, DummySink);
     }

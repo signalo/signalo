@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[test]
-    fn square() {
+    fn test() {
         let filter = Square::default();
         let input = get_input();
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {

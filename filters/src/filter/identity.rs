@@ -22,17 +22,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn fixed_point() {
-        let filter = Identity::default();
-        let input = vec![1, 1, 2, 3, 5, 8, 13, 21, 34];
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-        assert_eq!(output, vec![1, 1, 2, 3, 5, 8, 13, 21, 34]);
-    }
-
-    #[test]
-    fn floating_point() {
+    fn test() {
         let filter = Identity::default();
         let input = vec![1.0, 1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0, 34.0];
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {

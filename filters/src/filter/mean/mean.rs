@@ -86,7 +86,7 @@ mod tests {
     }
 
     #[test]
-    fn mean() {
+    fn test() {
         let filter: Mean<[f32; 3]> = Mean::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();

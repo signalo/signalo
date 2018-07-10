@@ -64,7 +64,7 @@ mod tests {
     }
 
     #[test]
-    fn source_pipe() {
+    fn test() {
         let _: UnitPipe<_> = source_pipe!(DummySource);
         let _: Pipe<_, _> = source_pipe!(DummySource, DummyFilter);
     }

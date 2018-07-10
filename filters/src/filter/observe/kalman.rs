@@ -133,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn floating_point() {
+    fn test() {
         let r = 0.0001; // Process noise
         let q = 0.001; // Measurement noise
         let a = 1.0; // State

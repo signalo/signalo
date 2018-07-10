@@ -77,7 +77,7 @@ mod tests {
     }
 
     #[test]
-    fn mean() {
+    fn test() {
         let filter = Mean::new(0.25);
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();

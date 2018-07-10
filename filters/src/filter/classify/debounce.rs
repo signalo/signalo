@@ -56,7 +56,7 @@ mod tests {
     use filter::classify::Classification;
 
     #[test]
-    fn debounce() {
+    fn test() {
         let filter = Debounce::new(3, 1, u8::classes());
         let input = vec![0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1];
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {

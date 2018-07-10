@@ -40,18 +40,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn fixed_point() {
-        let filter = Differentiate::default();
-        // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-        assert_eq!(output, vec![0, 1, 6, -5, 3, 3, 8, -13, 16, -13, 8, -5, 0, 8, 0, -13, 8, 8, 0, -13]);
-    }
-
-    #[test]
-    fn floating_point() {
+    fn test() {
         let filter = Differentiate::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = vec![0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0, 20.0, 20.0, 7.0];
