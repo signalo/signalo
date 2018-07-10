@@ -25,7 +25,7 @@ extern crate num_traits;
 extern crate num_integer;
 
 extern crate arraydeque;
-extern crate median;
+extern crate generic_array;
 
 #[cfg(test)]
 #[macro_use]
