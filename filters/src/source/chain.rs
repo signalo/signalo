@@ -21,12 +21,12 @@ enum ChainState {
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Iter;
-/// let front = Iter::from(vec![0, 1, 2]);
+/// use signalo_filters::source::FromIter;
+/// let front = FromIter::from(vec![0, 1, 2]);
 /// // ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │
 /// // ╰───╯  ╰───╯  ╰───╯
-/// let back = Iter::from(vec![3, 4]);
+/// let back = FromIter::from(vec![3, 4]);
 /// // ╭───╮  ╭───╮
 /// // │ 3 │─▶│ 4 │
 /// // ╰───╯  ╰───╯
@@ -80,12 +80,12 @@ where
 mod tests {
     use super::*;
 
-    use source::Iter;
+    use source::FromIter;
 
     #[test]
     fn test() {
-        let head = Iter::from(vec![0, 1, 2]);
-        let tail = Iter::from(vec![3, 4]);
+        let head = FromIter::from(vec![0, 1, 2]);
+        let tail = FromIter::from(vec![3, 4]);
         let source = Chain::new(head, tail);
         let subject: Vec<_> = (0..5).scan(source, |source, _| {
             source.source()
