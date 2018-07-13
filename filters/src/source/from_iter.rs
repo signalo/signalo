@@ -12,19 +12,19 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Iter;
-/// let iter = Iter::from(vec![0, 1, 2, 3]);
+/// use signalo_filters::source::FromIter;
+/// let iter = FromIter::from(vec![0, 1, 2, 3]);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │
 /// // ╰───╯  ╰───╯  ╰───╯  ╰───╯
 /// # }
 /// ```
 #[derive(Default, Clone, Debug)]
-pub struct Iter<I> {
+pub struct FromIter<I> {
     iter: I,
 }
 
-impl<I, J, T> From<J> for Iter<I>
+impl<I, J, T> From<J> for FromIter<I>
 where
     I: Iterator<Item=T>,
     J: IntoIterator<IntoIter=I, Item=T>,
@@ -35,7 +35,7 @@ where
     }
 }
 
-impl<I> Source for Iter<I>
+impl<I> Source for FromIter<I>
 where
     I: Iterator,
 {
@@ -54,7 +54,7 @@ mod tests {
     #[test]
     fn test() {
         let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
-        let source = Iter::from(input.clone());
+        let source = FromIter::from(input.clone());
         let subject: Vec<_> = (0..input.len()).scan(source, |source, _| {
             source.source()
         }).collect();

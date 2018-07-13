@@ -5,7 +5,7 @@
 //! Implementations of `trait Source`.
 
 mod pad;
-mod iter;
+mod from_iter;
 mod take;
 mod skip;
 mod chain;
@@ -15,7 +15,7 @@ mod constant;
 mod increment;
 
 pub use self::pad::{PadConstant, PadEdge};
-pub use self::iter::Iter;
+pub use self::from_iter::FromIter;
 pub use self::take::Take;
 pub use self::skip::Skip;
 pub use self::chain::Chain;

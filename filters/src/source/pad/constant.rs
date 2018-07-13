@@ -104,11 +104,11 @@ where
 mod tests {
     use super::*;
 
-    use source::Iter;
+    use source::FromIter;
 
     #[test]
     fn test() {
-        let inner = Iter::from(vec![0, 1, 2]);
+        let inner = FromIter::from(vec![0, 1, 2]);
         let source = Pad::new(inner, 42, 2);
         let subject: Vec<_> = (0..7).scan(source, |source, _| {
             source.source()

@@ -12,9 +12,9 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Iter;
+/// use signalo_filters::source::FromIter;
 ///
-/// let iter = Iter::from(vec![0, 1, 2]);
+/// let iter = FromIter::from(vec![0, 1, 2]);
 /// // ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │
 /// // ╰───╯  ╰───╯  ╰───╯
@@ -66,12 +66,12 @@ where
 mod tests {
     use super::*;
 
-    use source::Iter;
+    use source::FromIter;
 
     #[test]
     fn test() {
         let input = vec![0, 1, 2, 3];
-        let inner = Iter::from(input.clone());
+        let inner = FromIter::from(input.clone());
         let source = Cycle::new(inner);
         let subject: Vec<_> = (0..6).scan(source, |source, _| {
             source.source()
