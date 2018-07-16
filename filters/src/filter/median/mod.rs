@@ -15,6 +15,7 @@ pub mod exp;
 
 /// Implementation detail.
 /// (Once we have value generics we will hopefully be able to un-leak it.)
+#[doc(hidden)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct ListNode<T> {
     value: Option<T>,
