@@ -6,6 +6,7 @@
 
 mod pad;
 mod from_iter;
+mod into_iter;
 mod take;
 mod skip;
 mod chain;
@@ -16,6 +17,7 @@ mod increment;
 
 pub use self::pad::{PadConstant, PadEdge};
 pub use self::from_iter::FromIter;
+pub use self::into_iter::IntoIter;
 pub use self::take::Take;
 pub use self::skip::Skip;
 pub use self::chain::Chain;
