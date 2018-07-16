@@ -4,10 +4,10 @@
 
 //! Implementations of `trait Sink`.
 
-mod sum;
+mod integrate;
 mod last;
 mod mean_variance;
 
-pub use self::sum::Sum;
+pub use self::integrate::Integrate;
 pub use self::last::Last;
 pub use self::mean_variance::MeanVariance;
