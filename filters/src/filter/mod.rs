@@ -16,4 +16,3 @@ pub mod classify;
 
 pub use self::identity::Identity;
 pub use self::differentiate::Differentiate;
-pub use self::convolve::Convolve;
