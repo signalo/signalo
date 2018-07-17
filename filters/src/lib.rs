@@ -22,7 +22,6 @@ extern crate core as std;
 extern crate std;
 
 extern crate num_traits;
-extern crate num_integer;
 
 extern crate arraydeque;
 extern crate generic_array;
