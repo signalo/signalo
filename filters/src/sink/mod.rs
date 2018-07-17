@@ -9,6 +9,7 @@ mod min;
 mod bounds;
 mod integrate;
 mod last;
+mod mean;
 mod mean_variance;
 
 pub use self::max::Max;
