@@ -26,7 +26,7 @@ version = "0.1.5"
 [dependencies]
 arraydeque = "~0.4"
 num-traits = "~0.2"
-signalo_traits = "~0.1"
+signalo_traits = "0.1.2"
 generic-array = "~0.11"
 
 [dependencies.missing_mpl]
