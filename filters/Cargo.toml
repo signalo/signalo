@@ -23,19 +23,27 @@ readme = "README.md"
 repository = "https://github.com/signalo/signalo"
 version = "0.1.5"
 
-[dependencies]
-arraydeque = "~0.4"
-num-traits = "~0.2"
-signalo_traits = "0.1.2"
-generic-array = "~0.11"
+[dependencies.arraydeque]
+version = "~0.4"
+default-features = false
+
+[dependencies.num-traits]
+version = "~0.2"
+default-features = false
+
+[dependencies.generic-array]
+version = "~0.11"
+
+[dependencies.typenum]
+version = "~1.10"
 
 [dependencies.missing_mpl]
 optional = true
 version = "~0.1"
 
-[dependencies.typenum]
-optional = true
-version = "~1.10"
+[dependencies.signalo_traits]
+version = "0.1.2"
+default-features = false
 
 [dev-dependencies]
 nearly_eq = "~0.2"
@@ -43,5 +51,9 @@ rand = "~0.4"
 
 [features]
 default = ["std"]
+std = [
+    "signalo_traits/std",
+    "arraydeque/std",
+    "num-traits/std",
+]
 nightly = ["missing_mpl"]
-std = []
