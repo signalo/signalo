@@ -23,10 +23,17 @@ repository = "https://github.com/signalo/signalo"
 homepage = "https://github.com/signalo/signalo/tree/master/signalo"
 version = "0.1.3"
 
-[dependencies]
-signalo_traits = "0.1.2"
-signalo_filters = "0.1.5"
-signalo_pipes = "0.1.3"
+[dependencies.signalo_traits]
+version = "0.1.2"
+default-features = false
+
+[dependencies.signalo_filters]
+version = "0.1.5"
+default-features = false
+
+[dependencies.signalo_pipes]
+version = "0.1.3"
+default-features = false
 
 [dependencies.missing_mpl]
 version = "~0.1"
@@ -34,5 +41,9 @@ optional = true
 
 [features]
 default = ["std"]
-std = []
+std = [
+    "signalo_traits/std",
+    "signalo_filters/std",
+    "signalo_pipes/std",
+]
 nightly = ["missing_mpl"]
