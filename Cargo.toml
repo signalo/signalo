@@ -10,5 +10,5 @@ members = [
 [replace]
 "signalo:0.1.3" = { path = "signalo" }
 "signalo_traits:0.1.3" = { path = "traits" }
-"signalo_filters:0.1.5" = { path = "filters" }
+"signalo_filters:0.1.6" = { path = "filters" }
 "signalo_pipes:0.1.3" = { path = "pipes" }
