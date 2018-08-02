@@ -15,10 +15,6 @@
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-#[cfg(not(feature = "std"))]
-#[macro_use]
-extern crate std;
-
 extern crate signalo_traits;
 extern crate signalo_filters;
 

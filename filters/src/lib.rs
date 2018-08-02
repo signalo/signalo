@@ -17,10 +17,6 @@
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-#[cfg(not(feature = "std"))]
-#[macro_use]
-extern crate std;
-
 extern crate num_traits;
 
 extern crate arraydeque;

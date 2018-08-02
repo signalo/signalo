@@ -21,7 +21,7 @@ name = "signalo_pipes"
 readme = "README.md"
 repository = "https://github.com/signalo/signalo"
 homepage = "https://github.com/signalo/signalo/tree/master/pipes"
-version = "0.1.4"
+version = "0.1.5"
 
 [dependencies.signalo_traits]
 version = "0.1.3"

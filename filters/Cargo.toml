@@ -21,7 +21,7 @@ license = "MPL-2.0"
 name = "signalo_filters"
 readme = "README.md"
 repository = "https://github.com/signalo/signalo"
-version = "0.1.6"
+version = "0.1.7"
 
 [dependencies.arraydeque]
 version = "~0.4"
@@ -33,9 +33,11 @@ default-features = false
 
 [dependencies.generic-array]
 version = "~0.11"
+default-features = false
 
 [dependencies.typenum]
 version = "~1.10"
+default-features = false
 
 [dependencies.missing_mpl]
 optional = true
