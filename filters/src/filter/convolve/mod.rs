@@ -11,7 +11,37 @@ use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
 pub mod savitzky_golay;
+
+/// A convolution filter's internal state.
+#[derive(Clone)]
+pub struct State<A>
+where
+    A: Array,
+    A::Item: Copy,
+{
+    /// The filter's taps (i.e. buffered input).
+    pub taps: ArrayDeque<A, Wrapping>,
+}
+
+impl<T, A> fmt::Debug for State<A>
+where
+    T: Copy + fmt::Debug,
+    A: Array<Item = T> + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("State")
+            .field("taps", &self.taps)
+            .finish()
+    }
+}
 
 /// A convolution filter.
 #[derive(Clone)]
@@ -21,7 +51,7 @@ where
     A::Item: Copy,
 {
     coefficients: A,
-    state: ArrayDeque<A, Wrapping>,
+    state: State<A>,
 }
 
 impl<T, A> Convolve<A>
@@ -32,7 +62,8 @@ where
     /// Creates a new `Convolve` filter with given `coefficients`.
     #[inline]
     pub fn new(coefficients: A) -> Self {
-        Convolve { coefficients, state: ArrayDeque::new() }
+        let state = Self::initial_state(());
+        Convolve { coefficients, state }
     }
 
     /// Returns the filter's coefficients.
@@ -58,7 +89,8 @@ where
                 *coeff = *coeff / sum;
             }
         }
-        Convolve { coefficients, state: ArrayDeque::new() }
+        let state = Self::initial_state(());
+        Convolve { coefficients, state }
     }
 }
 
@@ -75,6 +107,49 @@ where
     }
 }
 
+impl<T, A> Stateful for Convolve<A>
+where
+    T: Copy,
+    A: Array<Item=T>,
+{
+    type State = State<A>;
+}
+
+unsafe impl<T, A> StatefulUnsafe for Convolve<A>
+where
+    T: Copy,
+    A: Array<Item=T>,
+{
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, A> InitialState<()> for Convolve<A>
+where
+    T: Copy,
+    A: Array<Item=T>,
+{
+    fn initial_state(_: ()) -> Self::State {
+        let taps = ArrayDeque::new();
+        State { taps }
+    }
+}
+
+impl<T, A> Resettable for Convolve<A>
+where
+    T: Copy,
+    A: Array<Item=T>,
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
+    }
+}
+
 impl<T, A> Filter<T> for Convolve<A>
 where
     T: Copy + Num,
@@ -85,12 +160,12 @@ where
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         loop {
-            if self.state.push_back(input).is_some() {
+            if self.state.taps.push_back(input).is_some() {
                 break;
             }
         }
 
-        let state_iter = self.state.iter();
+        let state_iter = self.state.taps.iter();
         let coeff_iter = self.coefficients.as_slice().iter().rev();
 
         let output = state_iter.zip(coeff_iter).fold(T::zero(), |sum, (state, coeff)| {
