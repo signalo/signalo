@@ -12,9 +12,17 @@ use signalo_traits::filter::Filter;
 use filter::classify::{
     slopes::{
         Slope,
+        State as SlopesState,
         Slopes,
     },
     Classification,
+};
+
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
 };
 
 /// A slope's kind.
@@ -41,11 +49,17 @@ impl Classification<[Peak; 3]> for Peak {
     }
 }
 
+/// A peak detection filter's internal state.
+#[derive(Clone, Debug)]
+pub struct State<T> {
+    pub slopes: Slopes<T, Slope>,
+    pub slope: Option<Slope>,
+}
+
 /// A peak detection filter.
 #[derive(Clone, Debug)]
 pub struct Peaks<T, U> {
-    inner: Slopes<T, Slope>,
-    state: Option<Slope>,
+    state: State<T>,
     /// rising, flat, falling outputs.
     outputs: [U; 3],
 }
@@ -57,41 +71,30 @@ where
     /// Creates a new `Peaks` filter with given `threshold` and `outputs` (`[max, none, min]`).
     #[inline]
     pub fn new(outputs: [U; 3]) -> Self {
-        let inner = Slopes::new(Slope::classes());
-        let state = None;
-        Peaks { inner, state, outputs }
-    }
-
-    /// Returns a mutable reference to the internal state of the filter.
-    pub unsafe fn state_mut(&mut self) -> &mut Option<Slope> {
-        &mut self.state
-    }
-
-    /// Returns a mutable reference to the internal slope filter.
-    pub unsafe fn inner_mut(&mut self) -> &mut Slopes<T, Slope> {
-        &mut self.inner
+        let state = Self::initial_state(());
+        Peaks { state, outputs }
     }
 
     fn filter_internal(&mut self, slope: Slope) -> (Slope, usize) {
         let index = match self.state {
-            None => {
+            State { slope: None, .. } => {
                 1
             },
-            Some(Slope::Rising) => {
+            State { slope: Some(Slope::Rising), .. } => {
                 match &slope {
                     Slope::Rising => 1, // None
                     Slope::None => 1, // None
                     Slope::Falling => 0, // Max
                 }
             },
-            Some(Slope::None) => {
+            State { slope: Some(Slope::None), .. } => {
                 match &slope {
                     Slope::Rising => 1, // None
                     Slope::None => 1, // None
                     Slope::Falling => 1, // None
                 }
             },
-            Some(Slope::Falling) => {
+            State { slope: Some(Slope::Falling), .. } => {
                 match &slope {
                     Slope::Rising => 2, // Min
                     Slope::None => 1, // None
@@ -100,6 +103,34 @@ where
             }
         };
         (slope, index)
+    }
+}
+
+impl<T, U> Stateful for Peaks<T, U> {
+    type State = State<T>;
+}
+
+unsafe impl<T, U> StatefulUnsafe for Peaks<T, U> {
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, U> InitialState<()> for Peaks<T, U> {
+    fn initial_state(_: ()) -> Self::State {
+        let slopes = Slopes::new(Slope::classes());
+        let slope = None;
+        State { slopes, slope }
+    }
+}
+
+impl<T, U> Resettable for Peaks<T, U> {
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
@@ -112,9 +143,9 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let slope = self.inner.filter(input);
+        let slope = self.state.slopes.filter(input);
         let (state, index) = self.filter_internal(slope);
-        self.state = Some(state);
+        self.state.slope = Some(state);
         self.outputs[index].clone()
     }
 }
@@ -129,10 +160,10 @@ where
     fn filter(&mut self, slope: Slope) -> Self::Output {
         let (state, index) = self.filter_internal(slope);
         unsafe {
-            let inner_state = self.inner.state_mut();
-            *inner_state = Some(slope);
+            let inner_state = self.state.slopes.state_mut();
+            *inner_state = SlopesState { input: Some(slope) };
         }
-        self.state = Some(state);
+        self.state.slope = Some(state);
         self.outputs[index].clone()
     }
 }

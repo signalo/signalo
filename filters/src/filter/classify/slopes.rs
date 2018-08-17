@@ -41,7 +41,7 @@ impl Classification<[Slope; 3]> for Slope {
     }
 }
 
-/// A peak detection filter's internal state.
+/// A slope detection filter's internal state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
     pub input: Option<T>,
@@ -72,11 +72,11 @@ impl<T, U> Stateful for Slopes<T, U> {
 }
 
 unsafe impl<T, U> StatefulUnsafe for Slopes<T, U> {
-    fn state(&self) -> &Self::State {
+    unsafe fn state(&self) -> &Self::State {
         &self.state
     }
 
-    fn state_mut(&mut self) -> &mut Self::State {
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -86,11 +86,6 @@ impl<T, U> InitialState<()> for Slopes<T, U> {
         State {
             input: None
         }
-    }
-
-    /// Returns a mutable reference to the internal state of the filter.
-    pub unsafe fn state_mut(&mut self) -> &mut Option<T> {
-        &mut self.state
     }
 }
 
