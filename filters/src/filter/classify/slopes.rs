@@ -12,7 +12,7 @@ use signalo_traits::filter::Filter;
 use filter::classify::Classification;
 
 /// A slope's kind.
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Slope {
     /// A rising slope.
     Rising,

@@ -15,7 +15,7 @@ use filter::classify::{
 };
 
 /// A slope's kind.
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Peak {
     /// A local maximum.
     Max,
