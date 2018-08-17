@@ -8,6 +8,22 @@ use num_traits::{Zero, Num};
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
+/// A Kalman filter's internal state.
+#[derive(Clone, Debug)]
+pub struct State<T> {
+    /// Velocity
+    pub velocity: T,
+    /// Value estimation
+    pub value: Option<T>,
+}
+
 /// An Alpha-Beta filter.
 #[derive(Clone, Debug)]
 pub struct AlphaBeta<T> {
@@ -15,10 +31,8 @@ pub struct AlphaBeta<T> {
     alpha: T,
     /// Beta coefficient
     beta: T,
-    /// Velocity
-    velocity: T,
     /// State
-    state: Option<T>,
+    state: State<T>,
 }
 
 impl<T> AlphaBeta<T>
@@ -37,9 +51,42 @@ where
     /// - `beta`: the `beta` coefficient
     #[inline]
     pub fn new(alpha: T, beta: T) -> Self {
+        let state = Self::initial_state(());
+        AlphaBeta {alpha, beta, state }
+    }
+}
+
+impl<T> Stateful for AlphaBeta<T> {
+    type State = State<T>;
+}
+
+unsafe impl<T> StatefulUnsafe for AlphaBeta<T> {
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T> InitialState<()> for AlphaBeta<T>
+where
+    T: Zero,
+{
+    fn initial_state(_: ()) -> Self::State {
         let velocity = T::zero();
-        let state = None;
-        AlphaBeta {alpha, beta, velocity, state }
+        let value = None;
+        State { velocity, value }
+    }
+}
+
+impl<T> Resettable for AlphaBeta<T>
+where
+    T: Zero,
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
@@ -50,7 +97,7 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let (velocity, state) = match (self.velocity, self.state) {
+        let (velocity, state) = match (self.state.velocity, self.state.value) {
             (velocity, None) => {
                 (velocity, input)
             },
@@ -68,8 +115,8 @@ where
                 (velocity, state)
             },
         };
-        self.velocity = velocity;
-        self.state = Some(state);
+        self.state.velocity = velocity;
+        self.state.value = Some(state);
         state
     }
 }
