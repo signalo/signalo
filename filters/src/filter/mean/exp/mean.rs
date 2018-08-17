@@ -8,11 +8,24 @@ use num_traits::{Zero, One, Num};
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
+/// A mean filter's internal state.
+#[derive(Clone, Debug)]
+pub struct State<T> {
+    pub value: Option<T>,
+}
+
 /// A filter producing the exponential moving average over a given signal.
 #[derive(Clone, Debug)]
 pub struct Mean<T> {
     beta: T,
-    state: Option<T>,
+    state: State<T>,
 }
 
 impl<T> Mean<T>
@@ -23,13 +36,41 @@ where
     #[inline]
     pub fn new(beta: T) -> Self {
         assert!(beta > T::zero() && beta <= T::one());
-        Mean { beta, state: None }
+        let state = Self::initial_state(());
+        Mean { beta, state }
     }
 
     /// Returns the filter's `beta` coefficient.
     #[inline]
     pub fn beta(&self) -> &T {
         &self.beta
+    }
+}
+
+impl<T> Stateful for Mean<T> {
+    type State = State<T>;
+}
+
+unsafe impl<T> StatefulUnsafe for Mean<T> {
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T> InitialState<()> for Mean<T> {
+    fn initial_state(_: ()) -> Self::State {
+        let value = None;
+        State { value }
+    }
+}
+
+impl<T> Resettable for Mean<T> {
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
@@ -40,7 +81,7 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let state = match self.state {
+        let mean = match self.state.value {
             None => {
                 input
             },
@@ -48,8 +89,8 @@ where
                 state + ((input - state) * self.beta)
             },
         };
-        self.state = Some(state);
-        state
+        self.state.value = Some(mean);
+        mean
     }
 }
 

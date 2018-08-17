@@ -8,80 +8,152 @@ use std::fmt;
 
 use arraydeque::Array;
 
-use num_traits::Num;
+use num_traits::{Zero, Num, Signed};
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
 use super::mean::Mean;
 
-/// A filter producing the moving average and variance over a given signal.
-// #[derive(Clone, Default)]
-pub struct MeanVariance<A>
+/// A mean filter's internal state.
+#[derive(Clone)]
+pub struct State<A>
 where
     A: Array,
+    A::Item: Clone,
 {
-    state: Option<A::Item>,
-    mean: Mean<A>,
-    variance: Mean<A>,
+    pub mean: Mean<A>,
+    pub variance: Mean<A>,
 }
 
-impl<T, A> Clone for MeanVariance<A>
+impl<T, A> fmt::Debug for State<A>
 where
-    T: Clone,
-    A: Clone + Array<Item = T>,
-{
-    fn clone(&self) -> Self {
-        Self {
-            state: self.state.clone(),
-            mean: self.mean.clone(),
-            variance: self.variance.clone(),
-        }
-    }
-}
-
-impl<T, A> Default for MeanVariance<A>
-where
-    T: Default,
-    A: Default + Array<Item = T>,
-{
-    fn default() -> Self {
-        Self {
-            state: None,
-            mean: Mean::default(),
-            variance: Mean::default(),
-        }
-    }
-}
-
-impl<T, A> fmt::Debug for MeanVariance<A>
-where
-    T: fmt::Debug,
-    A: Array<Item = T> + fmt::Debug,
+    T: Clone + fmt::Debug,
+    A: Array<Item=T> + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("MeanVariance")
-            .field("state", &self.state)
+        f.debug_struct("State")
             .field("mean", &self.mean)
             .field("variance", &self.variance)
             .finish()
     }
 }
 
+/// A filter producing the moving average and variance over a given signal.
+// #[derive(Clone, Default)]
+pub struct MeanVariance<A>
+where
+    A: Array,
+    A::Item: Clone,
+{
+    state: State<A>,
+}
+
+// impl<T, A> Clone for MeanVariance<A>
+// where
+//     T: Clone,
+//     A: Clone + Array<Item = T>,
+// {
+//     fn clone(&self) -> Self {
+//         Self {
+//             state: self.state.clone(),
+//             mean: self.mean.clone(),
+//             variance: self.variance.clone(),
+//         }
+//     }
+// }
+
+impl<T, A> Default for MeanVariance<A>
+where
+    T: Default + Clone + Zero,
+    A: Default + Array<Item = T>,
+{
+    fn default() -> Self {
+        let state = Self::initial_state(());
+        Self { state }
+    }
+}
+
+impl<T, A> fmt::Debug for MeanVariance<A>
+where
+    T: Clone + fmt::Debug,
+    A: Array<Item = T> + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("MeanVariance")
+            .field("state", &self.state)
+            .finish()
+    }
+}
+
+impl<T, A> Stateful for MeanVariance<A>
+where
+    T: Clone,
+    A: Array<Item=T>,
+{
+    type State = State<A>;
+}
+
+unsafe impl<T, A> StatefulUnsafe for MeanVariance<A>
+where
+    T: Clone,
+    A: Array<Item=T>,
+{
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, A> InitialState<()> for MeanVariance<A>
+where
+    T: Clone + Default + Zero,
+    A: Array<Item=T> + Default,
+{
+    fn initial_state(_: ()) -> Self::State {
+        let mean = Mean::default();
+        let variance = Mean::default();
+        State { mean, variance }
+    }
+}
+
+impl<T, A> Resettable for MeanVariance<A>
+where
+    T: Clone + Default + Zero,
+    A: Array<Item=T> + Default,
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
+    }
+}
+
 impl<T, A> Filter<T> for MeanVariance<A>
 where
-    T: Copy + Num,
+    T: Copy + Num + Signed + PartialOrd + ::std::fmt::Debug, // FIXME
     A: Array<Item = T> + fmt::Debug,
 {
     /// (mean, variance)
     type Output = (T, T);
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let mean_old = self.state.unwrap_or(input);
-        let mean = self.mean.filter(input);
-        let squared = (input - mean_old) * (input - mean);
-        let variance = self.variance.filter(squared);
-        self.state = Some(mean);
-        (mean, variance)
+        let mean_old = unsafe {
+            self.state.mean.state().value.unwrap_or(input)
+        };
+        let mean_new = self.state.mean.filter(input);
+        let deviation_old = (input - mean_old).abs();
+        let deviation_new = (input - mean_new).abs();
+        let squared = deviation_old * deviation_new;
+        let variance = self.state.variance.filter(squared);
+        (mean_new, variance)
     }
 }
 
@@ -110,12 +182,12 @@ mod tests {
 
     fn get_variance() -> Vec<f32> {
         vec![
-            0.000, 0.250, 9.556, 9.852, 9.870, 3.815, 26.741, 39.889, 57.667, 41.852, 30.074,
-            9.852, 2.815, 12.519, 16.370, 45.852, 34.370, 53.630, 30.889, 60.963, 49.481,
-            48.889, 23.778, 13.852, 29.889, 33.815, 2061.222, 2322.000, 2606.111, 576.111,
-            2013.667, 2257.111, 2368.556, 665.815, 132.000, 27.074, 13.667, 11.259, 42.296,
-            112.667, 1833.556, 2271.074, 2279.000, 576.259, 103.593, 20.556, 1723.296,
-            2094.741, 2241.148, 488.000
+            0.000, 0.250, 8.833, 11.500, 11.889, 9.222, 8.667, 60.111, 71.000, 104.444,
+            57.111, 46.889, 22.444, 44.444, 53.778, 155.333, 137.333, 156.000, 57.556,
+            178.889, 202.000, 221.556, 104.000, 76.222, 82.111, 124.556, 1522.556,
+            2672.889, 3868.333, 2440.333, 2267.222, 2752.222, 3427.445, 2479.445,
+            788.889, 168.778, 123.000, 78.222, 106.889, 378.444, 1278.000, 2799.000,
+            3133.667, 2306.333, 755.000, 125.666, 1148.555, 2456.222, 3252.777, 2323.777
         ]
     }
 

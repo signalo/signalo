@@ -4,18 +4,31 @@
 
 //! Exponential moving average & variance filters.
 
-use num_traits::{One, Zero, Num};
+use num_traits::{One, Zero, Num, Signed};
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
 use super::mean::Mean;
+
+/// A mean/variance filter's internal state.
+#[derive(Clone, Debug)]
+pub struct State<T> {
+    pub mean: Mean<T>,
+    pub variance: Mean<T>,
+}
 
 /// A filter producing the exponential moving average and variance over a given signal.
 #[derive(Clone, Debug)]
 pub struct MeanVariance<T> {
-    state: Option<T>,
-    mean: Mean<T>,
-    variance: Mean<T>,
+    beta: T,
+    state: State<T>,
 }
 
 impl<T> MeanVariance<T>
@@ -26,34 +39,68 @@ where
     #[inline]
     pub fn new(beta: T) -> Self {
         assert!(beta > T::zero() && beta <= T::one());
-        MeanVariance {
-            state: None,
-            mean: Mean::new(beta),
-            variance: Mean::new(beta),
-        }
+        let state = Self::initial_state(beta);
+        MeanVariance { beta, state }
     }
 
     /// Returns the filter's `beta` coefficient.
     #[inline]
     pub fn beta(&self) -> &T {
-        self.mean.beta()
+        &self.beta
+    }
+}
+
+impl<T> Stateful for MeanVariance<T> {
+    type State = State<T>;
+}
+
+unsafe impl<T> StatefulUnsafe for MeanVariance<T> {
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T> InitialState<T> for MeanVariance<T>
+where
+    T: Copy + PartialOrd + Zero + One
+{
+    fn initial_state(beta: T) -> Self::State {
+        let mean = Mean::new(beta);
+        let variance = Mean::new(beta);
+        State { mean, variance }
+    }
+}
+
+impl<T> Resettable for MeanVariance<T>
+where
+    T: Copy + PartialOrd + Zero + One
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(self.beta);
     }
 }
 
 impl<T> Filter<T> for MeanVariance<T>
 where
-    T: Copy + Num,
+    T: Copy + Num + Signed,
 {
     /// (mean, variance)
     type Output = (T, T);
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let mean_old = self.state.unwrap_or(input);
-        let mean = self.mean.filter(input);
-        let squared = (input - mean_old) * (input - mean);
-        let variance = self.variance.filter(squared);
-        self.state = Some(mean);
-        (mean, variance)
+        let mean_old = unsafe {
+            self.state.mean.state().value.unwrap_or(input)
+        };
+        let mean_new = self.state.mean.filter(input);
+        let deviation_old = (input - mean_old).abs();
+        let deviation_new = (input - mean_new).abs();
+        let squared = deviation_old * deviation_new;
+        let variance = self.state.variance.filter(squared);
+        (mean_new, variance)
     }
 }
 
