@@ -11,6 +11,13 @@ use signalo_traits::filter::Filter;
 
 use filter::classify::Classification;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Slope {
@@ -34,10 +41,16 @@ impl Classification<[Slope; 3]> for Slope {
     }
 }
 
+/// A peak detection filter's internal state.
+#[derive(Clone, Debug)]
+pub struct State<T> {
+    pub input: Option<T>,
+}
+
 /// A slope detection filter.
 #[derive(Clone, Debug)]
 pub struct Slopes<T, U> {
-    state: Option<T>,
+    state: State<T>,
     /// [rising, flat, falling] outputs.
     outputs: [U; 3],
 }
@@ -49,15 +62,41 @@ where
     /// Creates a new `Slopes` filter with given `threshold` and `outputs` (`[rising, none, falling]`).
     #[inline]
     pub fn new(outputs: [U; 3]) -> Self {
-        Slopes {
-            state: None,
-            outputs,
+        let state = Self::initial_state(());
+        Slopes { state, outputs }
+    }
+}
+
+impl<T, U> Stateful for Slopes<T, U> {
+    type State = State<T>;
+}
+
+unsafe impl<T, U> StatefulUnsafe for Slopes<T, U> {
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, U> InitialState<()> for Slopes<T, U> {
+    fn initial_state(_: ()) -> Self::State {
+        State {
+            input: None
         }
     }
 
     /// Returns a mutable reference to the internal state of the filter.
     pub unsafe fn state_mut(&mut self) -> &mut Option<T> {
         &mut self.state
+    }
+}
+
+impl<T, U> Resettable for Slopes<T, U> {
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
@@ -71,14 +110,14 @@ where
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         let index = match self.state {
-            None => 1, // None
-            Some(ref state) => match state.partial_cmp(&input).unwrap() {
+            State { input: None } => 1, // None
+            State { input: Some(ref state) } => match state.partial_cmp(&input).unwrap() {
                 Ordering::Less => 0, // Rising
                 Ordering::Equal => 1, // None
                 Ordering::Greater => 2, // Falling
             },
         };
-        self.state = Some(input);
+        self.state = State { input: Some(input) };
         self.outputs[index].clone()
     }
 }
