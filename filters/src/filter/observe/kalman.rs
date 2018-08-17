@@ -8,16 +8,37 @@ use num_traits::{Zero, One, Num};
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
+/// A Kalman filter's internal state.
+#[derive(Clone, Debug)]
+pub struct State<T> {
+    /// Covariance (uncertainty)
+    pub cov: T,
+    /// Value estimation
+    pub value: Option<T>,
+}
+
 /// A 1-dimensional Kalman filter.
 #[derive(Clone, Debug)]
 pub struct Kalman<T> {
-    r: T, /// Process noise covariance
-    q: T, /// Measurement noise covariance
-    a: T, /// State transition
-    b: T, /// Control transition
-    c: T, /// Measurement
-    cov: T, /// Covariance (uncertainty)
-    x: Option<T>,
+    /// Process noise covariance
+    r: T,
+    /// Measurement noise covariance
+    q: T,
+    /// State transition
+    a: T,
+    /// Control transition
+    b: T,
+    /// Measurement
+    c: T,
+    /// internal state
+    state: State<T>,
 }
 
 impl<T> Kalman<T>
@@ -34,9 +55,8 @@ where
     /// - `c`: Measurement
     #[inline]
     pub fn new(r: T, q: T, a: T, b: T, c: T) -> Self {
-        let cov = T::zero();
-        let x = None;
-        Kalman { r, q, a, b, c, cov, x }
+        let state = Self::initial_state(());
+        Kalman { r, q, a, b, c, state }
     }
 }
 
@@ -46,29 +66,29 @@ where
 {
     fn process(&mut self, (input, control): (T, T)) -> T {
         let c_squared = self.c * self.c;
-        let (x, cov) = match self.x {
+        let (value, cov) = match self.state.value {
             None => {
-                let x = input / self.c;
+                let value = input / self.c;
                 let cov = self.q / c_squared;
-                (x, cov)
+                (value, cov)
             },
-            Some(mut x) => {
+            Some(mut value) => {
                 // Compute prediction:
-                let pred_state = (self.a * x) + (self.b * control);
-                let pred_cov = (self.a * self.cov * self.a) + self.r;
+                let pred_state = (self.a * value) + (self.b * control);
+                let pred_cov = (self.a * self.state.cov * self.a) + self.r;
 
                 // Compute Kalman gain:
                 let k = pred_cov * self.c / ((pred_cov * c_squared) + self.q);
 
                 // Correction:
-                let x = pred_state + k * (input - (self.c * pred_state));
+                let value = pred_state + k * (input - (self.c * pred_state));
                 let cov = pred_cov - (k * self.c * pred_cov);
-                (x, cov)
+                (value, cov)
             },
         };
-        self.x = Some(x);
-        self.cov = cov;
-        x
+        self.state.value = Some(value);
+        self.state.cov = cov;
+        value
     }
 }
 
@@ -84,6 +104,40 @@ where
         let b = T::zero();
         let c = T::one();
         Kalman::new(r, q, a, b, c)
+    }
+}
+
+impl<T> Stateful for Kalman<T> {
+    type State = State<T>;
+}
+
+unsafe impl<T> StatefulUnsafe for Kalman<T> {
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T> InitialState<()> for Kalman<T>
+where
+    T: Zero,
+{
+    fn initial_state(_: ()) -> Self::State {
+        let cov = T::zero();
+        let value = None;
+        State { cov, value }
+    }
+}
+
+impl<T> Resettable for Kalman<T>
+where
+    T: Zero,
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
