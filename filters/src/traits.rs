@@ -21,10 +21,10 @@ pub trait Stateful {
 /// Stateful systems **can react to the same input differently depending on the current state**.
 pub unsafe trait StatefulUnsafe: Stateful {
     /// Returns a mutable reference to the internal state of the filter.
-    fn state(&self) -> &Self::State;
+    unsafe fn state(&self) -> &Self::State;
 
     /// Returns a mutable reference to the internal state of the filter.
-    fn state_mut(&mut self) -> &mut Self::State;
+    unsafe fn state_mut(&mut self) -> &mut Self::State;
 }
 
 /// Trait for **stateful** systems.

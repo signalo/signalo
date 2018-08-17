@@ -45,11 +45,11 @@ impl<T, U> Stateful for Debounce<T, U> {
 }
 
 unsafe impl<T, U> StatefulUnsafe for Debounce<T, U> {
-    fn state(&self) -> &Self::State {
+    unsafe fn state(&self) -> &Self::State {
         &self.state
     }
 
-    fn state_mut(&mut self) -> &mut Self::State {
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
