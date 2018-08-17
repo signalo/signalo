@@ -10,7 +10,40 @@
 ///
 /// Stateful systems **can react to the same input differently depending on the current state**.
 pub trait Stateful {
-    /// Resets the current state of `self`.
+    /// The filter's internal state.
+    type State;
+}
+
+/// Unsafe trait for accessing the state of **stateful** systems.
+///
+/// # Background:
+///
+/// Stateful systems **can react to the same input differently depending on the current state**.
+pub unsafe trait StatefulUnsafe: Stateful {
+    /// Returns a mutable reference to the internal state of the filter.
+    fn state(&self) -> &Self::State;
+
+    /// Returns a mutable reference to the internal state of the filter.
+    fn state_mut(&mut self) -> &mut Self::State;
+}
+
+/// Trait for **stateful** systems.
+///
+/// # Background:
+///
+/// Stateful systems **can react to the same input differently depending on the current state**.
+pub trait InitialState<T>: Stateful {
+    /// Returns the filter's initial state for a given parameter.
+    fn initial_state(parameter: T) -> Self::State;
+}
+
+/// Trait for **resettable** systems.
+///
+/// # Background:
+///
+/// Resettable systems **can be reset to their initial state**.
+pub trait Resettable: Stateful {
+    /// Resets the internal state of the filter.
     fn reset(&mut self);
 }
 
