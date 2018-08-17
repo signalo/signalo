@@ -18,7 +18,7 @@ pub struct Debounce<T, U> {
     /// Value to debounce.
     predicate: T,
     /// Counter of how long input was the same.
-    counter: usize,
+    state: usize,
 }
 
 impl<T, U> Debounce<T, U>
@@ -28,7 +28,7 @@ where
     /// Creates a new `Schmitt` filter with given `threshold`, `predicate` and `outputs` (`[off, on]`).
     #[inline]
     pub fn new(threshold: usize, predicate: T, outputs: [U; 2]) -> Self {
-        Debounce { threshold, outputs, predicate, counter: 0 }
+        Debounce { threshold, outputs, predicate, state: 0 }
     }
 }
 
@@ -41,11 +41,11 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         if input == self.predicate {
-            self.counter = (self.counter + 1).min(self.threshold);
+            self.state = (self.state + 1).min(self.threshold);
         } else {
-            self.counter = 0;
+            self.state = 0;
         }
-        let index = (self.counter >= self.threshold) as usize;
+        let index = (self.state >= self.threshold) as usize;
         self.outputs[index]
     }
 }
