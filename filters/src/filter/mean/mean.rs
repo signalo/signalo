@@ -8,32 +8,117 @@ use std::fmt;
 
 use arraydeque::{Array, ArrayDeque, Wrapping};
 
-use num_traits::Num;
+use num_traits::{Zero, Num};
 
 use signalo_traits::filter::Filter;
 
-/// A filter producing the moving median over a given signal.
-#[derive(Clone, Default)]
-pub struct Mean<A>
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
+/// A mean filter's internal state.
+#[derive(Clone)]
+pub struct State<A>
 where
     A: Array,
 {
-    state: Option<A::Item>,
-    buffer: ArrayDeque<A, Wrapping>,
-    weight: A::Item,
+    pub value: Option<A::Item>,
+    pub buffer: ArrayDeque<A, Wrapping>,
+    pub weight: A::Item,
+}
+
+impl<T, A> fmt::Debug for State<A>
+where
+    T: Clone + fmt::Debug,
+    A: Array<Item=T> + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("State")
+            .field("value", &self.value)
+            .field("buffer", &self.buffer)
+            .field("weight", &self.weight)
+            .finish()
+    }
+}
+
+/// A filter producing the moving median over a given signal.
+#[derive(Clone)]
+pub struct Mean<A>
+where
+    A: Array,
+    A::Item: Clone,
+{
+    state: State<A>,
+}
+
+impl<T, A> Default for Mean<A>
+where
+    T: Clone + Default + Zero,
+    A: Array<Item=T> + Default,
+{
+    fn default() -> Self {
+        let state = Self::initial_state(());
+        Self { state }
+    }
 }
 
 impl<T, A> fmt::Debug for Mean<A>
 where
-    T: fmt::Debug,
-    A: Array<Item = T> + fmt::Debug,
+    T: Clone + fmt::Debug,
+    A: Array<Item=T> + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Mean")
             .field("state", &self.state)
-            .field("buffer", &self.buffer)
-            .field("weight", &self.weight)
             .finish()
+    }
+}
+
+impl<T, A> Stateful for Mean<A>
+where
+    T: Clone,
+    A: Array<Item=T>,
+{
+    type State = State<A>;
+}
+
+unsafe impl<T, A> StatefulUnsafe for Mean<A>
+where
+    T: Clone,
+    A: Array<Item=T>,
+{
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, A> InitialState<()> for Mean<A>
+where
+    T: Clone + Default + Zero,
+    A: Array<Item=T> + Default,
+{
+    fn initial_state(_: ()) -> Self::State {
+        let value = None;
+        let buffer = ArrayDeque::default();
+        let weight = A::Item::zero();
+        State { value, buffer, weight }
+    }
+}
+
+impl<T, A> Resettable for Mean<A>
+where
+    T: Clone + Default + Zero,
+    A: Array<Item=T> + Default,
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
@@ -45,9 +130,9 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let old_mean = self.state.unwrap_or(input);
-        let old_weight = self.weight;
-        let (mean, weight) = if let Some(old_input) = self.buffer.push_back(input) {
+        let old_mean = self.state.value.unwrap_or(input);
+        let old_weight = self.state.weight;
+        let (mean, weight) = if let Some(old_input) = self.state.buffer.push_back(input) {
             let mean = old_mean - old_input + input;
             (mean, old_weight)
         } else {
@@ -55,8 +140,8 @@ where
             let weight = old_weight + T::one();
             (mean, weight)
         };
-        self.state = Some(mean);
-        self.weight = weight;
+        self.state.value = Some(mean);
+        self.state.weight = weight;
 
         mean / weight
     }
