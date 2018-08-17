@@ -8,6 +8,13 @@ use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
 /// A [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter.
 #[derive(Clone, Debug)]
 pub struct Debounce<T, U> {
@@ -28,7 +35,34 @@ where
     /// Creates a new `Schmitt` filter with given `threshold`, `predicate` and `outputs` (`[off, on]`).
     #[inline]
     pub fn new(threshold: usize, predicate: T, outputs: [U; 2]) -> Self {
-        Debounce { threshold, outputs, predicate, state: 0 }
+        let state = Self::initial_state(());
+        Debounce { threshold, outputs, predicate, state }
+    }
+}
+
+impl<T, U> Stateful for Debounce<T, U> {
+    type State = usize;
+}
+
+unsafe impl<T, U> StatefulUnsafe for Debounce<T, U> {
+    fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, U> InitialState<()> for Debounce<T, U> {
+    fn initial_state(_: ()) -> Self::State {
+        0
+    }
+}
+
+impl<T, U> Resettable for Debounce<T, U> {
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
@@ -43,7 +77,7 @@ where
         if input == self.predicate {
             self.state = (self.state + 1).min(self.threshold);
         } else {
-            self.state = 0;
+            self.reset();
         }
         let index = (self.state >= self.threshold) as usize;
         self.outputs[index]
