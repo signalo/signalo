@@ -54,6 +54,11 @@ where
             outputs,
         }
     }
+
+    /// Returns a mutable reference to the internal state of the filter.
+    pub unsafe fn state_mut(&mut self) -> &mut Option<T> {
+        &mut self.state
+    }
 }
 
 impl<T, U> Filter<T> for Slopes<T, U>

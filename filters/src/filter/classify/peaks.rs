@@ -57,6 +57,16 @@ where
             state: (None, Slope::None),
             outputs,
         }
+
+    /// Returns a mutable reference to the internal state of the filter.
+    pub unsafe fn state_mut(&mut self) -> &mut Option<Slope> {
+        &mut self.state
+    }
+
+    /// Returns a mutable reference to the internal slope filter.
+    pub unsafe fn inner_mut(&mut self) -> &mut Slopes<T, Slope> {
+        &mut self.inner
+    }
     }
 }
 
