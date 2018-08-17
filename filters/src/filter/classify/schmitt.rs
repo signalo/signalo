@@ -6,6 +6,19 @@ use std::cmp::PartialOrd;
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
+/// A Schmitt trigger's internal state.
+#[derive(Clone, Debug)]
+pub struct State {
+    pub on: bool,
+}
+
 /// A [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger) filter.
 #[derive(Clone, Debug)]
 pub struct Schmitt<T, U> {
@@ -14,7 +27,7 @@ pub struct Schmitt<T, U> {
     /// [off, on] outputs.
     outputs: [U; 2],
     /// Current internal state.
-    state: bool,
+    state: State,
 }
 
 impl<T, U> Schmitt<T, U>
@@ -24,7 +37,35 @@ where
     /// Creates a new `Schmitt` filter with given `thresholds` (`[low, high]`) and `outputs` (`[off, on]`).
     #[inline]
     pub fn new(thresholds: [T; 2], outputs: [U; 2]) -> Self {
-        Schmitt { thresholds, outputs, state: false }
+        let state = Self::initial_state(());
+        Schmitt { thresholds, outputs, state }
+    }
+}
+
+impl<T, U> Stateful for Schmitt<T, U> {
+    type State = State;
+}
+
+unsafe impl<T, U> StatefulUnsafe for Schmitt<T, U> {
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, U> InitialState<()> for Schmitt<T, U> {
+    fn initial_state(_: ()) -> Self::State {
+        let on = false;
+        State { on }
+    }
+}
+
+impl<T, U> Resettable for Schmitt<T, U> {
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
@@ -36,11 +77,11 @@ where
     type Output = U;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        self.state = match self.state {
+        self.state.on = match self.state.on {
             false => input > self.thresholds[1],
             true => input >= self.thresholds[0],
         };
-        let index = self.state as usize;
+        let index = self.state.on as usize;
         self.outputs[index].clone()
     }
 }
