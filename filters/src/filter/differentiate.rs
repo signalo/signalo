@@ -8,10 +8,60 @@ use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
 
+use traits::{
+    InitialState,
+    Resettable,
+    Stateful,
+    StatefulUnsafe,
+};
+
+/// A differentiate filter's internal state.
+#[derive(Clone, Debug)]
+pub struct State<T> {
+    pub value: Option<T>,
+}
+
 /// A filter that produces the derivative of the signal.
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Differentiate<T> {
-    state: Option<T>,
+    state: State<T>,
+}
+
+impl<T> Default for Differentiate<T>
+where
+    T: Default,
+{
+    fn default() -> Self {
+        let state = Self::initial_state(());
+        Self { state }
+    }
+}
+
+impl<T> Stateful for Differentiate<T> {
+    type State = State<T>;
+}
+
+unsafe impl<T> StatefulUnsafe for Differentiate<T> {
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T> InitialState<()> for Differentiate<T> {
+    fn initial_state(_: ()) -> Self::State {
+        let value = None;
+        State { value }
+    }
+}
+
+impl<T> Resettable for Differentiate<T> {
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
+    }
 }
 
 impl<T> Filter<T> for Differentiate<T>
@@ -21,7 +71,7 @@ where
     type Output = <T as Sub<T>>::Output;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let output = match self.state {
+        let output = match self.state.value {
             None => {
                 T::zero()
             },
@@ -29,7 +79,7 @@ where
                 input - state
             },
         };
-        self.state = Some(input);
+        self.state.value = Some(input);
         output
     }
 }
