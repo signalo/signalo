@@ -76,25 +76,25 @@ where
     }
 
     fn filter_internal(&mut self, slope: Slope) -> (Slope, usize) {
-        let index = match self.state {
-            State { slope: None, .. } => {
+        let index = match self.state.slope {
+            None => {
                 1
             },
-            State { slope: Some(Slope::Rising), .. } => {
+            Some(Slope::Rising) => {
                 match &slope {
                     Slope::Rising => 1, // None
                     Slope::None => 1, // None
                     Slope::Falling => 0, // Max
                 }
             },
-            State { slope: Some(Slope::None), .. } => {
+            Some(Slope::None) => {
                 match &slope {
                     Slope::Rising => 1, // None
                     Slope::None => 1, // None
                     Slope::Falling => 1, // None
                 }
             },
-            State { slope: Some(Slope::Falling), .. } => {
+            Some(Slope::Falling) => {
                 match &slope {
                     Slope::Rising => 2, // Min
                     Slope::None => 1, // None

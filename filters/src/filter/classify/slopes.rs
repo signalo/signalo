@@ -104,15 +104,15 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let index = match self.state {
-            State { input: None } => 1, // None
-            State { input: Some(ref state) } => match state.partial_cmp(&input).unwrap() {
+        let index = match self.state.input {
+            None => 1, // None
+            Some(ref state) => match state.partial_cmp(&input).unwrap() {
                 Ordering::Less => 0, // Rising
                 Ordering::Equal => 1, // None
                 Ordering::Greater => 2, // Falling
             },
         };
-        self.state = State { input: Some(input) };
+        self.state.input = Some(input);
         self.outputs[index].clone()
     }
 }
