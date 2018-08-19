@@ -9,7 +9,7 @@
 /// # Background:
 ///
 /// Stateful systems **can react to the same input differently depending on the current state**.
-pub trait Stateful {
+pub trait Stateful: Sized {
     /// The filter's internal state.
     type State;
 }
