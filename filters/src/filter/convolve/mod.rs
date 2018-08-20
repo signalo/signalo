@@ -141,6 +141,7 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
+        // FIXME: padding should not be implementated within filter:
         loop {
             if self.state.taps.push_back(input.clone()).is_some() {
                 break;
