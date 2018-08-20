@@ -6,3 +6,6 @@
 
 mod alpha_beta;
 mod kalman;
+
+pub use self::alpha_beta::AlphaBeta;
+pub use self::kalman::Kalman;

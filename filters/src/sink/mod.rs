@@ -17,4 +17,5 @@ pub use self::min::Min;
 pub use self::bounds::Bounds;
 pub use self::integrate::Integrate;
 pub use self::last::Last;
+pub use self::mean::Mean;
 pub use self::mean_variance::MeanVariance;
