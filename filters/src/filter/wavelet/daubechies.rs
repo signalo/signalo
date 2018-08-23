@@ -21,9 +21,9 @@ macro_rules! daubechies_impl_float {
                 let mut translate = scale.clone();
                 // reversing their order:
                 translate.reverse();
-                // and then inverting the sign of every second coefficient:
+                // and then inverting the sign of every even-indexed coefficient:
                 for (index, coeff) in translate.iter_mut().enumerate() {
-                    if index & 2 == 1 {
+                    if index & 2 == 0 {
                         *coeff = 0.0 - *coeff;
                     }
                 }
@@ -37,9 +37,9 @@ macro_rules! daubechies_impl_float {
                 let mut translate = scale.clone();
                 // reversing their order:
                 translate.reverse();
-                // and then inverting the sign of every second coefficient:
+                // and then inverting the sign of every even-indexed coefficient:
                 for (index, coeff) in translate.iter_mut().enumerate() {
-                    if index & 2 == 1 {
+                    if index & 2 == 0 {
                         *coeff = 0.0 - *coeff;
                     }
                 }
@@ -49,58 +49,143 @@ macro_rules! daubechies_impl_float {
     };
 }
 
-// Source: http://wavelets.pybytes.com/wavelet/
+// Source: http://wavelets.pybytes.com/wavelet/db1/
 
 daubechies_impl_float!(2 => [
-    0.707106781,
-    0.707106781,
+    0.7071067812,
+    0.7071067812,
 ]);
 daubechies_impl_float!(4 => [
-    -0.12940952255092145,
-    0.22414386804185735,
-    0.836516303737469,
-    0.48296291314469025,
+    0.4829629131,
+    0.8365163037,
+    0.2241438680,
+    -0.1294095226,
+
+    // -0.1294095226,
+    // 0.2241438680,
+    // 0.8365163037,
+    // 0.4829629131,
 ]);
-// daubechies_impl_float!(6 => 
-//     scale: [
-//         0.035226292,
-//         -0.085441274,
-//         -0.13501102,
-//         0.459877502,
-//         0.806891509,
-//         0.332670553,
-//     ],
-//     translate: [
-//         -0.332670553,
-//         0.806891509,
-//         -0.459877502,
-//         -0.13501102,
-//         0.085441274,
-//         0.035226292,
-//     ]
-// );
-// daubechies_impl_float!(8 => 
-//     scale: [
-//         -0.010597402,
-//         0.032883012,
-//         0.030841382,
-//         -0.187034812,
-//         -0.027983769,
-//         0.630880768,
-//         0.714846571,
-//         0.230377813,
-//     ],
-//     translate: [
-//         -0.230377813,
-//         0.714846571,
-//         -0.630880768,
-//         -0.027983769,
-//         0.187034812,
-//         0.030841382,
-//         -0.032883012,
-//         -0.010597402,
-//     ]
-// );
+daubechies_impl_float!(6 => [
+    0.0352262919,
+    -0.0854412739,
+    -0.1350110200,
+    0.4598775021,
+    0.8068915093,
+    0.3326705530,
+]);
+daubechies_impl_float!(8 => [
+    -0.0105974018,
+    0.0328830117,
+    0.0308413818,
+    -0.1870348117,
+    -0.0279837694,
+    0.6308807679,
+    0.7148465706,
+    0.2303778133,
+]);
+daubechies_impl_float!(10 => [
+    0.0033357253,
+    -0.0125807520,
+    -0.0062414902,
+    0.0775714938,
+    -0.0322448696,
+    -0.2422948871,
+    0.1384281459,
+    0.7243085284,
+    0.6038292698,
+    0.1601023980,
+]);
+daubechies_impl_float!(12 => [
+    -0.0010773011,
+    0.0047772575,
+    0.0005538422,
+    -0.0315820393,
+    0.0275228655,
+    0.0975016056,
+    -0.1297668676,
+    -0.2262646940,
+    0.3152503517,
+    0.7511339080,
+    0.4946238904,
+    0.1115407434,
+]);
+daubechies_impl_float!(14 => [
+    0.0003537138,
+    -0.0018016407,
+    0.0004295780,
+    0.0125509986,
+    -0.0165745416,
+    -0.0380299369,
+    0.0806126092,
+    0.0713092193,
+    -0.2240361850,
+    -0.1439060039,
+    0.4697822874,
+    0.7291320908,
+    0.3965393195,
+    0.0778520541,
+]);
+daubechies_impl_float!(16 => [
+    -0.0001174768,
+    0.0006754494,
+    -0.0003917404,
+    -0.0048703530,
+    0.0087460940,
+    0.0139810279,
+    -0.0440882539,
+    -0.0173693010,
+    0.1287474266,
+    0.0004724846,
+    -0.2840155430,
+    -0.0158291053,
+    0.5853546837,
+    0.6756307363,
+    0.3128715909,
+    0.0544158422,
+]);
+daubechies_impl_float!(18 => [
+    0.0000393473,
+    -0.0002519632,
+    0.0002303858,
+    0.0018476469,
+    -0.0042815037,
+    -0.0047232048,
+    0.0223616621,
+    0.0002509471,
+    -0.0676328291,
+    0.0307256815,
+    0.1485407493,
+    -0.0968407832,
+    -0.2932737833,
+    0.1331973858,
+    0.6572880780,
+    0.6048231237,
+    0.2438346746,
+    0.0380779474,
+]);
+daubechies_impl_float!(20 => [
+    -0.0000132642,
+    0.0000935887,
+    -0.0001164669,
+    -0.0006858567,
+    0.0019924053,
+    0.0013953517,
+    -0.0107331755,
+    0.0036065536,
+    0.0332126741,
+    -0.0294575368,
+    -0.0713941472,
+    0.0930573646,
+    0.1273693403,
+    -0.1959462744,
+    -0.2498464243,
+    0.2811723437,
+    0.6884590395,
+    0.5272011889,
+    0.1881768001,
+    0.0266700579,
+]);
 
 #[cfg(test)]
 mod tests {
@@ -196,6 +281,8 @@ mod tests {
         }).collect();
 
         let expected = get_output_2();
+
+        panic!("{:?}", output);
         
         let output_sums: Vec<_> = output.iter().map(|(sum, _)| *sum).collect();
         let expected_sums: Vec<_> = expected.iter().map(|(sum, _)| *sum).collect();
@@ -211,11 +298,16 @@ mod tests {
     fn daubechies_4() {
         let filter: Wavelet<[f32; 4]> = Wavelet::daubechies();
         let input = get_input();
+
+        // panic!("{:?}", input);
+
         let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
             Some(filter.filter(input))
         }).collect();
 
         let expected = get_output_4();
+
+        panic!("{:?}", output);
 
         let output_sums: Vec<_> = output.iter().map(|(sum, _)| *sum).collect();
         let expected_sums: Vec<_> = expected.iter().map(|(sum, _)| *sum).collect();
