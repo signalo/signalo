@@ -4,8 +4,8 @@
 
 use signalo_traits::source::Source;
 
-use source::take::Take;
 use source::constant::Constant;
+use source::take::Take;
 
 /// A source that returns a specified number of constant values.
 ///
@@ -24,7 +24,7 @@ use source::constant::Constant;
 ///```
 #[derive(Clone, Debug)]
 pub struct Repeat<T> {
-    inner: Take<Constant<T>>
+    inner: Take<Constant<T>>,
 }
 
 impl<T> Repeat<T> {
@@ -57,17 +57,15 @@ mod tests {
 
     #[test]
     fn test() {
-        const VALUE: f32 = 4.2;
-        const COUNT: usize = 3;
-
-        const EXCESS_COUNT: usize = COUNT + 10;
-
-        let constant = Repeat::new(VALUE, COUNT);
-        let source = Take::new(constant, COUNT);
-        let subject: Vec<_> = (0..EXCESS_COUNT).scan(source, |source, _| {
-            source.source()
-        }).collect();
-        let expected = vec![VALUE; COUNT];
+        let mut source = Repeat::new(42, 5);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
+        // let subject: Vec<_> = (0..EXCESS_COUNT)
+        //     .scan(source, |source, _| source.source())
+        //     .collect();
+        let expected = vec![42; 5];
         assert_eq!(subject, expected);
     }
 }

@@ -67,11 +67,11 @@ mod tests {
     #[test]
     fn test() {
         let inner = FromIter::from(vec![0, 1, 2, 3, 4, 5]);
-
-        let source = Skip::new(inner, 3);
-        let subject: Vec<_> = (0..3).scan(source, |source, _| {
-            source.source()
-        }).collect();
+        let mut source = Skip::new(inner, 3);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
         let expected = vec![3, 4, 5];
         assert_eq!(subject, expected);
     }

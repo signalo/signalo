@@ -57,7 +57,7 @@ where
                 self.inner = self.orig.clone();
                 self.inner.source()
             }
-            y => y
+            y => y,
         }
     }
 }
@@ -69,13 +69,11 @@ mod tests {
     use source::FromIter;
 
     #[test]
-    fn test() {
+    fn non_empty() {
         let input = vec![0, 1, 2, 3];
         let inner = FromIter::from(input.clone());
         let source = Cycle::new(inner);
-        let subject: Vec<_> = (0..6).scan(source, |source, _| {
-            source.source()
-        }).collect();
+        let subject: Vec<_> = (0..6).scan(source, |source, _| source.source()).collect();
         let expected = vec![0, 1, 2, 3, 0, 1];
         assert_eq!(subject, expected);
     }
