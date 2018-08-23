@@ -61,7 +61,12 @@ where
         let front = Repeat::new(value.clone(), count);
         let back = Repeat::new(value, count);
         let state = PadState::Front;
-        Pad { inner, front, back, state }
+        Pad {
+            inner,
+            front,
+            back,
+            state,
+        }
     }
 }
 
@@ -75,27 +80,21 @@ where
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
         match self.state {
-            PadState::Front => {
-                match self.front.source() {
-                    output @ Some(_) => output,
-                    None => {
-                        self.state = PadState::Inner;
-                        self.inner.source()
-                    }
+            PadState::Front => match self.front.source() {
+                output @ Some(_) => output,
+                None => {
+                    self.state = PadState::Inner;
+                    self.source()
                 }
             },
-            PadState::Inner => {
-                match self.inner.source() {
-                    output @ Some(_) => output,
-                    None => {
-                        self.state = PadState::Back;
-                        self.back.source()
-                    }
+            PadState::Inner => match self.inner.source() {
+                output @ Some(_) => output,
+                None => {
+                    self.state = PadState::Back;
+                    self.source()
                 }
             },
-            PadState::Back => {
-                self.back.source()
-            },
+            PadState::Back => self.back.source(),
         }
     }
 }
@@ -107,13 +106,26 @@ mod tests {
     use source::FromIter;
 
     #[test]
-    fn test() {
-        let inner = FromIter::from(vec![0, 1, 2]);
-        let source = Pad::new(inner, 42, 2);
-        let subject: Vec<_> = (0..7).scan(source, |source, _| {
-            source.source()
-        }).collect();
-        let expected = vec![42, 42, 0, 1, 2, 42, 42];
+    fn empty() {
+        let inner = FromIter::from(vec![]);
+        let mut source = Pad::new(inner, 42, 2);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
+        let expected = vec![42, 42, 42, 42];
+        assert_eq!(subject, expected);
+    }
+
+    #[test]
+    fn non_empty() {
+        let inner = FromIter::from(vec![0, 1, 2, 3, 4]);
+        let mut source = Pad::new(inner, 42, 2);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
+        let expected = vec![42, 42, 0, 1, 2, 3, 4, 42, 42];
         assert_eq!(subject, expected);
     }
 }

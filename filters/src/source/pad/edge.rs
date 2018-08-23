@@ -13,7 +13,7 @@ enum PadState<T> {
     // source values from front
     Front(Repeat<T>),
     // source values from inner
-    Inner,
+    Inner(T),
     // source values from back
     Back(Repeat<T>),
     // reached end of back padding
@@ -62,7 +62,11 @@ where
     #[inline]
     pub fn new(inner: S, count: usize) -> Self {
         let state = PadState::Before;
-        Pad { inner, count, state }
+        Pad {
+            inner,
+            count,
+            state,
+        }
     }
 }
 
@@ -83,32 +87,33 @@ where
                 } else {
                     (Some(PadState::After), None)
                 }
-            },
+            }
             PadState::Front(ref mut front) => {
                 if let Some(value) = front.source() {
                     (None, Some(value))
-                } else {
-                    (Some(PadState::Inner), self.inner.source())
-                }
-            },
-            PadState::Inner => {
-                if let Some(value) = self.inner.source() {
-                    let back = Repeat::new(value.clone(), self.count);
-                    (Some(PadState::Back(back)), Some(value))
+                } else if let Some(value) = self.inner.source() {
+                    (Some(PadState::Inner(value.clone())), Some(value))
                 } else {
                     (Some(PadState::After), None)
                 }
-            },
+            }
+            PadState::Inner(ref value) => {
+                if let Some(value) = self.inner.source() {
+                    (Some(PadState::Inner(value.clone())), Some(value))
+                } else {
+                    let count = if self.count > 0 { self.count - 1 } else { 0 };
+                    let back = Repeat::new(value.clone(), count);
+                    (Some(PadState::Back(back)), Some(value.clone()))
+                }
+            }
             PadState::Back(ref mut back) => {
                 if let Some(value) = back.source() {
                     (None, Some(value))
                 } else {
                     (Some(PadState::After), None)
                 }
-            },
-            PadState::After => {
-                (None, None)
-            },
+            }
+            PadState::After => (None, None),
         };
         if let Some(state) = state {
             self.state = state;
@@ -124,13 +129,26 @@ mod tests {
     use source::FromIter;
 
     #[test]
-    fn test() {
-        let inner = FromIter::from(vec![0, 1, 2]);
-        let source = Pad::new(inner, 2);
-        let subject: Vec<_> = (0..7).scan(source, |source, _| {
-            source.source()
-        }).collect();
-        let expected = vec![0, 0, 0, 1, 2, 2, 2];
+    fn empty() {
+        let inner = FromIter::from(vec![]);
+        let mut source = Pad::new(inner, 2);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
+        let expected = vec![];
+        assert_eq!(subject, expected);
+    }
+
+    #[test]
+    fn non_empty() {
+        let inner = FromIter::from(vec![0, 1, 2, 3, 4]);
+        let mut source = Pad::new(inner, 2);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
+        let expected = vec![0, 0, 0, 1, 2, 3, 4, 4, 4];
         assert_eq!(subject, expected);
     }
 }
