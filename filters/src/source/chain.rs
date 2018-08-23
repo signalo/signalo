@@ -83,13 +83,40 @@ mod tests {
     use source::FromIter;
 
     #[test]
-    fn test() {
+    fn head_empty() {
+        let head = FromIter::from(vec![]);
+        let tail = FromIter::from(vec![3, 4]);
+        let mut source = Chain::new(head, tail);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
+        let expected = vec![3, 4];
+        assert_eq!(subject, expected);
+    }
+
+    #[test]
+    fn tail_empty() {
+        let head = FromIter::from(vec![0, 1, 2]);
+        let tail = FromIter::from(vec![]);
+        let mut source = Chain::new(head, tail);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
+        let expected = vec![0, 1, 2];
+        assert_eq!(subject, expected);
+    }
+
+    #[test]
+    fn non_empty() {
         let head = FromIter::from(vec![0, 1, 2]);
         let tail = FromIter::from(vec![3, 4]);
-        let source = Chain::new(head, tail);
-        let subject: Vec<_> = (0..5).scan(source, |source, _| {
-            source.source()
-        }).collect();
+        let mut source = Chain::new(head, tail);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
         let expected = vec![0, 1, 2, 3, 4];
         assert_eq!(subject, expected);
     }

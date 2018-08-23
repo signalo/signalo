@@ -64,19 +64,14 @@ mod tests {
 
     #[test]
     fn test() {
-        use source::Constant;
-
-        const VALUE: f32 = 4.2;
-        const COUNT: usize = 3;
-
-        const EXCESS_COUNT: usize = COUNT + 10;
-
-        let constant = Constant::new(VALUE);
-        let source = Take::new(constant, COUNT);
-        let subject: Vec<_> = (0..EXCESS_COUNT).scan(source, |source, _| {
-            source.source()
-        }).collect();
-        let expected = vec![VALUE; COUNT];
+        use source::Increment;
+        let increment = Increment::new(0, 2);
+        let mut source = Take::new(increment, 5);
+        let mut subject: Vec<usize> = vec![];
+        while let Some(value) = source.source() {
+            subject.push(value);
+        }
+        let expected = vec![0, 2, 4, 6, 8];
         assert_eq!(subject, expected);
     }
 }
