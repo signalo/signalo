@@ -8,6 +8,7 @@ mod identity;
 mod differentiate;
 
 pub mod ops;
+pub mod hampel;
 pub mod mean;
 pub mod median;
 pub mod observe;
