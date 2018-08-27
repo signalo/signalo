@@ -156,26 +156,23 @@ where
 
     /// Returns the filter buffer's current median value, panicking if empty.
     #[inline]
-    pub fn median(&self) -> T {
-        assert!(!self.buffer.is_empty());
-
-        unsafe { self.read_median() }
+    pub fn median(&self) -> Option<T> {
+        let index = self.median;
+        self.buffer[index].value.clone()
     }
 
     /// Returns the filter buffer's current min value, panicking if empty.
     #[inline]
-    pub fn min(&self) -> T {
-        assert!(!self.buffer.is_empty());
-
-        unsafe { self.read_min() }
+    pub fn min(&self) -> Option<T> {
+        let index = self.head;
+        self.buffer[index].value.clone()
     }
 
     /// Returns the filter buffer's current max value, panicking if empty.
     #[inline]
-    pub fn max(&self) -> T {
-        assert!(!self.buffer.is_empty());
-
-        unsafe { self.read_max() }
+    pub fn max(&self) -> Option<T> {
+        let index = (self.cursor + self.len() - 1) % (self.len());
+        self.buffer[index].value.clone()
     }
 
     #[inline]
@@ -286,21 +283,8 @@ where
     }
 
     #[inline]
-    unsafe fn read_median(&self) -> T {
-        let index = self.median;
-        self.buffer[index].value.clone().unwrap()
-    }
-
-    #[inline]
-    unsafe fn read_min(&self) -> T {
-        let index = self.head;
-        self.buffer[index].value.clone().unwrap()
-    }
-
-    #[inline]
-    unsafe fn read_max(&self) -> T {
-        let index = (self.cursor + self.len() - 1) % (self.len());
-        self.buffer[index].value.clone().unwrap()
+    unsafe fn median_unchecked(&mut self) -> T {
+        self.median().unwrap()
     }
 }
 
@@ -342,7 +326,7 @@ where
         unsafe { self.increment_cursor(); }
 
         // Read node value from buffer at `self.medium`:
-        unsafe { self.read_median() }
+        unsafe { self.median_unchecked() }
     }
 }
 
@@ -482,9 +466,9 @@ mod tests {
         for input in input {
             filter.filter(input);
         }
-        assert_eq!(filter.min(), 10);
-        assert_eq!(filter.max(), 60);
-        assert_eq!(filter.median(), 30);
+        assert_eq!(filter.min(), Some(10));
+        assert_eq!(filter.max(), Some(60));
+        assert_eq!(filter.median(), Some(30));
     }
 
     fn get_input() -> Vec<f32> {
