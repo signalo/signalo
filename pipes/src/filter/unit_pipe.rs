@@ -101,17 +101,6 @@ mod tests {
         }
     }
 
-    struct DummyFilterMul;
-
-    impl Filter<Value> for DummyFilterMul {
-        type Output = Value;
-
-        #[inline]
-        fn filter(&mut self, input: Value) -> Self::Output {
-            input * 2
-        }
-    }
-
     #[test]
     fn test() {
         let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
