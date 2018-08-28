@@ -2,9 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use std::ops::Add;
-
-use num_traits::Zero;
+use num_traits::Num;
 
 use signalo_traits::sink::Sink;
 
@@ -32,43 +30,33 @@ use signalo_traits::sink::Sink;
 /// // ╰───╯  ╰───╯  ╰───╯
 ///
 /// use signalo_filters::sink::Integrate;
-/// let mut integrate = Integrate::new();
+/// let mut integrate = Integrate::default();
 /// while let Some(value) = take.source() {
 ///     integrate.sink(value);
 /// }
-/// assert_eq!(integrate.finalize(), 3);
+/// assert_eq!(integrate.finalize(), Some(3));
 /// # }
 ///```
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct Integrate<T> {
-    state: T,
-}
-
-impl<T> Integrate<T>
-where
-    T: Zero,
-{
-    /// Creates a new `Integrate` sink.
-    #[inline]
-    pub fn new() -> Self {
-        Integrate { state: T::zero() }
-    }
+    sum: Option<T>,
 }
 
 impl<T> Sink<T> for Integrate<T>
 where
-    T: Copy + Add<T, Output = T>,
+    T: Copy + Num,
 {
-    type Output = T;
+    type Output = Option<T>;
 
     #[inline]
     fn sink(&mut self, input: T) {
-        self.state = self.state + input;
+        let sum = self.sum.unwrap_or(T::zero());
+        self.sum = Some(sum + input);
     }
 
     #[inline]
     fn finalize(self) -> Self::Output {
-        self.state
+        self.sum
     }
 }
 
@@ -82,11 +70,11 @@ mod tests {
         let input = vec![
             0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
         ];
-        let mut sink = Integrate::new();
+        let mut sink = Integrate::default();
         for input in input {
             sink.sink(input);
         }
         let subject = sink.finalize();
-        assert_eq!(subject, 196);
+        assert_eq!(subject, Some(196));
     }
 }
