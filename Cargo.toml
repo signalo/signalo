@@ -8,7 +8,7 @@ members = [
 ]
 
 [replace]
-"signalo:0.1.5" = { path = "signalo" }
-"signalo_traits:0.1.4" = { path = "traits" }
-"signalo_filters:0.1.7" = { path = "filters" }
-"signalo_pipes:0.1.5" = { path = "pipes" }
+"signalo:0.2.0" = { path = "signalo" }
+"signalo_traits:0.2.0" = { path = "traits" }
+"signalo_filters:0.2.0" = { path = "filters" }
+"signalo_pipes:0.2.0" = { path = "pipes" }
