@@ -189,7 +189,6 @@ mod tests {
         let filter: MeanVariance<[f32; 3]> = MeanVariance::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
-        println!("{:?}", input);
         let output: Vec<_> = input
             .iter()
             .scan(filter, |filter, &input| Some(filter.filter(input).0))
