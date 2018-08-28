@@ -12,7 +12,7 @@ pub struct Div;
 
 impl<T, U> Filter<(T, U)> for Div
 where
-    T: Copy + StdDiv<U>,
+    T: StdDiv<U>,
 {
     type Output = <T as StdDiv<U>>::Output;
 

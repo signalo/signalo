@@ -12,7 +12,7 @@ pub struct Mul;
 
 impl<T, U> Filter<(T, U)> for Mul
 where
-    T: Copy + StdMul<U>,
+    T: StdMul<U>,
 {
     type Output = <T as StdMul<U>>::Output;
 

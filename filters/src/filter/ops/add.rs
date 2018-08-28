@@ -12,7 +12,7 @@ pub struct Add;
 
 impl<T, U> Filter<(T, U)> for Add
 where
-    T: Copy + StdAdd<U>,
+    T: StdAdd<U>,
 {
     type Output = <T as StdAdd<U>>::Output;
 

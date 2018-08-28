@@ -12,7 +12,7 @@ pub struct Sub;
 
 impl<T, U> Filter<(T, U)> for Sub
 where
-    T: Copy + StdSub<U>,
+    T: StdSub<U>,
 {
     type Output = <T as StdSub<U>>::Output;
 

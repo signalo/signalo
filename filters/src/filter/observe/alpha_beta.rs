@@ -87,29 +87,29 @@ where
 
 impl<T> Filter<T> for AlphaBeta<T>
 where
-    T: Copy + Num,
+    T: Clone + Num,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let (velocity, state) = match (self.state.velocity, self.state.value) {
-            (velocity, None) => (velocity, input),
+        let (velocity, state) = match (self.state.velocity.clone(), self.state.value.clone()) {
+            (velocity, None) => (velocity, input.clone()),
             (mut velocity, Some(mut state)) => {
                 // Compute prediction:
-                state = state + velocity;
+                state = state + velocity.clone();
 
                 // Compute residual (error):
-                let residual = input - state;
+                let residual = input - state.clone();
 
                 // Correction:
-                state = state + (self.alpha * residual);
-                velocity = velocity + (self.beta * residual);
+                state = state + (self.alpha.clone() * residual.clone());
+                velocity = velocity.clone() + (self.beta.clone() * residual);
 
                 (velocity, state)
             }
         };
         self.state.velocity = velocity;
-        self.state.value = Some(state);
+        self.state.value = Some(state.clone());
         state
     }
 }

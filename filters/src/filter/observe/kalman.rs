@@ -64,31 +64,34 @@ where
 
 impl<T> Kalman<T>
 where
-    T: Copy + Num,
+    T: Clone + Num,
 {
     fn process(&mut self, (input, control): (T, T)) -> T {
-        let c_squared = self.c * self.c;
-        let (value, cov) = match self.state.value {
+        let c_squared = self.c.clone() * self.c.clone();
+        let (value, cov) = match &self.state.value {
             None => {
-                let value = input / self.c;
-                let cov = self.q / c_squared;
+                let value = input / self.c.clone();
+                let cov = self.q.clone() / c_squared;
                 (value, cov)
             }
-            Some(mut value) => {
+            Some(ref value) => {
                 // Compute prediction:
-                let pred_state = (self.a * value) + (self.b * control);
-                let pred_cov = (self.a * self.state.cov * self.a) + self.r;
+                let pred_state = (self.a.clone() * value.clone()) + (self.b.clone() * control);
+                let pred_cov =
+                    (self.a.clone() * self.state.cov.clone() * self.a.clone()) + self.r.clone();
 
                 // Compute Kalman gain:
-                let k = pred_cov * self.c / ((pred_cov * c_squared) + self.q);
+                let gain = pred_cov.clone() * self.c.clone()
+                    / ((pred_cov.clone() * c_squared) + self.q.clone());
 
                 // Correction:
-                let value = pred_state + k * (input - (self.c * pred_state));
-                let cov = pred_cov - (k * self.c * pred_cov);
+                let value =
+                    pred_state.clone() + gain.clone() * (input - (self.c.clone() * pred_state));
+                let cov = pred_cov.clone() - (gain * self.c.clone() * pred_cov);
                 (value, cov)
             }
         };
-        self.state.value = Some(value);
+        self.state.value = Some(value.clone());
         self.state.cov = cov;
         value
     }
@@ -145,7 +148,7 @@ where
 
 impl<T> Filter<T> for Kalman<T>
 where
-    T: Copy + Num,
+    T: Clone + Num,
 {
     type Output = T;
 
@@ -156,7 +159,7 @@ where
 
 impl<T> Filter<(T, T)> for Kalman<T>
 where
-    T: Copy + Num,
+    T: Clone + Num,
 {
     type Output = T;
 

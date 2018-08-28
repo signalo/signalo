@@ -25,7 +25,7 @@ pub struct Debounce<T, U> {
 
 impl<T, U> Debounce<T, U>
 where
-    T: Copy + Zero,
+    T: Clone + Zero,
 {
     /// Creates a new `Schmitt` filter with given `threshold`, `predicate` and `outputs` (`[off, on]`).
     #[inline]
@@ -68,8 +68,8 @@ impl<T, U> Resettable for Debounce<T, U> {
 
 impl<T, U> Filter<T> for Debounce<T, U>
 where
-    T: Copy + PartialEq<T>,
-    U: Copy,
+    T: Clone + PartialEq<T>,
+    U: Clone,
 {
     type Output = U;
 
@@ -80,7 +80,7 @@ where
             self.reset();
         }
         let index = (self.state >= self.threshold) as usize;
-        self.outputs[index]
+        self.outputs[index].clone()
     }
 }
 

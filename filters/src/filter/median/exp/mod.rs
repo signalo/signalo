@@ -30,9 +30,9 @@ where
     /// - `gamma`: `beta * 0.5`
     #[inline]
     pub fn new(alpha: T, beta: T, gamma: T) -> Self {
-        assert!(alpha > T::zero() && alpha <= T::one());
-        assert!(beta > T::zero() && beta <= T::one());
-        assert!(gamma > T::zero() && gamma <= T::one());
+        debug_assert!(alpha > T::zero() && alpha <= T::one());
+        debug_assert!(beta > T::zero() && beta <= T::one());
+        debug_assert!(gamma > T::zero() && gamma <= T::one());
         let mean = (Mean::new(alpha), Mean::new(gamma));
         Median {
             beta,
@@ -62,23 +62,23 @@ where
 
 impl<T> Filter<T> for Median<T>
 where
-    T: Copy + Num,
+    T: Clone + Num,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
         // We calculate the mean and use it as an estimate of the median:
-        let mean = self.mean.0.filter(input);
+        let mean = self.mean.0.filter(input.clone());
         // We then calculate the approximate of the median:
-        let median = match self.state {
+        let median = match &self.state {
             None => mean,
-            Some(mut state) => state + ((mean - state) * self.beta),
+            Some(ref state) => state.clone() + ((mean - state.clone()) * self.beta.clone()),
         };
         // The approximated median tends to oscillate,
         // so we apply another mean to smoothen those out:
         let state = self.mean.1.filter(median);
         // And we're done. Store a copy and return the result:
-        self.state = Some(state);
+        self.state = Some(state.clone());
         state
     }
 }

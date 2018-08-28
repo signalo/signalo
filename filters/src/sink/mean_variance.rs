@@ -25,26 +25,26 @@ pub struct MeanVariance<T> {
 
 impl<T> Sink<T> for MeanVariance<T>
 where
-    T: Copy + PartialOrd + Num,
+    T: Clone + PartialOrd + Num,
 {
     type Output = Option<(T, T)>;
 
     #[inline]
     fn sink(&mut self, input: T) {
-        let (old_count, old_mean, old_variance) = match self.state {
+        let (old_count, old_mean, old_variance) = match &self.state {
             Some(State {
-                count,
-                mean,
-                variance,
-            }) => (count, mean, variance),
+                ref count,
+                ref mean,
+                ref variance,
+            }) => (count.clone(), mean.clone(), variance.clone()),
             None => (T::zero(), T::zero(), T::zero()),
         };
 
         let count = old_count + T::one();
-        let mean = old_mean + ((input - old_mean) / count);
+        let mean = old_mean.clone() + ((input.clone() - old_mean.clone()) / count.clone());
 
-        let old_delta = input - old_mean;
-        let delta = input - mean;
+        let old_delta = input.clone() - old_mean;
+        let delta = input - mean.clone();
 
         let variance = old_variance + (old_delta * delta);
 

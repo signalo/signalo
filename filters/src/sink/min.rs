@@ -14,16 +14,16 @@ pub struct Min<T> {
 
 impl<T> Sink<T> for Min<T>
 where
-    T: Copy + PartialOrd,
+    T: Clone + PartialOrd,
 {
     type Output = Option<T>;
 
     #[inline]
     fn sink(&mut self, input: T) {
-        self.min = match self.min {
-            Some(min) => match min.partial_cmp(&input) {
+        self.min = match &self.min {
+            Some(ref min) => match min.partial_cmp(&input) {
                 Some(Ordering::Greater) => Some(input),
-                _ => Some(min),
+                _ => Some(min.clone()),
             },
             None => Some(input),
         };

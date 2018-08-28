@@ -30,11 +30,13 @@ where
     /// Creates a new `Mean` filter with `beta = 1.0 / n` with `n` being the filter width.
     #[inline]
     pub fn new(beta: T) -> Self {
-        assert!(beta > T::zero() && beta <= T::one());
+        debug_assert!(beta > T::zero() && beta <= T::one());
         let state = Self::initial_state(());
         Mean { beta, state }
     }
+}
 
+impl<T> Mean<T> {
     /// Returns the filter's `beta` coefficient.
     #[inline]
     pub fn beta(&self) -> &T {
@@ -71,16 +73,16 @@ impl<T> Resettable for Mean<T> {
 
 impl<T> Filter<T> for Mean<T>
 where
-    T: Copy + Num,
+    T: Clone + Num,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let mean = match self.state.value {
+        let mean = match &self.state.value {
             None => input,
-            Some(mut state) => state + ((input - state) * self.beta),
+            Some(ref state) => state.clone() + ((input - state.clone()) * self.beta.clone()),
         };
-        self.state.value = Some(mean);
+        self.state.value = Some(mean.clone());
         mean
     }
 }

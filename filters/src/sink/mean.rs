@@ -23,19 +23,22 @@ pub struct Mean<T> {
 
 impl<T> Sink<T> for Mean<T>
 where
-    T: Copy + PartialOrd + Num,
+    T: Clone + PartialOrd + Num,
 {
     type Output = Option<T>;
 
     #[inline]
     fn sink(&mut self, input: T) {
-        let (old_count, old_mean) = match self.state {
-            Some(State { count, mean }) => (count, mean),
+        let (old_count, old_mean) = match &self.state {
+            Some(State {
+                ref count,
+                ref mean,
+            }) => (count.clone(), mean.clone()),
             None => (T::zero(), T::zero()),
         };
 
         let count = old_count + T::one();
-        let mean = old_mean + ((input - old_mean) / count);
+        let mean = old_mean.clone() + ((input.clone() - old_mean) / count.clone());
 
         self.state = Some(State { count, mean });
     }

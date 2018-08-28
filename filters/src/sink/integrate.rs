@@ -44,13 +44,13 @@ pub struct Integrate<T> {
 
 impl<T> Sink<T> for Integrate<T>
 where
-    T: Copy + Num,
+    T: Clone + Num,
 {
     type Output = Option<T>;
 
     #[inline]
     fn sink(&mut self, input: T) {
-        let sum = self.sum.unwrap_or(T::zero());
+        let sum = self.sum.clone().unwrap_or(T::zero());
         self.sum = Some(sum + input);
     }
 

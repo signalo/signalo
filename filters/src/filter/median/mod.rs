@@ -11,7 +11,40 @@ use std::ptr;
 
 use generic_array::{ArrayBuilder, ArrayLength, GenericArray};
 
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+
 pub mod exp;
+
+/// A median filter's internal state.
+#[derive(Clone)]
+pub struct State<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    // Buffer of list nodes:
+    buffer: GenericArray<ListNode<T>, N>,
+    // Cursor into circular buffer of data:
+    cursor: usize,
+    // Cursor to beginning of circular list:
+    head: usize,
+    // Cursor to median of circular list:
+    median: usize,
+}
+
+impl<T, N> fmt::Debug for State<T, N>
+where
+    T: fmt::Debug,
+    N: ArrayLength<ListNode<T>>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("State")
+            .field("buffer", &self.buffer)
+            .field("cursor", &self.cursor)
+            .field("head", &self.head)
+            .field("median", &self.median)
+            .finish()
+    }
+}
 
 /// Implementation detail.
 /// (Once we have value generics we will hopefully be able to un-leak it.)
@@ -72,47 +105,55 @@ where
 /// 8. **Return median value**.
 ///
 /// (_Based on Phil Ekstrom, Embedded Systems Programming, November 2000._)
+#[derive(Clone, Debug)]
 pub struct Median<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
-    // Buffer of list nodes:
-    buffer: GenericArray<ListNode<T>, N>,
-    // Cursor into circular buffer of data:
-    cursor: usize,
-    // Cursor to beginning of circular list:
-    head: usize,
-    // Cursor to median of circular list:
-    median: usize,
+    state: State<T, N>,
 }
 
-impl<T, N> Clone for Median<T, N>
+impl<T, N> Default for Median<T, N>
 where
     T: Clone,
     N: ArrayLength<ListNode<T>>,
 {
-    fn clone(&self) -> Self {
-        Self {
-            buffer: self.buffer.clone(),
-            cursor: self.cursor.clone(),
-            head: self.head.clone(),
-            median: self.median.clone(),
-        }
+    fn default() -> Self {
+        let state = Self::initial_state(());
+        Self { state }
     }
 }
 
-impl<T, N> fmt::Debug for Median<T, N>
+impl<T, N> Median<T, N>
 where
-    T: fmt::Debug,
+    T: Clone,
     N: ArrayLength<ListNode<T>>,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Median")
-            .field("buffer", &self.buffer)
-            .field("cursor", &self.cursor)
-            .field("head", &self.head)
-            .field("median", &self.median)
-            .finish()
+    /// Returns the window size of the filter.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.state.buffer.len()
+    }
+
+    /// Returns the filter buffer's current median value, panicking if empty.
+    #[inline]
+    pub fn median(&self) -> Option<T> {
+        let index = self.state.median;
+        self.state.buffer[index].value.clone()
+    }
+
+    /// Returns the filter buffer's current min value, panicking if empty.
+    #[inline]
+    pub fn min(&self) -> Option<T> {
+        let index = self.state.head;
+        self.state.buffer[index].value.clone()
+    }
+
+    /// Returns the filter buffer's current max value, panicking if empty.
+    #[inline]
+    pub fn max(&self) -> Option<T> {
+        let index = (self.state.cursor + self.len() - 1) % (self.len());
+        self.state.buffer[index].value.clone()
     }
 }
 
@@ -121,63 +162,9 @@ where
     T: Clone + PartialOrd,
     N: ArrayLength<ListNode<T>>,
 {
-    /// Creates a new median filter with a given window size.
-    pub fn new() -> Self {
-        let buffer = unsafe {
-            let mut builder = ArrayBuilder::new();
-            {
-                let size = N::to_usize();
-                let (mut iter, index) = builder.iter_position();
-                while let Some(destination) = iter.next() {
-                    let node = ListNode {
-                        value: None,
-                        previous: (*index + size - 1) % size,
-                        next: (*index + 1) % size,
-                    };
-                    ptr::write(destination, node);
-                    *index += 1;
-                }
-            }
-            builder.into_inner()
-        };
-        Median {
-            buffer: buffer,
-            cursor: 0,
-            head: 0,
-            median: 0,
-        }
-    }
-
-    /// Returns the window size of the filter.
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.buffer.len()
-    }
-
-    /// Returns the filter buffer's current median value, panicking if empty.
-    #[inline]
-    pub fn median(&self) -> Option<T> {
-        let index = self.median;
-        self.buffer[index].value.clone()
-    }
-
-    /// Returns the filter buffer's current min value, panicking if empty.
-    #[inline]
-    pub fn min(&self) -> Option<T> {
-        let index = self.head;
-        self.buffer[index].value.clone()
-    }
-
-    /// Returns the filter buffer's current max value, panicking if empty.
-    #[inline]
-    pub fn max(&self) -> Option<T> {
-        let index = (self.cursor + self.len() - 1) % (self.len());
-        self.buffer[index].value.clone()
-    }
-
     #[inline]
     fn should_insert(&self, value: &T, current: usize, index: usize) -> bool {
-        if let Some(ref v) = self.buffer[current].value {
+        if let Some(ref v) = self.state.buffer[current].value {
             (index + 1 == self.len()) || !(v < value)
         } else {
             true
@@ -186,34 +173,34 @@ where
 
     #[inline]
     unsafe fn move_head_forward(&mut self) {
-        if self.cursor == self.head {
-            self.head = self.buffer[self.head].next;
+        if self.state.cursor == self.state.head {
+            self.state.head = self.state.buffer[self.state.head].next;
         }
     }
 
     #[inline]
     unsafe fn remove_node(&mut self) {
         let (predecessor, successor) = {
-            let node = &self.buffer[self.cursor];
+            let node = &self.state.buffer[self.state.cursor];
             (node.previous, node.next)
         };
-        self.buffer[predecessor].next = successor;
-        self.buffer[self.cursor] = ListNode {
+        self.state.buffer[predecessor].next = successor;
+        self.state.buffer[self.state.cursor] = ListNode {
             previous: usize::max_value(),
             value: None,
             next: usize::max_value(),
         };
-        self.buffer[successor].previous = predecessor;
+        self.state.buffer[successor].previous = predecessor;
     }
 
     #[inline]
     unsafe fn initialize_median(&mut self) {
-        self.median = self.head;
+        self.state.median = self.state.head;
     }
 
     #[inline]
     unsafe fn insert_value(&mut self, value: &T) {
-        let mut current = self.head;
+        let mut current = self.state.head;
         let buffer_len = self.len();
         let mut has_inserted = false;
         for index in 0..buffer_len {
@@ -231,60 +218,127 @@ where
             // so that it ends up in the middle, eventually:
             self.shift_median(index, current);
 
-            current = self.buffer[current].next;
+            current = self.state.buffer[current].next;
         }
     }
 
     #[inline]
     unsafe fn insert(&mut self, value: &T, current: usize) {
         let successor = current;
-        let predecessor = self.buffer[current].previous;
-        debug_assert!(self.buffer.len() == 1 || current != self.cursor);
-        self.buffer[predecessor].next = self.cursor;
-        self.buffer[self.cursor] = ListNode {
+        let predecessor = self.state.buffer[current].previous;
+        debug_assert!(self.state.buffer.len() == 1 || current != self.state.cursor);
+        self.state.buffer[predecessor].next = self.state.cursor;
+        self.state.buffer[self.state.cursor] = ListNode {
             previous: predecessor,
             value: Some(value.clone()),
             next: successor,
         };
-        self.buffer[successor].previous = self.cursor;
+        self.state.buffer[successor].previous = self.state.cursor;
     }
 
     #[inline]
     unsafe fn shift_median(&mut self, index: usize, current: usize) {
-        if (index & 0b1 == 0b1) && (self.buffer[current].value.is_some()) {
-            self.median = self.buffer[self.median].next;
+        if (index & 0b1 == 0b1) && (self.state.buffer[current].value.is_some()) {
+            self.state.median = self.state.buffer[self.state.median].next;
         }
     }
 
     #[inline]
     unsafe fn update_head(&mut self, value: &T) {
-        let should_update_head = if let Some(ref head) = self.buffer[self.head].value {
+        let should_update_head = if let Some(ref head) = self.state.buffer[self.state.head].value {
             value <= head
         } else {
             true
         };
 
         if should_update_head {
-            self.head = self.cursor;
-            self.median = self.buffer[self.median].previous;
+            self.state.head = self.state.cursor;
+            self.state.median = self.state.buffer[self.state.median].previous;
         }
     }
 
     #[inline]
     unsafe fn adjust_median_for_even_length(&mut self) {
         if self.len() % 2 == 0 {
-            self.median = self.buffer[self.median].previous;
+            self.state.median = self.state.buffer[self.state.median].previous;
         }
     }
 
     #[inline]
     unsafe fn increment_cursor(&mut self) {
-        self.cursor = (self.cursor + 1) % (self.len());
+        self.state.cursor = (self.state.cursor + 1) % (self.len());
     }
 
     #[inline]
     unsafe fn median_unchecked(&mut self) -> T {
         self.median().unwrap()
+    }
+}
+
+impl<T, N> Stateful for Median<T, N>
+where
+    T: Clone,
+    N: ArrayLength<ListNode<T>>,
+{
+    type State = State<T, N>;
+}
+
+unsafe impl<T, N> StatefulUnsafe for Median<T, N>
+where
+    T: Clone,
+    N: ArrayLength<ListNode<T>>,
+{
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, N> InitialState<()> for Median<T, N>
+where
+    T: Clone,
+    N: ArrayLength<ListNode<T>>,
+{
+    fn initial_state(_: ()) -> Self::State {
+        let buffer = unsafe {
+            let mut builder = ArrayBuilder::new();
+            {
+                let size = N::to_usize();
+                let (mut iter, index) = builder.iter_position();
+                while let Some(destination) = iter.next() {
+                    let node = ListNode {
+                        value: None,
+                        previous: (*index + size - 1) % size,
+                        next: (*index + 1) % size,
+                    };
+                    ptr::write(destination, node);
+                    *index += 1;
+                }
+            }
+            builder.into_inner()
+        };
+        let cursor = 0;
+        let head = 0;
+        let median = 0;
+        State {
+            buffer,
+            cursor,
+            head,
+            median,
+        }
+    }
+}
+
+impl<T, N> Resettable for Median<T, N>
+where
+    T: Clone + Default,
+    N: ArrayLength<ListNode<T>>,
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 
@@ -352,7 +406,7 @@ mod tests {
 
     macro_rules! test_filter {
         ($size:ident, $input:expr, $output:expr) => {
-            let filter: Median<_, $size> = Median::new();
+            let filter: Median<_, $size> = Median::default();
             let output: Vec<_> = $input
                 .iter()
                 .scan(filter, |filter, &input| Some(filter.filter(input)))
@@ -477,7 +531,7 @@ mod tests {
     #[test]
     fn min_max_median() {
         let input = vec![70, 50, 30, 10, 20, 40, 60];
-        let mut filter: Median<_, U5> = Median::new();
+        let mut filter: Median<_, U5> = Median::default();
         for input in input {
             filter.filter(input);
         }
@@ -506,7 +560,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Median<_, U5> = Median::new();
+        let filter: Median<_, U5> = Median::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

@@ -15,13 +15,13 @@ pub struct Bounds<T> {
 
 impl<T> Sink<T> for Bounds<T>
 where
-    T: Copy + PartialOrd,
+    T: Clone + PartialOrd,
 {
     type Output = Option<(T, T)>;
 
     #[inline]
     fn sink(&mut self, input: T) {
-        self.min.sink(input);
+        self.min.sink(input.clone());
         self.max.sink(input);
     }
 

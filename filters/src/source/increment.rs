@@ -40,14 +40,14 @@ impl<T> Increment<T> {
 
 impl<T> Source for Increment<T>
 where
-    T: Copy + AddAssign<T>,
+    T: Clone + AddAssign<T>,
 {
     type Output = T;
 
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
         let output = self.state.clone();
-        self.state += self.interval;
+        self.state += self.interval.clone();
         Some(output)
     }
 }

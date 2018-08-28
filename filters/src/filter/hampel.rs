@@ -6,50 +6,33 @@
 
 use signalo_traits::filter::Filter;
 
-use std::fmt;
-
 use generic_array::ArrayLength;
 use num_traits::{Num, Signed};
 
 use filter::median::{ListNode, Median};
 
-/// An implementation of a hampel filter of fixed width.
-///
-/// J. Astola, P. Kuosmanen, "Fundamentals of Nonlinear Digital Filtering", CRC Press, 1997.
-pub struct Hampel<T, N>
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+
+/// A hampel filter's internal state.
+#[derive(Clone, Debug)]
+pub struct State<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
     // Median filter
     inner: Median<T, N>,
-    // Thresholding factor
+}
+
+/// An implementation of a hampel filter of fixed width.
+///
+/// J. Astola, P. Kuosmanen, "Fundamentals of Nonlinear Digital Filtering", CRC Press, 1997.
+#[derive(Clone, Debug)]
+pub struct Hampel<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    state: State<T, N>,
     threshold: T,
-}
-
-impl<T, N> Clone for Hampel<T, N>
-where
-    T: Clone,
-    N: ArrayLength<ListNode<T>>,
-{
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            threshold: self.threshold.clone(),
-        }
-    }
-}
-
-impl<T, N> fmt::Debug for Hampel<T, N>
-where
-    T: fmt::Debug,
-    N: ArrayLength<ListNode<T>>,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Hampel")
-            .field("inner", &self.inner)
-            .field("threshold", &self.threshold)
-            .finish()
-    }
 }
 
 impl<T, N> Hampel<T, N>
@@ -59,20 +42,20 @@ where
 {
     /// Creates a new median filter with a given window size.
     pub fn new(threshold: T) -> Self {
-        let inner = Median::new();
-        Self { inner, threshold }
+        let state = Self::initial_state(());
+        Self { state, threshold }
     }
 
     /// Returns the window size of the filter.
     #[inline]
     pub fn len(&self) -> usize {
-        self.inner.len()
+        self.state.inner.len()
     }
 }
 
 impl<T, N> Hampel<T, N>
 where
-    T: Clone + PartialOrd + Num + Signed + fmt::Debug,
+    T: Clone + PartialOrd + Num + Signed,
     N: ArrayLength<ListNode<T>>,
 {
     /// The Hampel Filter
@@ -85,12 +68,12 @@ where
     /// it is replaced with the median:
     fn filter_internal(&mut self, input: T, factor: T) -> T {
         // Read window's current median and min/max boundaries:
-        let min = self.inner.min().unwrap_or(input.clone());
-        let median = self.inner.median().unwrap_or(input.clone());
-        let max = self.inner.max().unwrap_or(input.clone());
+        let min = self.state.inner.min().unwrap_or(input.clone());
+        let median = self.state.inner.median().unwrap_or(input.clone());
+        let max = self.state.inner.max().unwrap_or(input.clone());
 
         // Feed the input to the internal median filter:
-        self.inner.filter(input.clone());
+        self.state.inner.filter(input.clone());
 
         // Calculate the boundary's absolute deviations from the median:
         let min_dev = (median.clone() - min).abs();
@@ -114,6 +97,49 @@ where
         } else {
             input
         }
+    }
+}
+
+impl<T, N> Stateful for Hampel<T, N>
+where
+    T: Clone,
+    N: ArrayLength<ListNode<T>>,
+{
+    type State = State<T, N>;
+}
+
+unsafe impl<T, N> StatefulUnsafe for Hampel<T, N>
+where
+    T: Clone,
+    N: ArrayLength<ListNode<T>>,
+{
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
+    }
+
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, N> InitialState<()> for Hampel<T, N>
+where
+    T: Clone,
+    N: ArrayLength<ListNode<T>>,
+{
+    fn initial_state(_: ()) -> Self::State {
+        let inner = Median::default();
+        State { inner }
+    }
+}
+
+impl<T, N> Resettable for Hampel<T, N>
+where
+    T: Clone,
+    N: ArrayLength<ListNode<T>>,
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(());
     }
 }
 

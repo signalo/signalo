@@ -41,7 +41,7 @@ where
 }
 
 /// A filter producing the moving average and variance over a given signal.
-// #[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct MeanVariance<A>
 where
     A: Array,
@@ -50,24 +50,10 @@ where
     state: State<A>,
 }
 
-// impl<T, A> Clone for MeanVariance<A>
-// where
-//     T: Clone,
-//     A: Clone + Array<Item = T>,
-// {
-//     fn clone(&self) -> Self {
-//         Self {
-//             state: self.state.clone(),
-//             mean: self.mean.clone(),
-//             variance: self.variance.clone(),
-//         }
-//     }
-// }
-
 impl<T, A> Default for MeanVariance<A>
 where
-    T: Default + Clone + Zero,
-    A: Default + Array<Item = T>,
+    T: Clone + Zero,
+    A: Array<Item = T>,
 {
     fn default() -> Self {
         let state = Self::initial_state(());
@@ -111,8 +97,8 @@ where
 
 impl<T, A> InitialState<()> for MeanVariance<A>
 where
-    T: Clone + Default + Zero,
-    A: Array<Item = T> + Default,
+    T: Clone + Zero,
+    A: Array<Item = T>,
 {
     fn initial_state(_: ()) -> Self::State {
         let mean = Mean::default();
@@ -133,17 +119,24 @@ where
 
 impl<T, A> Filter<T> for MeanVariance<A>
 where
-    T: Copy + Num + Signed + PartialOrd + ::std::fmt::Debug, // FIXME
-    A: Array<Item = T> + fmt::Debug,
+    T: Clone + Num + Signed + PartialOrd + ::std::fmt::Debug, // FIXME
+    A: Array<Item = T>,
 {
     /// (mean, variance)
     type Output = (T, T);
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let mean_old = unsafe { self.state.mean.state().value.unwrap_or(input) };
-        let mean_new = self.state.mean.filter(input);
-        let deviation_old = (input - mean_old).abs();
-        let deviation_new = (input - mean_new).abs();
+        let mean_old = unsafe {
+            self.state
+                .mean
+                .state()
+                .value
+                .clone()
+                .unwrap_or(input.clone())
+        };
+        let mean_new = self.state.mean.filter(input.clone());
+        let deviation_old = (input.clone() - mean_old).abs();
+        let deviation_new = (input.clone() - mean_new.clone()).abs();
         let squared = deviation_old * deviation_new;
         let variance = self.state.variance.filter(squared);
         (mean_new, variance)
