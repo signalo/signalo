@@ -4,18 +4,18 @@
 
 //! Implementations of `trait Sink`.
 
-mod max;
-mod min;
 mod bounds;
 mod integrate;
 mod last;
+mod max;
 mod mean;
 mod mean_variance;
+mod min;
 
-pub use self::max::Max;
-pub use self::min::Min;
 pub use self::bounds::Bounds;
 pub use self::integrate::Integrate;
 pub use self::last::Last;
+pub use self::max::Max;
 pub use self::mean::Mean;
 pub use self::mean_variance::MeanVariance;
+pub use self::min::Min;

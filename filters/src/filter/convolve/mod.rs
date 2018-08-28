@@ -11,12 +11,7 @@ use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
-use traits::{
-    InitialState,
-    Resettable,
-    Stateful,
-    StatefulUnsafe,
-};
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 pub mod savitzky_golay;
 
@@ -37,9 +32,7 @@ where
     A: Array<Item = T> + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("State")
-            .field("taps", &self.taps)
-            .finish()
+        f.debug_struct("State").field("taps", &self.taps).finish()
     }
 }
 
@@ -57,13 +50,16 @@ where
 impl<T, A> Convolve<A>
 where
     T: Copy,
-    A: Array<Item=T>,
+    A: Array<Item = T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`.
     #[inline]
     pub fn new(coefficients: A) -> Self {
         let state = Self::initial_state(());
-        Convolve { coefficients, state }
+        Convolve {
+            coefficients,
+            state,
+        }
     }
 
     /// Returns the filter's coefficients.
@@ -76,21 +72,25 @@ where
 impl<T, A> Convolve<A>
 where
     T: Copy + PartialOrd + Num,
-    A: Array<Item=T>,
+    A: Array<Item = T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
     #[inline]
     pub fn normalized(mut coefficients: A) -> Self {
-        let sum = coefficients.as_slice().iter().fold(T::zero(), |sum, coeff| {
-            sum + (*coeff)
-        });
+        let sum = coefficients
+            .as_slice()
+            .iter()
+            .fold(T::zero(), |sum, coeff| sum + (*coeff));
         if !sum.is_zero() {
             for coeff in coefficients.as_mut_slice() {
                 *coeff = *coeff / sum;
             }
         }
         let state = Self::initial_state(());
-        Convolve { coefficients, state }
+        Convolve {
+            coefficients,
+            state,
+        }
     }
 }
 
@@ -110,7 +110,7 @@ where
 impl<T, A> Stateful for Convolve<A>
 where
     T: Copy,
-    A: Array<Item=T>,
+    A: Array<Item = T>,
 {
     type State = State<A>;
 }
@@ -118,7 +118,7 @@ where
 unsafe impl<T, A> StatefulUnsafe for Convolve<A>
 where
     T: Copy,
-    A: Array<Item=T>,
+    A: Array<Item = T>,
 {
     unsafe fn state(&self) -> &Self::State {
         &self.state
@@ -132,7 +132,7 @@ where
 impl<T, A> InitialState<()> for Convolve<A>
 where
     T: Copy,
-    A: Array<Item=T>,
+    A: Array<Item = T>,
 {
     fn initial_state(_: ()) -> Self::State {
         let taps = ArrayDeque::new();
@@ -143,7 +143,7 @@ where
 impl<T, A> Resettable for Convolve<A>
 where
     T: Copy,
-    A: Array<Item=T>,
+    A: Array<Item = T>,
 {
     fn reset(&mut self) {
         self.state = Self::initial_state(());
@@ -168,9 +168,9 @@ where
         let state_iter = self.state.taps.iter();
         let coeff_iter = self.coefficients.as_slice().iter().rev();
 
-        let output = state_iter.zip(coeff_iter).fold(T::zero(), |sum, (state, coeff)| {
-            sum + ((*state) * (*coeff))
-        });
+        let output = state_iter
+            .zip(coeff_iter)
+            .fold(T::zero(), |sum, (state, coeff)| sum + ((*state) * (*coeff)));
 
         output
     }
@@ -186,7 +186,7 @@ mod tests {
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 13.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 180.0, 108.0, 18.0,
             106.0, 5.0, 26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0,
-            16.0, 16.0, 104.0, 11.0, 24.0, 24.0
+            16.0, 16.0, 104.0, 11.0, 24.0, 24.0,
         ]
     }
 
@@ -194,8 +194,8 @@ mod tests {
         vec![
             0.0, 1.0, 6.0, -5.0, 3.0, 3.0, 8.0, -3.0, 6.0, -13.0, 8.0, -5.0, 0.0, 8.0, 0.0, -13.0,
             8.0, 8.0, 0.0, -13.0, 0.0, 8.0, 0.0, -5.0, 13.0, -13.0, 101.0, 69.0, -72.0, -90.0,
-            88.0, -101.0, 21.0, -13.0, 0.0, 8.0, 0.0, 0.0, 13.0, -26.0, 101.0, -101.0, 21.0,
-            -13.0, 0.0, 0.0, 88.0, -93.0, 13.0, 0.0
+            88.0, -101.0, 21.0, -13.0, 0.0, 8.0, 0.0, 0.0, 13.0, -26.0, 101.0, -101.0, 21.0, -13.0,
+            0.0, 0.0, 88.0, -93.0, 13.0, 0.0,
         ]
     }
 
@@ -204,9 +204,10 @@ mod tests {
         // Effectively calculates the derivative:
         let filter = Convolve::new([1.000, -1.000]);
         let input = get_input();
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
 }

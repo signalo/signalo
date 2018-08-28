@@ -5,17 +5,17 @@
 //! Arithmetic operation filters.
 
 mod add;
-mod sub;
-mod mul;
 mod div;
+mod mul;
 mod rem;
+mod sub;
 
 mod neg;
 mod square;
 
 pub use self::add::Add;
-pub use self::sub::Sub;
-pub use self::mul::Mul;
 pub use self::div::Div;
+pub use self::mul::Mul;
+pub use self::sub::Sub;
 
 pub use self::square::Square;

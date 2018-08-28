@@ -8,12 +8,7 @@ use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
 
-use traits::{
-    InitialState,
-    Resettable,
-    Stateful,
-    StatefulUnsafe,
-};
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter.
 #[derive(Clone, Debug)]
@@ -30,13 +25,18 @@ pub struct Debounce<T, U> {
 
 impl<T, U> Debounce<T, U>
 where
-    T: Copy + Zero
+    T: Copy + Zero,
 {
     /// Creates a new `Schmitt` filter with given `threshold`, `predicate` and `outputs` (`[off, on]`).
     #[inline]
     pub fn new(threshold: usize, predicate: T, outputs: [U; 2]) -> Self {
         let state = Self::initial_state(());
-        Debounce { threshold, outputs, predicate, state }
+        Debounce {
+            threshold,
+            outputs,
+            predicate,
+            state,
+        }
     }
 }
 
@@ -93,9 +93,13 @@ mod tests {
     fn test() {
         let filter = Debounce::new(3, 1, u8::classes());
         let input = vec![0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1];
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-        assert_eq!(output, vec![0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
+        assert_eq!(
+            output,
+            vec![0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
     }
 }

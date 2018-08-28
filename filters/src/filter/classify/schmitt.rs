@@ -6,12 +6,7 @@ use std::cmp::PartialOrd;
 
 use signalo_traits::filter::Filter;
 
-use traits::{
-    InitialState,
-    Resettable,
-    Stateful,
-    StatefulUnsafe,
-};
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A Schmitt trigger's internal state.
 #[derive(Clone, Debug)]
@@ -32,13 +27,17 @@ pub struct Schmitt<T, U> {
 
 impl<T, U> Schmitt<T, U>
 where
-    U: Clone
+    U: Clone,
 {
     /// Creates a new `Schmitt` filter with given `thresholds` (`[low, high]`) and `outputs` (`[off, on]`).
     #[inline]
     pub fn new(thresholds: [T; 2], outputs: [U; 2]) -> Self {
         let state = Self::initial_state(());
-        Schmitt { thresholds, outputs, state }
+        Schmitt {
+            thresholds,
+            outputs,
+            state,
+        }
     }
 }
 
@@ -95,10 +94,16 @@ mod tests {
     fn test() {
         let filter = Schmitt::new([5, 10], u8::classes());
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-        assert_eq!(output, vec![0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]);
+        let input = vec![
+            0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
+        ];
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
+        assert_eq!(
+            output,
+            vec![0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]
+        );
     }
 }

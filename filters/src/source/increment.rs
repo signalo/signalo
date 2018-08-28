@@ -31,7 +31,10 @@ impl<T> Increment<T> {
     /// Creates a new `Increment` source for a given `initial` value and an `interval`.
     #[inline]
     pub fn new(initial: T, interval: T) -> Self {
-        Self { state: initial, interval }
+        Self {
+            state: initial,
+            interval,
+        }
     }
 }
 
@@ -56,9 +59,7 @@ mod tests {
     #[test]
     fn test() {
         let source = Increment::new(42, 2);
-        let subject: Vec<_> = (0..5).scan(source, |source, _| {
-            source.source()
-        }).collect();
+        let subject: Vec<_> = (0..5).scan(source, |source, _| source.source()).collect();
         let expected = vec![42, 44, 46, 48, 50];
         assert_eq!(subject, expected);
     }

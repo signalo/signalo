@@ -60,9 +60,9 @@ mod tests {
         const VALUE: usize = 42;
         const COUNT: usize = 3;
         let source = Constant::new(VALUE);
-        let subject: Vec<_> = (0..COUNT).scan(source, |source, _| {
-            source.source()
-        }).collect();
+        let subject: Vec<_> = (0..COUNT)
+            .scan(source, |source, _| source.source())
+            .collect();
         let expected = vec![VALUE; COUNT];
         assert_eq!(subject, expected);
     }

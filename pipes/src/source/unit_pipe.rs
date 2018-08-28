@@ -24,8 +24,7 @@ pub struct UnitPipe<T> {
     source: T,
 }
 
-impl<T> UnitPipe<T>
-{
+impl<T> UnitPipe<T> {
     /// Creates a new unit pipe wrapping `source`.
     #[inline]
     pub fn new(source: T) -> Self {
@@ -97,9 +96,7 @@ mod tests {
     fn test() {
         const COUNT: usize = 3;
         let pipe = UnitPipe::new(DummySource);
-        let subject: Vec<_> = (0..COUNT).scan(pipe, |pipe, _| {
-            pipe.source()
-        }).collect();
+        let subject: Vec<_> = (0..COUNT).scan(pipe, |pipe, _| pipe.source()).collect();
         let expected = vec![VALUE; COUNT];
         assert_eq!(subject, expected);
     }

@@ -24,8 +24,7 @@ pub struct UnitPipe<T> {
     sink: T,
 }
 
-impl<T> UnitPipe<T>
-{
+impl<T> UnitPipe<T> {
     /// Creates a new unit pipe wrapping `sink`.
     #[inline]
     pub fn new(sink: T) -> Self {
@@ -78,7 +77,7 @@ mod tests {
     type Value = usize;
 
     struct DummySink {
-        sum: usize
+        sum: usize,
     }
 
     impl Sink<Value> for DummySink {
@@ -97,7 +96,9 @@ mod tests {
 
     #[test]
     fn test() {
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
+        let input = vec![
+            0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
+        ];
         let sink = DummySink { sum: 0 };
         let mut pipe = UnitPipe::new(sink);
         for i in input {

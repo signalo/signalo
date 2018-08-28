@@ -24,8 +24,7 @@ pub struct Pipe<T, U> {
     rhs: U,
 }
 
-impl<T, U> Pipe<T, U>
-{
+impl<T, U> Pipe<T, U> {
     /// Creates a new pipe connecting `lhs` and `rhs`.
     #[inline]
     pub fn new(lhs: T, rhs: U) -> Self {
@@ -109,9 +108,7 @@ mod tests {
     fn test() {
         const COUNT: usize = 3;
         let pipe = Pipe::new(DummySource, DummyFilter);
-        let subject: Vec<_> = (0..COUNT).scan(pipe, |pipe, _| {
-            pipe.source()
-        }).collect();
+        let subject: Vec<_> = (0..COUNT).scan(pipe, |pipe, _| pipe.source()).collect();
         let expected = vec![VALUE + 1; COUNT];
         assert_eq!(subject, expected);
     }

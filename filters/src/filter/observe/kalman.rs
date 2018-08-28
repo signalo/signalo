@@ -4,16 +4,11 @@
 
 //! Kalman filters.
 
-use num_traits::{Zero, One, Num};
+use num_traits::{Num, One, Zero};
 
 use signalo_traits::filter::Filter;
 
-use traits::{
-    InitialState,
-    Resettable,
-    Stateful,
-    StatefulUnsafe,
-};
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A Kalman filter's internal state.
 #[derive(Clone, Debug)]
@@ -43,7 +38,7 @@ pub struct Kalman<T> {
 
 impl<T> Kalman<T>
 where
-    T: Zero
+    T: Zero,
 {
     /// Creates a new `Kalman` filter with given `r`, `q`, `a`, `b`, and `c` coefficients.
     ///
@@ -56,13 +51,20 @@ where
     #[inline]
     pub fn new(r: T, q: T, a: T, b: T, c: T) -> Self {
         let state = Self::initial_state(());
-        Kalman { r, q, a, b, c, state }
+        Kalman {
+            r,
+            q,
+            a,
+            b,
+            c,
+            state,
+        }
     }
 }
 
 impl<T> Kalman<T>
 where
-    T: Copy + Num
+    T: Copy + Num,
 {
     fn process(&mut self, (input, control): (T, T)) -> T {
         let c_squared = self.c * self.c;
@@ -71,7 +73,7 @@ where
                 let value = input / self.c;
                 let cov = self.q / c_squared;
                 (value, cov)
-            },
+            }
             Some(mut value) => {
                 // Compute prediction:
                 let pred_state = (self.a * value) + (self.b * control);
@@ -84,7 +86,7 @@ where
                 let value = pred_state + k * (input - (self.c * pred_state));
                 let cov = pred_cov - (k * self.c * pred_cov);
                 (value, cov)
-            },
+            }
         };
         self.state.value = Some(value);
         self.state.cov = cov;
@@ -94,7 +96,7 @@ where
 
 impl<T> Default for Kalman<T>
 where
-    T: Zero + One
+    T: Zero + One,
 {
     #[inline]
     fn default() -> Self {
@@ -143,7 +145,7 @@ where
 
 impl<T> Filter<T> for Kalman<T>
 where
-    T: Copy + Num
+    T: Copy + Num,
 {
     type Output = T;
 
@@ -154,7 +156,7 @@ where
 
 impl<T> Filter<(T, T)> for Kalman<T>
 where
-    T: Copy + Num
+    T: Copy + Num,
 {
     type Output = T;
 
@@ -172,17 +174,17 @@ mod tests {
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 18.0, 18.0, 18.0,
             106.0, 5.0, 26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0,
-            16.0, 16.0, 104.0, 11.0, 24.0, 24.0
+            16.0, 16.0, 104.0, 11.0, 24.0, 24.0,
         ]
     }
 
     fn get_output() -> Vec<f32> {
         vec![
-            0.000, 0.524, 3.012, 2.682, 3.375, 4.693, 7.837, 6.510, 9.912, 8.851, 10.245,
-            9.908, 9.663, 11.646, 13.092, 10.636, 11.004, 13.435, 15.208, 12.991, 11.372,
-            12.352, 13.068, 12.239, 15.146, 13.756, 40.027, 34.076, 29.733, 26.563, 48.024,
-            36.401, 33.591, 28.028, 23.968, 23.166, 22.581, 22.154, 25.354, 20.666, 44.530,
-            34.661, 33.132, 28.503, 25.126, 22.660, 44.635, 35.548, 32.428, 30.151
+            0.000, 0.524, 3.012, 2.682, 3.375, 4.693, 7.837, 6.510, 9.912, 8.851, 10.245, 9.908,
+            9.663, 11.646, 13.092, 10.636, 11.004, 13.435, 15.208, 12.991, 11.372, 12.352, 13.068,
+            12.239, 15.146, 13.756, 40.027, 34.076, 29.733, 26.563, 48.024, 36.401, 33.591, 28.028,
+            23.968, 23.166, 22.581, 22.154, 25.354, 20.666, 44.530, 34.661, 33.132, 28.503, 25.126,
+            22.660, 44.635, 35.548, 32.428, 30.151,
         ]
     }
 
@@ -197,9 +199,10 @@ mod tests {
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
 
         assert_nearly_eq!(output, get_output(), 0.001);
     }

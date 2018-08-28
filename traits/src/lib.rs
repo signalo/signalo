@@ -7,21 +7,19 @@
 #![cfg_attr(feature = "missing_mpl", feature(plugin))]
 #![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
 #![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
-
 #![warn(missing_docs)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-pub mod source;
 pub mod filter;
 pub mod sink;
+pub mod source;
 
 /// The crate's prelude.
 pub mod prelude {
-    pub use source::Source;
-    pub use sink::Sink;
     pub use filter::Filter;
+    pub use sink::Sink;
+    pub use source::Source;
 }

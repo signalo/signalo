@@ -21,13 +21,11 @@ where
     #[inline]
     fn sink(&mut self, input: T) {
         self.max = match self.max {
-            Some(max) => {
-                match max.partial_cmp(&input) {
-                    Some(Ordering::Less) => Some(input),
-                    _ => Some(max),
-                }
+            Some(max) => match max.partial_cmp(&input) {
+                Some(Ordering::Less) => Some(input),
+                _ => Some(max),
             },
-            None => Some(input)
+            None => Some(input),
         };
     }
 
@@ -44,7 +42,9 @@ mod tests {
     #[test]
     fn test() {
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
+        let input = vec![
+            0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
+        ];
         let mut sink = Max::default();
         for input in input {
             sink.sink(input);
