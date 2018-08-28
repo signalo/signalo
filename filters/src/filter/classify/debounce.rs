@@ -4,6 +4,8 @@
 
 use std::cmp::PartialEq;
 
+use generic_array::typenum::U2;
+use generic_array::GenericArray;
 use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
@@ -16,7 +18,7 @@ pub struct Debounce<T, U> {
     /// Threshold of how long input must remain same to be accepted.
     threshold: usize,
     /// [off, on] output.
-    outputs: [U; 2],
+    outputs: GenericArray<U, U2>,
     /// Value to debounce.
     predicate: T,
     /// Counter of how long input was the same.
@@ -29,7 +31,7 @@ where
 {
     /// Creates a new `Schmitt` filter with given `threshold`, `predicate` and `outputs` (`[off, on]`).
     #[inline]
-    pub fn new(threshold: usize, predicate: T, outputs: [U; 2]) -> Self {
+    pub fn new(threshold: usize, predicate: T, outputs: GenericArray<U, U2>) -> Self {
         let state = Self::initial_state(());
         Debounce {
             threshold,

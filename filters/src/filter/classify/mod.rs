@@ -4,7 +4,8 @@
 
 //! Filters that map a signal onto a fixed set of discrete values (e.g. `on`, `off`).
 
-use arraydeque::Array;
+use generic_array::typenum::*;
+use generic_array::{ArrayLength, GenericArray};
 
 mod debounce;
 mod schmitt;
@@ -22,12 +23,12 @@ pub use self::slopes::{Slope, Slopes};
 pub use self::peaks::{Peak, Peaks};
 
 /// A trait describing a classification value.
-pub trait Classification<A>: Sized
+pub trait Classification<T, N>: Sized
 where
-    A: Array<Item = Self>,
+    N: ArrayLength<T>,
 {
     /// The available classes.
-    fn classes() -> A;
+    fn classes() -> GenericArray<T, N>;
 }
 
 macro_rules! classification_impl {
@@ -36,9 +37,9 @@ macro_rules! classification_impl {
         classification_impl!($($tail),+ => [$a, $b]);
     };
     ($t:ty => [$a:expr, $b:expr]) => {
-        impl Classification<[$t; 2]> for $t {
-            fn classes() -> [$t; 2] {
-                [$a, $b]
+        impl Classification<$t, U2> for $t {
+            fn classes() -> GenericArray<$t, U2> {
+                arr![$t; $a, $b]
             }
         }
     };
@@ -47,9 +48,9 @@ macro_rules! classification_impl {
         classification_impl!($($tail),+ => [$a, $b, $c]);
     };
     ($t:ty => [$a:expr, $b:expr, $c:expr]) => {
-        impl Classification<[$t; 3]> for $t {
-            fn classes() -> [$t; 3] {
-                [$a, $b, $c]
+        impl Classification<$t, U3> for $t {
+            fn classes() -> GenericArray<$t, U3> {
+                arr![$t; $a, $b, $c]
             }
         }
     };

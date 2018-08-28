@@ -4,6 +4,9 @@
 
 use std::cmp::PartialOrd;
 
+use generic_array::typenum::*;
+use generic_array::GenericArray;
+
 use signalo_traits::filter::Filter;
 
 use filter::classify::{
@@ -30,10 +33,9 @@ impl Default for Peak {
     }
 }
 
-/// A trait describing a classification value.
-impl Classification<[Peak; 3]> for Peak {
-    fn classes() -> [Peak; 3] {
-        [Peak::Max, Peak::None, Peak::Min]
+impl Classification<Peak, U3> for Peak {
+    fn classes() -> GenericArray<Peak, U3> {
+        arr![Peak; Peak::Max, Peak::None, Peak::Min]
     }
 }
 
@@ -49,7 +51,7 @@ pub struct State<T> {
 pub struct Peaks<T, U> {
     state: State<T>,
     /// rising, flat, falling outputs.
-    outputs: [U; 3],
+    outputs: GenericArray<U, U3>,
 }
 
 impl<T, U> Peaks<T, U>
@@ -58,7 +60,7 @@ where
 {
     /// Creates a new `Peaks` filter with given `threshold` and `outputs` (`[max, none, min]`).
     #[inline]
-    pub fn new(outputs: [U; 3]) -> Self {
+    pub fn new(outputs: GenericArray<U, U3>) -> Self {
         let state = Self::initial_state(());
         Peaks { state, outputs }
     }

@@ -6,7 +6,7 @@
 
 use std::fmt;
 
-use arraydeque::Array;
+use generic_array::ArrayLength;
 
 use num_traits::{Num, Signed, Zero};
 
@@ -18,19 +18,18 @@ use super::mean::Mean;
 
 /// A mean filter's internal state.
 #[derive(Clone)]
-pub struct State<A>
+pub struct State<T, N>
 where
-    A: Array,
-    A::Item: Clone,
+    N: ArrayLength<T>,
 {
-    pub mean: Mean<A>,
-    pub variance: Mean<A>,
+    pub mean: Mean<T, N>,
+    pub variance: Mean<T, N>,
 }
 
-impl<T, A> fmt::Debug for State<A>
+impl<T, N> fmt::Debug for State<T, N>
 where
-    T: Clone + fmt::Debug,
-    A: Array<Item = T> + fmt::Debug,
+    T: fmt::Debug,
+    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -42,18 +41,17 @@ where
 
 /// A filter producing the moving average and variance over a given signal.
 #[derive(Clone)]
-pub struct MeanVariance<A>
+pub struct MeanVariance<T, N>
 where
-    A: Array,
-    A::Item: Clone,
+    N: ArrayLength<T>,
 {
-    state: State<A>,
+    state: State<T, N>,
 }
 
-impl<T, A> Default for MeanVariance<A>
+impl<T, N> Default for MeanVariance<T, N>
 where
-    T: Clone + Zero,
-    A: Array<Item = T>,
+    T: Clone + Default + Zero,
+    N: ArrayLength<T>,
 {
     fn default() -> Self {
         let state = Self::initial_state(());
@@ -61,10 +59,10 @@ where
     }
 }
 
-impl<T, A> fmt::Debug for MeanVariance<A>
+impl<T, N> fmt::Debug for MeanVariance<T, N>
 where
-    T: Clone + fmt::Debug,
-    A: Array<Item = T> + fmt::Debug,
+    T: fmt::Debug,
+    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("MeanVariance")
@@ -73,18 +71,18 @@ where
     }
 }
 
-impl<T, A> Stateful for MeanVariance<A>
+impl<T, N> Stateful for MeanVariance<T, N>
 where
     T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
-    type State = State<A>;
+    type State = State<T, N>;
 }
 
-unsafe impl<T, A> StatefulUnsafe for MeanVariance<A>
+unsafe impl<T, N> StatefulUnsafe for MeanVariance<T, N>
 where
     T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     unsafe fn state(&self) -> &Self::State {
         &self.state
@@ -95,10 +93,10 @@ where
     }
 }
 
-impl<T, A> InitialState<()> for MeanVariance<A>
+impl<T, N> InitialState<()> for MeanVariance<T, N>
 where
-    T: Clone + Zero,
-    A: Array<Item = T>,
+    T: Clone + Default + Zero,
+    N: ArrayLength<T>,
 {
     fn initial_state(_: ()) -> Self::State {
         let mean = Mean::default();
@@ -107,20 +105,20 @@ where
     }
 }
 
-impl<T, A> Resettable for MeanVariance<A>
+impl<T, N> Resettable for MeanVariance<T, N>
 where
     T: Clone + Default + Zero,
-    A: Array<Item = T> + Default,
+    N: ArrayLength<T>,
 {
     fn reset(&mut self) {
         self.state = Self::initial_state(());
     }
 }
 
-impl<T, A> Filter<T> for MeanVariance<A>
+impl<T, N> Filter<T> for MeanVariance<T, N>
 where
-    T: Clone + Num + Signed + PartialOrd + ::std::fmt::Debug, // FIXME
-    A: Array<Item = T>,
+    T: Clone + Num + Signed + PartialOrd,
+    N: ArrayLength<T>,
 {
     /// (mean, variance)
     type Output = (T, T);
@@ -146,6 +144,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use generic_array::typenum::*;
 
     fn get_input() -> Vec<f32> {
         vec![
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn mean() {
-        let filter: MeanVariance<[f32; 3]> = MeanVariance::default();
+        let filter: MeanVariance<f32, U3> = MeanVariance::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn variance() {
-        let filter: MeanVariance<[f32; 3]> = MeanVariance::default();
+        let filter: MeanVariance<f32, U3> = MeanVariance::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

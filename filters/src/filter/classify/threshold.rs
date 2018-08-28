@@ -4,6 +4,9 @@
 
 use std::cmp::PartialOrd;
 
+use generic_array::typenum::U2;
+use generic_array::GenericArray;
+
 use signalo_traits::filter::Filter;
 
 /// A threshold filter.
@@ -12,7 +15,7 @@ pub struct Threshold<T, U> {
     /// input threshold.
     threshold: T,
     /// [off, on] outputs.
-    outputs: [U; 2],
+    outputs: GenericArray<U, U2>,
 }
 
 impl<T, U> Threshold<T, U>
@@ -21,7 +24,7 @@ where
 {
     /// Creates a new `Threshold` filter with given `threshold` and `outputs` (`[off, on]`).
     #[inline]
-    pub fn new(threshold: T, outputs: [U; 2]) -> Self {
+    pub fn new(threshold: T, outputs: GenericArray<U, U2>) -> Self {
         Threshold { threshold, outputs }
     }
 }

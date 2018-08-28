@@ -4,10 +4,12 @@
 
 use std::cmp::{Ordering, PartialOrd};
 
+use generic_array::typenum::*;
+use generic_array::GenericArray;
+
 use signalo_traits::filter::Filter;
 
 use filter::classify::Classification;
-
 use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A slope's kind.
@@ -27,9 +29,9 @@ impl Default for Slope {
     }
 }
 
-impl Classification<[Slope; 3]> for Slope {
-    fn classes() -> [Slope; 3] {
-        [Slope::Rising, Slope::None, Slope::Falling]
+impl Classification<Slope, U3> for Slope {
+    fn classes() -> GenericArray<Slope, U3> {
+        arr![Slope; Slope::Rising, Slope::None, Slope::Falling]
     }
 }
 
@@ -44,7 +46,7 @@ pub struct State<T> {
 pub struct Slopes<T, U> {
     state: State<T>,
     /// [rising, flat, falling] outputs.
-    outputs: [U; 3],
+    outputs: GenericArray<U, U3>,
 }
 
 impl<T, U> Slopes<T, U>
@@ -53,7 +55,7 @@ where
 {
     /// Creates a new `Slopes` filter with given `threshold` and `outputs` (`[rising, none, falling]`).
     #[inline]
-    pub fn new(outputs: [U; 3]) -> Self {
+    pub fn new(outputs: GenericArray<U, U3>) -> Self {
         let state = Self::initial_state(());
         Slopes { state, outputs }
     }
