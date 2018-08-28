@@ -12,7 +12,7 @@ pub struct Rem;
 
 impl<T, U> Filter<(T, U)> for Rem
 where
-    T: Copy + StdRem<U>,
+    T: StdRem<U>,
 {
     type Output = <T as StdRem<U>>::Output;
 

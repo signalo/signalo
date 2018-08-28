@@ -20,7 +20,7 @@ pub mod savitzky_golay;
 pub struct State<A>
 where
     A: Array,
-    A::Item: Copy,
+    A::Item: Clone,
 {
     /// The filter's taps (i.e. buffered input).
     pub taps: ArrayDeque<A, Wrapping>,
@@ -28,7 +28,7 @@ where
 
 impl<T, A> fmt::Debug for State<A>
 where
-    T: Copy + fmt::Debug,
+    T: Clone + fmt::Debug,
     A: Array<Item = T> + fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -41,7 +41,7 @@ where
 pub struct Convolve<A>
 where
     A: Array,
-    A::Item: Copy,
+    A::Item: Clone,
 {
     coefficients: A,
     state: State<A>,
@@ -49,7 +49,7 @@ where
 
 impl<T, A> Convolve<A>
 where
-    T: Copy,
+    T: Clone,
     A: Array<Item = T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`.
@@ -71,7 +71,7 @@ where
 
 impl<T, A> Convolve<A>
 where
-    T: Copy + PartialOrd + Num,
+    T: Clone + PartialOrd + Num,
     A: Array<Item = T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
@@ -80,10 +80,10 @@ where
         let sum = coefficients
             .as_slice()
             .iter()
-            .fold(T::zero(), |sum, coeff| sum + (*coeff));
+            .fold(T::zero(), |sum, coeff| sum + coeff.clone());
         if !sum.is_zero() {
             for coeff in coefficients.as_mut_slice() {
-                *coeff = *coeff / sum;
+                *coeff = coeff.clone() / sum.clone();
             }
         }
         let state = Self::initial_state(());
@@ -94,22 +94,9 @@ where
     }
 }
 
-impl<T, A> fmt::Debug for Convolve<A>
-where
-    T: Copy + fmt::Debug,
-    A: Array<Item = T> + fmt::Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Convolve")
-            .field("coefficients", &self.coefficients)
-            .field("state", &self.state)
-            .finish()
-    }
-}
-
 impl<T, A> Stateful for Convolve<A>
 where
-    T: Copy,
+    T: Clone,
     A: Array<Item = T>,
 {
     type State = State<A>;
@@ -117,7 +104,7 @@ where
 
 unsafe impl<T, A> StatefulUnsafe for Convolve<A>
 where
-    T: Copy,
+    T: Clone,
     A: Array<Item = T>,
 {
     unsafe fn state(&self) -> &Self::State {
@@ -131,7 +118,7 @@ where
 
 impl<T, A> InitialState<()> for Convolve<A>
 where
-    T: Copy,
+    T: Clone,
     A: Array<Item = T>,
 {
     fn initial_state(_: ()) -> Self::State {
@@ -142,7 +129,7 @@ where
 
 impl<T, A> Resettable for Convolve<A>
 where
-    T: Copy,
+    T: Clone,
     A: Array<Item = T>,
 {
     fn reset(&mut self) {
@@ -152,7 +139,7 @@ where
 
 impl<T, A> Filter<T> for Convolve<A>
 where
-    T: Copy + Num,
+    T: Clone + Num,
     A: Array<Item = T>,
 {
     type Output = T;
@@ -160,7 +147,7 @@ where
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         loop {
-            if self.state.taps.push_back(input).is_some() {
+            if self.state.taps.push_back(input.clone()).is_some() {
                 break;
             }
         }
@@ -170,7 +157,9 @@ where
 
         let output = state_iter
             .zip(coeff_iter)
-            .fold(T::zero(), |sum, (state, coeff)| sum + ((*state) * (*coeff)));
+            .fold(T::zero(), |sum, (state, coeff)| {
+                sum + (state.clone() * coeff.clone())
+            });
 
         output
     }

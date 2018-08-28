@@ -28,16 +28,18 @@ pub struct MeanVariance<T> {
 
 impl<T> MeanVariance<T>
 where
-    T: Copy + PartialOrd + Zero + One,
+    T: Clone + PartialOrd + Zero + One,
 {
     /// Creates a new `MeanVariance` filter with `beta = 1.0 / n` with `n` being the filter width.
     #[inline]
     pub fn new(beta: T) -> Self {
-        assert!(beta > T::zero() && beta <= T::one());
-        let state = Self::initial_state(beta);
+        debug_assert!(beta > T::zero() && beta <= T::one());
+        let state = Self::initial_state(beta.clone());
         MeanVariance { beta, state }
     }
+}
 
+impl<T> MeanVariance<T> {
     /// Returns the filter's `beta` coefficient.
     #[inline]
     pub fn beta(&self) -> &T {
@@ -61,10 +63,10 @@ unsafe impl<T> StatefulUnsafe for MeanVariance<T> {
 
 impl<T> InitialState<T> for MeanVariance<T>
 where
-    T: Copy + PartialOrd + Zero + One,
+    T: Clone + PartialOrd + Zero + One,
 {
     fn initial_state(beta: T) -> Self::State {
-        let mean = Mean::new(beta);
+        let mean = Mean::new(beta.clone());
         let variance = Mean::new(beta);
         State { mean, variance }
     }
@@ -72,25 +74,32 @@ where
 
 impl<T> Resettable for MeanVariance<T>
 where
-    T: Copy + PartialOrd + Zero + One,
+    T: Clone + PartialOrd + Zero + One,
 {
     fn reset(&mut self) {
-        self.state = Self::initial_state(self.beta);
+        self.state = Self::initial_state(self.beta.clone());
     }
 }
 
 impl<T> Filter<T> for MeanVariance<T>
 where
-    T: Copy + Num + Signed,
+    T: Clone + Num + Signed,
 {
     /// (mean, variance)
     type Output = (T, T);
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let mean_old = unsafe { self.state.mean.state().value.unwrap_or(input) };
-        let mean_new = self.state.mean.filter(input);
-        let deviation_old = (input - mean_old).abs();
-        let deviation_new = (input - mean_new).abs();
+        let mean_old = unsafe {
+            self.state
+                .mean
+                .state()
+                .value
+                .clone()
+                .unwrap_or(input.clone())
+        };
+        let mean_new = self.state.mean.filter(input.clone());
+        let deviation_old = (input.clone() - mean_old).abs();
+        let deviation_new = (input.clone() - mean_new.clone()).abs();
         let squared = deviation_old * deviation_new;
         let variance = self.state.variance.filter(squared);
         (mean_new, variance)

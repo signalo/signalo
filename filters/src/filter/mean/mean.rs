@@ -51,8 +51,8 @@ where
 
 impl<T, A> Default for Mean<A>
 where
-    T: Clone + Default + Zero,
-    A: Array<Item = T> + Default,
+    T: Clone + Zero,
+    A: Array<Item = T>,
 {
     fn default() -> Self {
         let state = Self::initial_state(());
@@ -94,8 +94,8 @@ where
 
 impl<T, A> InitialState<()> for Mean<A>
 where
-    T: Clone + Default + Zero,
-    A: Array<Item = T> + Default,
+    T: Clone + Zero,
+    A: Array<Item = T>,
 {
     fn initial_state(_: ()) -> Self::State {
         let value = None;
@@ -121,25 +121,27 @@ where
 
 impl<T, A> Filter<T> for Mean<A>
 where
-    T: Copy + Num,
+    T: Clone + Num,
     A: Array<Item = T>,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let old_mean = self.state.value.unwrap_or(input);
-        let old_weight = self.state.weight;
-        let (mean, weight) = if let Some(old_input) = self.state.buffer.push_back(input) {
-            let mean = old_mean - old_input + input;
-            (mean, old_weight)
-        } else {
-            let mean = old_mean + input;
-            let weight = old_weight + T::one();
-            (mean, weight)
+        let old_mean = self.state.value.clone().unwrap_or(input.clone());
+        let old_weight = self.state.weight.clone();
+        let (mean, weight) = match self.state.buffer.push_back(input.clone()) {
+            Some(old_input) => {
+                let mean = old_mean - old_input + input.clone();
+                (mean, old_weight)
+            }
+            None => {
+                let mean = old_mean + input;
+                let weight = old_weight + T::one();
+                (mean, weight)
+            }
         };
-        self.state.value = Some(mean);
-        self.state.weight = weight;
-
+        self.state.value = Some(mean.clone());
+        self.state.weight = weight.clone();
         mean / weight
     }
 }

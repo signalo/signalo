@@ -12,13 +12,13 @@ pub struct Square;
 
 impl<T> Filter<T> for Square
 where
-    T: Copy + Mul<T>,
+    T: Clone + Mul<T>,
 {
     type Output = <T as Mul<T>>::Output;
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        input * input
+        input.clone() * input
     }
 }
 

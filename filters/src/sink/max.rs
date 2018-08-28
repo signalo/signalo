@@ -14,16 +14,16 @@ pub struct Max<T> {
 
 impl<T> Sink<T> for Max<T>
 where
-    T: Copy + PartialOrd,
+    T: Clone + PartialOrd,
 {
     type Output = Option<T>;
 
     #[inline]
     fn sink(&mut self, input: T) {
-        self.max = match self.max {
-            Some(max) => match max.partial_cmp(&input) {
+        self.max = match &self.max {
+            Some(ref max) => match max.partial_cmp(&input) {
                 Some(Ordering::Less) => Some(input),
-                _ => Some(max),
+                _ => Some(max.clone()),
             },
             None => Some(input),
         };

@@ -61,14 +61,14 @@ impl<T> Resettable for Differentiate<T> {
 
 impl<T> Filter<T> for Differentiate<T>
 where
-    T: Copy + Sub<T, Output = T> + Zero,
+    T: Clone + Sub<T, Output = T> + Zero,
 {
     type Output = <T as Sub<T>>::Output;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let output = match self.state.value {
+        let output = match &self.state.value {
             None => T::zero(),
-            Some(state) => input - state,
+            Some(ref state) => input.clone() - state.clone(),
         };
         self.state.value = Some(input);
         output

@@ -12,7 +12,7 @@ pub struct Neg;
 
 impl<T> Filter<T> for Neg
 where
-    T: Copy + StdNeg,
+    T: StdNeg,
 {
     type Output = <T as StdNeg>::Output;
 
