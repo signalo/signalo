@@ -6,7 +6,9 @@
 
 use std::fmt;
 
-use arraydeque::{Array, ArrayDeque, Wrapping};
+use arraydeque::{ArrayDeque, Wrapping};
+use generic_array::{ArrayLength, GenericArray};
+
 use num_traits::Num;
 
 use signalo_traits::filter::Filter;
@@ -17,19 +19,18 @@ pub mod savitzky_golay;
 
 /// A convolution filter's internal state.
 #[derive(Clone)]
-pub struct State<A>
+pub struct State<T, N>
 where
-    A: Array,
-    A::Item: Clone,
+    N: ArrayLength<T>,
 {
     /// The filter's taps (i.e. buffered input).
-    pub taps: ArrayDeque<A, Wrapping>,
+    pub taps: ArrayDeque<GenericArray<T, N>, Wrapping>,
 }
 
-impl<T, A> fmt::Debug for State<A>
+impl<T, N> fmt::Debug for State<T, N>
 where
-    T: Clone + fmt::Debug,
-    A: Array<Item = T> + fmt::Debug,
+    T: fmt::Debug,
+    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State").field("taps", &self.taps).finish()
@@ -38,23 +39,21 @@ where
 
 /// A convolution filter.
 #[derive(Clone)]
-pub struct Convolve<A>
+pub struct Convolve<T, N>
 where
-    A: Array,
-    A::Item: Clone,
+    N: ArrayLength<T>,
 {
-    coefficients: A,
-    state: State<A>,
+    coefficients: GenericArray<T, N>,
+    state: State<T, N>,
 }
 
-impl<T, A> Convolve<A>
+impl<T, N> Convolve<T, N>
 where
-    T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`.
     #[inline]
-    pub fn new(coefficients: A) -> Self {
+    pub fn new(coefficients: GenericArray<T, N>) -> Self {
         let state = Self::initial_state(());
         Convolve {
             coefficients,
@@ -64,19 +63,19 @@ where
 
     /// Returns the filter's coefficients.
     #[inline]
-    pub fn coefficients(&self) -> &A {
+    pub fn coefficients(&self) -> &[T] {
         &self.coefficients
     }
 }
 
-impl<T, A> Convolve<A>
+impl<T, N> Convolve<T, N>
 where
     T: Clone + PartialOrd + Num,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
     #[inline]
-    pub fn normalized(mut coefficients: A) -> Self {
+    pub fn normalized(mut coefficients: GenericArray<T, N>) -> Self {
         let sum = coefficients
             .as_slice()
             .iter()
@@ -94,18 +93,16 @@ where
     }
 }
 
-impl<T, A> Stateful for Convolve<A>
+impl<T, N> Stateful for Convolve<T, N>
 where
-    T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
-    type State = State<A>;
+    type State = State<T, N>;
 }
 
-unsafe impl<T, A> StatefulUnsafe for Convolve<A>
+unsafe impl<T, N> StatefulUnsafe for Convolve<T, N>
 where
-    T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     unsafe fn state(&self) -> &Self::State {
         &self.state
@@ -116,10 +113,9 @@ where
     }
 }
 
-impl<T, A> InitialState<()> for Convolve<A>
+impl<T, N> InitialState<()> for Convolve<T, N>
 where
-    T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     fn initial_state(_: ()) -> Self::State {
         let taps = ArrayDeque::new();
@@ -127,20 +123,19 @@ where
     }
 }
 
-impl<T, A> Resettable for Convolve<A>
+impl<T, N> Resettable for Convolve<T, N>
 where
-    T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     fn reset(&mut self) {
         self.state = Self::initial_state(());
     }
 }
 
-impl<T, A> Filter<T> for Convolve<A>
+impl<T, N> Filter<T> for Convolve<T, N>
 where
     T: Clone + Num,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     type Output = T;
 
@@ -191,7 +186,7 @@ mod tests {
     #[test]
     fn test() {
         // Effectively calculates the derivative:
-        let filter = Convolve::new([1.000, -1.000]);
+        let filter = Convolve::new(arr![f32; 1.000, -1.000]);
         let input = get_input();
         let output: Vec<_> = input
             .iter()

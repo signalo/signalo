@@ -6,7 +6,8 @@
 
 use std::fmt;
 
-use arraydeque::{Array, ArrayDeque, Wrapping};
+use arraydeque::{ArrayDeque, Wrapping};
+use generic_array::{ArrayLength, GenericArray};
 
 use num_traits::{Num, Zero};
 
@@ -16,19 +17,19 @@ use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A mean filter's internal state.
 #[derive(Clone)]
-pub struct State<A>
+pub struct State<T, N>
 where
-    A: Array,
+    N: ArrayLength<T>,
 {
-    pub value: Option<A::Item>,
-    pub buffer: ArrayDeque<A, Wrapping>,
-    pub weight: A::Item,
+    pub value: Option<T>,
+    pub buffer: ArrayDeque<GenericArray<T, N>, Wrapping>,
+    pub weight: T,
 }
 
-impl<T, A> fmt::Debug for State<A>
+impl<T, N> fmt::Debug for State<T, N>
 where
-    T: Clone + fmt::Debug,
-    A: Array<Item = T> + fmt::Debug,
+    T: fmt::Debug,
+    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -41,18 +42,17 @@ where
 
 /// A filter producing the moving median over a given signal.
 #[derive(Clone)]
-pub struct Mean<A>
+pub struct Mean<T, N>
 where
-    A: Array,
-    A::Item: Clone,
+    N: ArrayLength<T>,
 {
-    state: State<A>,
+    state: State<T, N>,
 }
 
-impl<T, A> Default for Mean<A>
+impl<T, N> Default for Mean<T, N>
 where
-    T: Clone + Zero,
-    A: Array<Item = T>,
+    T: Clone + Default + Zero,
+    N: ArrayLength<T>,
 {
     fn default() -> Self {
         let state = Self::initial_state(());
@@ -60,28 +60,28 @@ where
     }
 }
 
-impl<T, A> fmt::Debug for Mean<A>
+impl<T, N> fmt::Debug for Mean<T, N>
 where
-    T: Clone + fmt::Debug,
-    A: Array<Item = T> + fmt::Debug,
+    T: fmt::Debug,
+    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Mean").field("state", &self.state).finish()
     }
 }
 
-impl<T, A> Stateful for Mean<A>
+impl<T, N> Stateful for Mean<T, N>
 where
     T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
-    type State = State<A>;
+    type State = State<T, N>;
 }
 
-unsafe impl<T, A> StatefulUnsafe for Mean<A>
+unsafe impl<T, N> StatefulUnsafe for Mean<T, N>
 where
     T: Clone,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     unsafe fn state(&self) -> &Self::State {
         &self.state
@@ -92,15 +92,15 @@ where
     }
 }
 
-impl<T, A> InitialState<()> for Mean<A>
+impl<T, N> InitialState<()> for Mean<T, N>
 where
-    T: Clone + Zero,
-    A: Array<Item = T>,
+    T: Clone + Default + Zero,
+    N: ArrayLength<T>,
 {
     fn initial_state(_: ()) -> Self::State {
         let value = None;
         let buffer = ArrayDeque::default();
-        let weight = A::Item::zero();
+        let weight = T::zero();
         State {
             value,
             buffer,
@@ -109,20 +109,20 @@ where
     }
 }
 
-impl<T, A> Resettable for Mean<A>
+impl<T, N> Resettable for Mean<T, N>
 where
     T: Clone + Default + Zero,
-    A: Array<Item = T> + Default,
+    N: ArrayLength<T>,
 {
     fn reset(&mut self) {
         self.state = Self::initial_state(());
     }
 }
 
-impl<T, A> Filter<T> for Mean<A>
+impl<T, N> Filter<T> for Mean<T, N>
 where
     T: Clone + Num,
-    A: Array<Item = T>,
+    N: ArrayLength<T>,
 {
     type Output = T;
 
@@ -150,6 +150,8 @@ where
 mod tests {
     use super::*;
 
+    use generic_array::typenum::*;
+
     fn get_input() -> Vec<f32> {
         vec![
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
@@ -171,7 +173,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Mean<[f32; 3]> = Mean::default();
+        let filter: Mean<f32, U3> = Mean::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

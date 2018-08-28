@@ -17,6 +17,8 @@ extern crate core as std;
 extern crate num_traits;
 
 extern crate arraydeque;
+
+#[macro_use]
 extern crate generic_array;
 
 #[cfg(test)]

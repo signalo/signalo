@@ -26,6 +26,9 @@ version = "0.2.2"
 [dependencies.arraydeque]
 version = "~0.4"
 default-features = false
+features = [
+    "use_generic_array",
+]
 
 [dependencies.num-traits]
 version = "~0.2"

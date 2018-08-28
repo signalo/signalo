@@ -4,6 +4,8 @@
 
 //! Savitzky-Golay filters.
 
+use generic_array::typenum::*;
+
 use super::Convolve;
 
 /// Trait for Savitzky-Golay convolution filters.
@@ -13,15 +15,15 @@ pub trait SavitzkyGolay: Sized {
 }
 
 macro_rules! savitzky_golay_impl_float {
-    ($width:expr => [$($coeffs:expr),*]) => {
-        impl SavitzkyGolay for Convolve<[f32; $width]> {
+    ($width:ident => [$($coeffs:expr),*]) => {
+        impl SavitzkyGolay for Convolve<f32, $width> {
             fn savitzky_golay() -> Self {
-                Convolve::new([$($coeffs),*])
+                Convolve::new(arr![f32; $($coeffs),*])
             }
         }
-        impl SavitzkyGolay for Convolve<[f64; $width]> {
+        impl SavitzkyGolay for Convolve<f64, $width> {
             fn savitzky_golay() -> Self {
-                Convolve::new([$($coeffs),*])
+                Convolve::new(arr![f64; $($coeffs),*])
             }
         }
     };
@@ -29,45 +31,45 @@ macro_rules! savitzky_golay_impl_float {
 
 // Source: https://gregstanleyandassociates.com/whitepapers/FaultDiagnosis/Filtering/LeastSquares-Filter/leastsquares-filter.htm
 
-savitzky_golay_impl_float!(1 => [
+savitzky_golay_impl_float!(U1 => [
     1.0
 ]);
-savitzky_golay_impl_float!(2 => [
+savitzky_golay_impl_float!(U2 => [
     1.0, 0.0
 ]);
-savitzky_golay_impl_float!(3 => [
+savitzky_golay_impl_float!(U3 => [
     0.83333, 0.33333, -0.16667
 ]);
-savitzky_golay_impl_float!(4 => [
+savitzky_golay_impl_float!(U4 => [
     0.7, 0.4, 0.1, -0.2
 ]);
-savitzky_golay_impl_float!(5 => [
+savitzky_golay_impl_float!(U5 => [
     0.6, 0.4, 0.2, 0.0, -0.2
 ]);
-savitzky_golay_impl_float!(6 => [
+savitzky_golay_impl_float!(U6 => [
     0.52381, 0.38095, 0.2381, 0.09524, -0.04762, -0.19048
 ]);
-savitzky_golay_impl_float!(7 => [
+savitzky_golay_impl_float!(U7 => [
     0.46429, 0.35714, 0.25, 0.14286, 0.03571, -0.07143, -0.17857
 ]);
-savitzky_golay_impl_float!(8 => [
+savitzky_golay_impl_float!(U8 => [
     0.41667, 0.33333, 0.25, 0.16667, 0.08333, 0.0, -0.08333, -0.16667
 ]);
-savitzky_golay_impl_float!(9 => [
+savitzky_golay_impl_float!(U9 => [
     0.37778, 0.31111, 0.24444, 0.17778, 0.11111, 0.04444, -0.02222, -0.08889, -0.15556
 ]);
-savitzky_golay_impl_float!(10 => [
+savitzky_golay_impl_float!(U10 => [
     0.34545, 0.29091, 0.23636, 0.18182, 0.12727, 0.07273, 0.01818, -0.03636, -0.09091, -0.14545
 ]);
-savitzky_golay_impl_float!(11 => [
+savitzky_golay_impl_float!(U11 => [
     0.31818, 0.27273, 0.22727, 0.18182, 0.13636, 0.09091, 0.04545, 0.0, -0.04545, -0.09091,
     -0.13636
 ]);
-savitzky_golay_impl_float!(12 => [
+savitzky_golay_impl_float!(U12 => [
     0.29487, 0.25641, 0.21795, 0.17949, 0.14103, 0.10256, 0.06410, 0.02564, -0.01282, -0.05128,
     -0.08974, -0.12821
 ]);
-savitzky_golay_impl_float!(13 => [
+savitzky_golay_impl_float!(U13 => [
     0.27473, 0.24176, 0.20879, 0.17582, 0.14286, 0.10989, 0.07692, 0.04396, 0.01099, -0.02198,
     -0.05495, -0.08791, -0.12088
 ]);
@@ -276,7 +278,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_1() {
-        let filter: Convolve<[f32; 1]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U1> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -288,7 +290,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_2() {
-        let filter: Convolve<[f32; 2]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U2> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -300,7 +302,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_3() {
-        let filter: Convolve<[f32; 3]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U3> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -312,7 +314,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_4() {
-        let filter: Convolve<[f32; 4]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U4> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -324,7 +326,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_5() {
-        let filter: Convolve<[f32; 5]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U5> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -336,7 +338,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_6() {
-        let filter: Convolve<[f32; 6]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U6> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -348,7 +350,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_7() {
-        let filter: Convolve<[f32; 7]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U7> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -360,7 +362,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_8() {
-        let filter: Convolve<[f32; 8]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U8> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -372,7 +374,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_9() {
-        let filter: Convolve<[f32; 9]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U9> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -384,7 +386,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_10() {
-        let filter: Convolve<[f32; 10]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U10> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -396,7 +398,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_11() {
-        let filter: Convolve<[f32; 11]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U11> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -408,7 +410,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_12() {
-        let filter: Convolve<[f32; 12]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U12> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -420,7 +422,7 @@ mod tests {
 
     #[test]
     fn savitzky_golay_13() {
-        let filter: Convolve<[f32; 13]> = Convolve::savitzky_golay();
+        let filter: Convolve<f32, U13> = Convolve::savitzky_golay();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
