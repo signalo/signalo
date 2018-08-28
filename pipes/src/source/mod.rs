@@ -38,8 +38,8 @@ pub use self::unit_pipe::*;
 mod tests {
     use super::*;
 
-    use signalo_traits::source::Source;
     use signalo_traits::filter::Filter;
+    use signalo_traits::source::Source;
 
     struct DummyFilter;
 

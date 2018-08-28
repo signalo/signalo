@@ -12,7 +12,7 @@ pub struct Neg;
 
 impl<T> Filter<T> for Neg
 where
-    T: Copy + StdNeg
+    T: Copy + StdNeg,
 {
     type Output = <T as StdNeg>::Output;
 
@@ -31,7 +31,7 @@ mod tests {
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 18.0, 18.0, 18.0,
             106.0, 5.0, 26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0,
-            16.0, 16.0, 104.0, 11.0, 24.0, 24.0
+            16.0, 16.0, 104.0, 11.0, 24.0, 24.0,
         ]
     }
 
@@ -42,7 +42,7 @@ mod tests {
             -7.000, -15.000, -15.000, -10.000, -23.000, -10.000, -111.000, -18.000, -18.000,
             -18.000, -106.000, -5.000, -26.000, -13.000, -13.000, -21.000, -21.000, -21.000,
             -34.000, -8.000, -109.000, -8.000, -29.000, -16.000, -16.000, -16.000, -104.000,
-            -11.000, -24.000, -24.000
+            -11.000, -24.000, -24.000,
         ]
     }
 
@@ -50,9 +50,10 @@ mod tests {
     fn test() {
         let filter = Neg::default();
         let input = get_input();
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
 }

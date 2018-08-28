@@ -4,16 +4,16 @@
 
 //! Implementations of `trait Filter`.
 
-mod identity;
 mod differentiate;
+mod identity;
 
-pub mod ops;
+pub mod classify;
+pub mod convolve;
 pub mod hampel;
 pub mod mean;
 pub mod median;
 pub mod observe;
-pub mod convolve;
-pub mod classify;
+pub mod ops;
 
-pub use self::identity::Identity;
 pub use self::differentiate::Differentiate;
+pub use self::identity::Identity;

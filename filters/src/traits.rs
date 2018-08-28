@@ -114,9 +114,7 @@ pub trait LinearPhaseShift: PhaseShift {
 /// independent of time. This means the behavior of system does not depend on time at which
 /// input is applied. For the discrete time system time invariance is called shift invariance.
 /// <sup>[Wikipedia](https://en.wikipedia.org/wiki/Time-invariant_system)</sup>
-pub trait TimeInvariant: DiscreteTime {
-
-}
+pub trait TimeInvariant: DiscreteTime {}
 
 /// Trait for **shift-invariant** filters.
 ///
@@ -130,9 +128,7 @@ pub trait TimeInvariant: DiscreteTime {
 /// the contemporaneous response of the output variable to a given value of the input variable
 /// does not depend on when the input occurs; time shifts are irrelevant in this regard.
 /// <sup>[Wikipedia](https://en.wikipedia.org/wiki/Shift-invariant_system)</sup>
-pub trait ShiftInvariant: ContinuousTime {
-
-}
+pub trait ShiftInvariant: ContinuousTime {}
 
 /// Trait for **causal** systems.
 ///
@@ -145,9 +141,7 @@ pub trait ShiftInvariant: ContinuousTime {
 /// (in addition to possible past or current input values) **is termed an acausal system**,
 /// and a system that **depends solely on future input values is an anticausal system**.
 /// <sup>[Wikipedia](https://en.wikipedia.org/wiki/Causal_filter)</sup>
-pub trait Causal: Sized {
-
-}
+pub trait Causal: Sized {}
 
 /// Trait for **discrete-time** systems.
 ///
@@ -167,9 +161,7 @@ pub trait Causal: Sized {
 ///
 /// Measurements are typically made at sequential integer values of the variable "time".
 /// <sup>[Wikipedia](https://en.wikipedia.org/wiki/Discrete_time_and_continuous_time#Discrete_time_2)</sup>
-pub trait DiscreteTime: Sized {
-
-}
+pub trait DiscreteTime: Sized {}
 
 /// Trait for **continuous-time** systems.
 ///
@@ -183,6 +175,4 @@ pub trait DiscreteTime: Sized {
 /// The variable "time" **ranges over the non-negative entire real number line**, or depending on the context,
 /// over **some subset of it**. Thus **time is viewed as a continuous variable**.
 /// <sup>[Wikipedia](https://en.wikipedia.org/wiki/Discrete_time_and_continuous_time#Continuous_time_2)</sup>
-pub trait ContinuousTime: Sized {
-
-}
+pub trait ContinuousTime: Sized {}

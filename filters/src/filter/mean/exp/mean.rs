@@ -4,16 +4,11 @@
 
 //! Exponential moving average filters.
 
-use num_traits::{Zero, One, Num};
+use num_traits::{Num, One, Zero};
 
 use signalo_traits::filter::Filter;
 
-use traits::{
-    InitialState,
-    Resettable,
-    Stateful,
-    StatefulUnsafe,
-};
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A mean filter's internal state.
 #[derive(Clone, Debug)]
@@ -30,7 +25,7 @@ pub struct Mean<T> {
 
 impl<T> Mean<T>
 where
-    T: PartialOrd + Zero + One
+    T: PartialOrd + Zero + One,
 {
     /// Creates a new `Mean` filter with `beta = 1.0 / n` with `n` being the filter width.
     #[inline]
@@ -82,12 +77,8 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         let mean = match self.state.value {
-            None => {
-                input
-            },
-            Some(mut state) => {
-                state + ((input - state) * self.beta)
-            },
+            None => input,
+            Some(mut state) => state + ((input - state) * self.beta),
         };
         self.state.value = Some(mean);
         mean
@@ -103,17 +94,17 @@ mod tests {
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 18.0, 18.0, 18.0,
             106.0, 5.0, 26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0,
-            16.0, 16.0, 104.0, 11.0, 24.0, 24.0
+            16.0, 16.0, 104.0, 11.0, 24.0, 24.0,
         ]
     }
 
     fn get_output() -> Vec<f32> {
         vec![
-            0.000, 0.250, 1.938, 1.953, 2.715, 4.036, 7.027, 6.020, 9.265, 8.449, 9.837,
-            9.628, 9.471, 11.353, 12.765, 10.574, 10.930, 13.198, 14.898, 12.924, 11.443,
-            12.332, 12.999, 12.249, 14.937, 13.703, 38.027, 33.020, 29.265, 26.449, 46.337,
-            36.003, 33.502, 28.376, 24.532, 23.649, 22.987, 22.490, 25.368, 21.026, 43.019,
-            34.264, 32.948, 28.711, 25.533, 23.150, 43.363, 35.272, 32.454, 30.340
+            0.000, 0.250, 1.938, 1.953, 2.715, 4.036, 7.027, 6.020, 9.265, 8.449, 9.837, 9.628,
+            9.471, 11.353, 12.765, 10.574, 10.930, 13.198, 14.898, 12.924, 11.443, 12.332, 12.999,
+            12.249, 14.937, 13.703, 38.027, 33.020, 29.265, 26.449, 46.337, 36.003, 33.502, 28.376,
+            24.532, 23.649, 22.987, 22.490, 25.368, 21.026, 43.019, 34.264, 32.948, 28.711, 25.533,
+            23.150, 43.363, 35.272, 32.454, 30.340,
         ]
     }
 
@@ -122,9 +113,10 @@ mod tests {
         let filter = Mean::new(0.25);
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
 }

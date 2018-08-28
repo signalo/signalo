@@ -7,20 +7,11 @@ use std::cmp::PartialOrd;
 use signalo_traits::filter::Filter;
 
 use filter::classify::{
-    slopes::{
-        Slope,
-        State as SlopesState,
-        Slopes,
-    },
+    slopes::{Slope, Slopes, State as SlopesState},
     Classification,
 };
 
-use traits::{
-    InitialState,
-    Resettable,
-    Stateful,
-    StatefulUnsafe,
-};
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -30,7 +21,7 @@ pub enum Peak {
     /// A local constant.
     None,
     /// A local minimum.
-    Min
+    Min,
 }
 
 impl Default for Peak {
@@ -74,27 +65,25 @@ where
 
     fn filter_internal(&mut self, slope: Slope) -> (Slope, usize) {
         let index = match self.state.slope {
-            None => {
-                1
-            },
+            None => 1,
             Some(Slope::Rising) => {
                 match &slope {
-                    Slope::Rising => 1, // None
-                    Slope::None => 1, // None
+                    Slope::Rising => 1,  // None
+                    Slope::None => 1,    // None
                     Slope::Falling => 0, // Max
                 }
-            },
+            }
             Some(Slope::None) => {
                 match &slope {
-                    Slope::Rising => 1, // None
-                    Slope::None => 1, // None
+                    Slope::Rising => 1,  // None
+                    Slope::None => 1,    // None
                     Slope::Falling => 1, // None
                 }
-            },
+            }
             Some(Slope::Falling) => {
                 match &slope {
-                    Slope::Rising => 2, // Min
-                    Slope::None => 1, // None
+                    Slope::Rising => 2,  // Min
+                    Slope::None => 1,    // None
                     Slope::Falling => 1, // None
                 }
             }
@@ -176,15 +165,21 @@ mod tests {
 
         let filter = Peaks::new(Peak::classes());
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
+        let input = vec![
+            0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
+        ];
 
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-        assert_eq!(output, vec![
-            None, None, None, Max, Min, None, None, Max, Min, Max,
-            Min, Max, None, None, None, None, Min, None, None, None,
-        ]);
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
+        assert_eq!(
+            output,
+            vec![
+                None, None, None, Max, Min, None, None, Max, Min, Max, Min, Max, None, None, None,
+                None, Min, None, None, None,
+            ]
+        );
     }
 
     #[test]
@@ -200,12 +195,16 @@ mod tests {
                 Rising, Falling, None, Rising, None, Falling, Rising, Rising, None, Falling,
             ]
         };
-        let output: Vec<_> = input.iter().scan(filter, |filter, input| {
-            Some(filter.filter(input.clone()))
-        }).collect();
-        assert_eq!(output, vec![
-            None, None, None, Max, Min, None, None, Max, Min, Max,
-            Min, Max, None, None, None, None, Min, None, None, None,
-        ]);
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, input| Some(filter.filter(input.clone())))
+            .collect();
+        assert_eq!(
+            output,
+            vec![
+                None, None, None, Max, Min, None, None, Max, Min, Max, Min, Max, None, None, None,
+                None, Min, None, None, None,
+            ]
+        );
     }
 }

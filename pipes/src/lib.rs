@@ -7,38 +7,32 @@
 #![cfg_attr(feature = "missing_mpl", feature(plugin))]
 #![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
 #![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
-
 #![warn(missing_docs)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-extern crate signalo_traits;
 extern crate signalo_filters;
+extern crate signalo_traits;
 
-pub mod source;
 pub mod filter;
 pub mod sink;
+pub mod source;
 
 /// The crate's prelude.
 pub mod prelude {
     pub use {
-        source::{
-            // macros::*,
-            UnitPipe as SourceUnitPipe,
-            Pipe as SourcePipe
-        },
-        filter::{
-            macros::*,
-            UnitPipe as FilterUnitPipe,
-            Pipe as FilterPipe
-        },
+        filter::{macros::*, Pipe as FilterPipe, UnitPipe as FilterUnitPipe},
         sink::{
+            Pipe as SinkPipe,
             // macros::*,
             UnitPipe as SinkUnitPipe,
-            Pipe as SinkPipe
+        },
+        source::{
+            Pipe as SourcePipe,
+            // macros::*,
+            UnitPipe as SourceUnitPipe,
         },
     };
 }

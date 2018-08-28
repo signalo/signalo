@@ -17,7 +17,7 @@ pub struct Threshold<T, U> {
 
 impl<T, U> Threshold<T, U>
 where
-    U: Clone
+    U: Clone,
 {
     /// Creates a new `Threshold` filter with given `threshold` and `outputs` (`[off, on]`).
     #[inline]
@@ -49,10 +49,16 @@ mod tests {
     fn test() {
         let filter = Threshold::new(10, u8::classes());
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-        assert_eq!(output, vec![0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0]);
+        let input = vec![
+            0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
+        ];
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
+        assert_eq!(
+            output,
+            vec![0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0]
+        );
     }
 }

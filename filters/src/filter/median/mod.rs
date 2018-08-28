@@ -9,7 +9,7 @@ use signalo_traits::filter::Filter;
 use std::fmt;
 use std::ptr;
 
-use generic_array::{ArrayLength, GenericArray, ArrayBuilder};
+use generic_array::{ArrayBuilder, ArrayLength, GenericArray};
 
 pub mod exp;
 
@@ -299,31 +299,45 @@ where
         // If the current head is about to be overwritten
         // we need to make sure to have the head point to
         // the next node after the current head:
-        unsafe { self.move_head_forward(); }
+        unsafe {
+            self.move_head_forward();
+        }
 
         // Remove the node that is about to be overwritten
         // from the linked list:
-        unsafe { self.remove_node(); }
+        unsafe {
+            self.remove_node();
+        }
 
         // Initialize `self.median` pointing
         // to the first (smallest) node in the sorted list:
-        unsafe { self.initialize_median(); }
+        unsafe {
+            self.initialize_median();
+        }
 
         // Search for the insertion index in the linked list
         // in regards to `value` as the insertion index.
-        unsafe { self.insert_value(&input); }
+        unsafe {
+            self.insert_value(&input);
+        }
 
         // Update head to newly inserted node if
         // cursor's value <= head's value or head is empty:
-        unsafe { self.update_head(&input); }
+        unsafe {
+            self.update_head(&input);
+        }
 
         // If the filter has an even window size, then shift the median
         // back one slot, so that it points to the left one
         // of the middle pair of median values
-        unsafe { self.adjust_median_for_even_length(); }
+        unsafe {
+            self.adjust_median_for_even_length();
+        }
 
         // Increment and wrap data in pointer:
-        unsafe { self.increment_cursor(); }
+        unsafe {
+            self.increment_cursor();
+        }
 
         // Read node value from buffer at `self.medium`:
         unsafe { self.median_unchecked() }
@@ -339,11 +353,12 @@ mod tests {
     macro_rules! test_filter {
         ($size:ident, $input:expr, $output:expr) => {
             let filter: Median<_, $size> = Median::new();
-            let output: Vec<_> = $input.iter().scan(filter, |filter, &input| {
-                Some(filter.filter(input))
-            }).collect();
+            let output: Vec<_> = $input
+                .iter()
+                .scan(filter, |filter, &input| Some(filter.filter(input)))
+                .collect();
             assert_eq!(output, $output);
-        }
+        };
     }
 
     #[test]
@@ -476,16 +491,16 @@ mod tests {
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 18.0, 18.0, 18.0,
             106.0, 5.0, 26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0,
-            16.0, 16.0, 104.0, 11.0, 24.0, 24.0
+            16.0, 16.0, 104.0, 11.0, 24.0, 24.0,
         ]
     }
 
     fn get_output() -> Vec<f32> {
         vec![
-            0.0, 0.0, 1.0, 1.0, 2.0, 5.0, 7.0, 5.0, 8.0, 8.0, 14.0, 9.0, 9.0, 9.0, 14.0, 9.0,
-            12.0, 17.0, 17.0, 12.0, 12.0, 15.0, 15.0, 10.0, 15.0, 15.0, 15.0, 18.0, 18.0, 18.0,
-            18.0, 18.0, 18.0, 18.0, 13.0, 13.0, 21.0, 21.0, 21.0, 21.0, 21.0, 21.0, 29.0, 16.0,
-            16.0, 16.0, 16.0, 16.0, 16.0, 24.0
+            0.0, 0.0, 1.0, 1.0, 2.0, 5.0, 7.0, 5.0, 8.0, 8.0, 14.0, 9.0, 9.0, 9.0, 14.0, 9.0, 12.0,
+            17.0, 17.0, 12.0, 12.0, 15.0, 15.0, 10.0, 15.0, 15.0, 15.0, 18.0, 18.0, 18.0, 18.0,
+            18.0, 18.0, 18.0, 13.0, 13.0, 21.0, 21.0, 21.0, 21.0, 21.0, 21.0, 29.0, 16.0, 16.0,
+            16.0, 16.0, 16.0, 16.0, 24.0,
         ]
     }
 
@@ -494,9 +509,10 @@ mod tests {
         let filter: Median<_, U5> = Median::new();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
 }

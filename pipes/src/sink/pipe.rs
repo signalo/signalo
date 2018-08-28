@@ -24,8 +24,7 @@ pub struct Pipe<T, U> {
     rhs: U,
 }
 
-impl<T, U> Pipe<T, U>
-{
+impl<T, U> Pipe<T, U> {
     /// Creates a new pipe connecting `lhs` and `rhs`.
     #[inline]
     pub fn new(lhs: T, rhs: U) -> Self {
@@ -88,7 +87,7 @@ mod tests {
     type Value = usize;
 
     struct DummySink {
-        sum: usize
+        sum: usize,
     }
 
     impl Sink<Value> for DummySink {
@@ -118,7 +117,9 @@ mod tests {
 
     #[test]
     fn test() {
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
+        let input = vec![
+            0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
+        ];
         let filter = DummyFilter;
         let sink = DummySink { sum: 0 };
         let mut pipe = Pipe::new(filter, sink);

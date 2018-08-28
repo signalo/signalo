@@ -2,21 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use std::cmp::{
-    PartialOrd,
-    Ordering,
-};
+use std::cmp::{Ordering, PartialOrd};
 
 use signalo_traits::filter::Filter;
 
 use filter::classify::Classification;
 
-use traits::{
-    InitialState,
-    Resettable,
-    Stateful,
-    StatefulUnsafe,
-};
+use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -26,7 +18,7 @@ pub enum Slope {
     /// A flat slope.
     None,
     /// A falling slope.
-    Falling
+    Falling,
 }
 
 impl Default for Slope {
@@ -83,9 +75,7 @@ unsafe impl<T, U> StatefulUnsafe for Slopes<T, U> {
 
 impl<T, U> InitialState<()> for Slopes<T, U> {
     fn initial_state(_: ()) -> Self::State {
-        State {
-            input: None
-        }
+        State { input: None }
     }
 }
 
@@ -107,8 +97,8 @@ where
         let index = match self.state.input {
             None => 1, // None
             Some(ref state) => match state.partial_cmp(&input).unwrap() {
-                Ordering::Less => 0, // Rising
-                Ordering::Equal => 1, // None
+                Ordering::Less => 0,    // Rising
+                Ordering::Equal => 1,   // None
                 Ordering::Greater => 2, // Falling
             },
         };
@@ -128,13 +118,19 @@ mod tests {
 
         let filter = Slopes::new(Slope::classes());
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7];
-        let output: Vec<_> = input.iter().scan(filter, |filter, &input| {
-            Some(filter.filter(input))
-        }).collect();
-        assert_eq!(output, vec![
-            None, Rising, Rising, Falling, Rising, Rising, Rising, Falling, Rising, Falling,
-            Rising, Falling, None, Rising, None, Falling, Rising, Rising, None, Falling,
-        ]);
+        let input = vec![
+            0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
+        ];
+        let output: Vec<_> = input
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
+        assert_eq!(
+            output,
+            vec![
+                None, Rising, Rising, Falling, Rising, Rising, Rising, Falling, Rising, Falling,
+                Rising, Falling, None, Rising, None, Falling, Rising, Rising, None, Falling,
+            ]
+        );
     }
 }
