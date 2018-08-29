@@ -4,7 +4,7 @@
 
 //! Approximated exponential moving median filters.
 
-use num_traits::{Num, One, Zero};
+use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
@@ -18,11 +18,10 @@ pub struct Median<T> {
     state: Option<T>,
 }
 
-impl<T> Median<T>
-where
-    T: PartialOrd + Zero + One,
-{
+impl<T> Median<T> {
     /// Creates a new `Median` filter with given `alpha`, `beta` and `gamma` coefficients.
+    ///
+    /// Note: `alpha`, `beta` and `gamma` are required to be in the range between `0.0` and `1.0`.
     ///
     /// Recommended values:
     /// - `alpha`: `beta`
@@ -30,9 +29,6 @@ where
     /// - `gamma`: `beta * 0.5`
     #[inline]
     pub fn new(alpha: T, beta: T, gamma: T) -> Self {
-        debug_assert!(alpha > T::zero() && alpha <= T::one());
-        debug_assert!(beta > T::zero() && beta <= T::one());
-        debug_assert!(gamma > T::zero() && gamma <= T::one());
         let mean = (Mean::new(alpha), Mean::new(gamma));
         Median {
             beta,
