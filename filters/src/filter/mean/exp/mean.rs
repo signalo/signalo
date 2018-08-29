@@ -4,7 +4,7 @@
 
 //! Exponential moving average filters.
 
-use num_traits::{Num, One, Zero};
+use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
@@ -23,14 +23,12 @@ pub struct Mean<T> {
     state: State<T>,
 }
 
-impl<T> Mean<T>
-where
-    T: PartialOrd + Zero + One,
-{
+impl<T> Mean<T> {
     /// Creates a new `Mean` filter with `beta = 1.0 / n` with `n` being the filter width.
+    ///
+    /// Note: `beta` is required to be in the range between `0.0` and `1.0`.
     #[inline]
     pub fn new(beta: T) -> Self {
-        debug_assert!(beta > T::zero() && beta <= T::one());
         let state = Self::initial_state(());
         Mean { beta, state }
     }

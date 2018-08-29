@@ -4,7 +4,7 @@
 
 //! Exponential moving average & variance filters.
 
-use num_traits::{Num, One, Signed, Zero};
+use num_traits::{Num, Signed};
 
 use signalo_traits::filter::Filter;
 
@@ -28,12 +28,13 @@ pub struct MeanVariance<T> {
 
 impl<T> MeanVariance<T>
 where
-    T: Clone + PartialOrd + Zero + One,
+    T: Clone,
 {
     /// Creates a new `MeanVariance` filter with `beta = 1.0 / n` with `n` being the filter width.
+    ///
+    /// Note: `beta` is required to be in the range between `0.0` and `1.0`.
     #[inline]
     pub fn new(beta: T) -> Self {
-        debug_assert!(beta > T::zero() && beta <= T::one());
         let state = Self::initial_state(beta.clone());
         MeanVariance { beta, state }
     }
@@ -63,7 +64,7 @@ unsafe impl<T> StatefulUnsafe for MeanVariance<T> {
 
 impl<T> InitialState<T> for MeanVariance<T>
 where
-    T: Clone + PartialOrd + Zero + One,
+    T: Clone,
 {
     fn initial_state(beta: T) -> Self::State {
         let mean = Mean::new(beta.clone());
@@ -74,7 +75,7 @@ where
 
 impl<T> Resettable for MeanVariance<T>
 where
-    T: Clone + PartialOrd + Zero + One,
+    T: Clone,
 {
     fn reset(&mut self) {
         self.state = Self::initial_state(self.beta.clone());
