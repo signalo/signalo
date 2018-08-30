@@ -9,7 +9,7 @@ use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
 
-use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A Schmitt trigger's internal state.
 #[derive(Clone, Debug)]

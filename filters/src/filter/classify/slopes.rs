@@ -10,7 +10,7 @@ use generic_array::GenericArray;
 use signalo_traits::filter::Filter;
 
 use filter::classify::Classification;
-use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]

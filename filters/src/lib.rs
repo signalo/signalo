@@ -30,11 +30,10 @@ extern crate signalo_traits;
 pub mod filter;
 pub mod sink;
 pub mod source;
-pub mod traits;
 
 /// The crate's prelude.
 pub mod prelude {
-    pub use signalo_traits::filter::Filter;
-    pub use signalo_traits::sink::Sink;
-    pub use signalo_traits::source::Source;
+    pub use signalo_traits::filter::{self, Filter};
+    pub use signalo_traits::sink::{self, Sink};
+    pub use signalo_traits::source::{self, Source};
 }
