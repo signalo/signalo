@@ -13,7 +13,7 @@ use num_traits::{Num, Zero};
 
 use signalo_traits::filter::Filter;
 
-use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A mean filter's internal state.
 #[derive(Clone)]

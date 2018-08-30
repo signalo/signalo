@@ -8,7 +8,7 @@ use num_traits::{Num, Signed};
 
 use signalo_traits::filter::Filter;
 
-use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 use super::mean::Mean;
 

@@ -11,7 +11,7 @@ use num_traits::{Num, Signed};
 
 use filter::median::{ListNode, Median};
 
-use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A hampel filter's internal state.
 #[derive(Clone, Debug)]

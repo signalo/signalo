@@ -11,7 +11,7 @@ use std::ptr;
 
 use generic_array::{ArrayBuilder, ArrayLength, GenericArray};
 
-use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 pub mod exp;
 

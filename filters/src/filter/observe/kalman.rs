@@ -8,7 +8,7 @@ use num_traits::{Num, One, Zero};
 
 use signalo_traits::filter::Filter;
 
-use traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A Kalman filter's internal state.
 #[derive(Clone, Debug)]
