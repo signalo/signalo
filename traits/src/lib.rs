@@ -17,11 +17,15 @@ pub mod filter;
 pub mod sink;
 pub mod source;
 
+pub use filter::Filter;
+pub use sink::Sink;
+pub use source::Source;
+
 /// The crate's prelude.
 pub mod prelude {
-    pub use filter::Filter;
-    pub use sink::Sink;
-    pub use source::Source;
+    pub use filter::{self, Filter};
+    pub use sink::{self, Sink};
+    pub use source::{self, Source};
 }
 
 /// Trait for **stateful** systems.

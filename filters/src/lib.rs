@@ -25,15 +25,13 @@ extern crate generic_array;
 #[macro_use]
 extern crate nearly_eq;
 
-extern crate signalo_traits;
+pub extern crate signalo_traits;
+
+pub use signalo_traits as traits;
 
 pub mod filter;
 pub mod sink;
 pub mod source;
 
 /// The crate's prelude.
-pub mod prelude {
-    pub use signalo_traits::filter::{self, Filter};
-    pub use signalo_traits::sink::{self, Sink};
-    pub use signalo_traits::source::{self, Source};
-}
+pub mod prelude {}
