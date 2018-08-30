@@ -12,8 +12,8 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::prelude::Source;
-/// use signalo_filters::prelude::Sink;
+/// use signalo_filters::traits::Source;
+/// use signalo_filters::traits::Sink;
 ///
 /// use signalo_filters::source::Increment;
 /// let increment: Increment<_> = Increment::new(0, 1);
