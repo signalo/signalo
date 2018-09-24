@@ -10,7 +10,7 @@ use generic_array::GenericArray;
 use signalo_traits::filter::Filter;
 
 use filter::classify::Classification;
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -35,7 +35,14 @@ impl Classification<Slope, U3> for Slope {
     }
 }
 
-/// A slope detection filter's internal state.
+/// The slope detection filter's configuration.
+#[derive(Clone, Debug)]
+pub struct Config<U> {
+    /// [rising, flat, falling] outputs.
+    pub outputs: GenericArray<U, U3>,
+}
+
+/// The slope detection filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
     pub input: Option<T>,
@@ -44,9 +51,8 @@ pub struct State<T> {
 /// A slope detection filter.
 #[derive(Clone, Debug)]
 pub struct Slopes<T, U> {
+    config: Config<U>,
     state: State<T>,
-    /// [rising, flat, falling] outputs.
-    outputs: GenericArray<U, U3>,
 }
 
 impl<T, U> Slopes<T, U>
@@ -55,9 +61,17 @@ where
 {
     /// Creates a new `Slopes` filter with given `threshold` and `outputs` (`[rising, none, falling]`).
     #[inline]
-    pub fn new(outputs: GenericArray<U, U3>) -> Self {
-        let state = Self::initial_state(());
-        Slopes { state, outputs }
+    pub fn new(config: Config<U>) -> Self {
+        let state = Self::initial_state(&config);
+        Slopes { config, state }
+    }
+}
+
+impl<T, U> Configurable for Slopes<T, U> {
+    type Config = Config<U>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
     }
 }
 
@@ -75,15 +89,15 @@ unsafe impl<T, U> StatefulUnsafe for Slopes<T, U> {
     }
 }
 
-impl<T, U> InitialState<()> for Slopes<T, U> {
-    fn initial_state(_: ()) -> Self::State {
+impl<'a, T, U> InitialState<&'a Config<U>> for Slopes<T, U> {
+    fn initial_state(_config: &'a Config<U>) -> Self::State {
         State { input: None }
     }
 }
 
 impl<T, U> Resettable for Slopes<T, U> {
     fn reset(&mut self) {
-        self.state = Self::initial_state(());
+        self.state = Self::initial_state(self.config());
     }
 }
 
@@ -105,7 +119,7 @@ where
             },
         };
         self.state.input = Some(input);
-        self.outputs[index].clone()
+        self.config.outputs[index].clone()
     }
 }
 
@@ -118,7 +132,9 @@ mod tests {
     fn test() {
         use self::Slope::*;
 
-        let filter = Slopes::new(Slope::classes());
+        let filter = Slopes::new(Config {
+            outputs: Slope::classes(),
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = vec![
             0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,

@@ -11,19 +11,26 @@ use num_traits::{Num, Signed};
 
 use filter::median::{ListNode, Median};
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
 
-/// A hampel filter's internal state.
+/// The hampel filter's configuration.
+#[derive(Clone, Debug)]
+pub struct Config<T> {
+    /// The filter's outlier threshold.
+    pub threshold: T,
+}
+
+/// The hampel filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
     // Median filter
-    inner: Median<T, N>,
+    median: Median<T, N>,
 }
 
-/// An implementation of a hampel filter of fixed width.
+/// A hampel filter of fixed width.
 ///
 /// J. Astola, P. Kuosmanen, "Fundamentals of Nonlinear Digital Filtering", CRC Press, 1997.
 #[derive(Clone, Debug)]
@@ -31,8 +38,8 @@ pub struct Hampel<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
+    config: Config<T>,
     state: State<T, N>,
-    threshold: T,
 }
 
 impl<T, N> Hampel<T, N>
@@ -41,15 +48,15 @@ where
     N: ArrayLength<ListNode<T>>,
 {
     /// Creates a new median filter with a given window size.
-    pub fn new(threshold: T) -> Self {
-        let state = Self::initial_state(());
-        Self { state, threshold }
+    pub fn new(config: Config<T>) -> Self {
+        let state = Self::initial_state(&config);
+        Self { config, state }
     }
 
     /// Returns the window size of the filter.
     #[inline]
     pub fn len(&self) -> usize {
-        self.state.inner.len()
+        self.state.median.len()
     }
 }
 
@@ -68,12 +75,12 @@ where
     /// it is replaced with the median:
     fn filter_internal(&mut self, input: T, factor: T) -> T {
         // Read window's current median and min/max boundaries:
-        let min = self.state.inner.min().unwrap_or(input.clone());
-        let median = self.state.inner.median().unwrap_or(input.clone());
-        let max = self.state.inner.max().unwrap_or(input.clone());
+        let min = self.state.median.min().unwrap_or(input.clone());
+        let median = self.state.median.median().unwrap_or(input.clone());
+        let max = self.state.median.max().unwrap_or(input.clone());
 
         // Feed the input to the internal median filter:
-        self.state.inner.filter(input.clone());
+        self.state.median.filter(input.clone());
 
         // Calculate the boundary's absolute deviations from the median:
         let min_dev = (median.clone() - min).abs();
@@ -89,7 +96,7 @@ where
         let dev = (input.clone() - median.clone()).abs();
 
         // Calculate window's threshold:
-        let threshold = std_dev.clone() * self.threshold.clone();
+        let threshold = std_dev.clone() * self.config.threshold.clone();
 
         // If input falls outside the threshold we return the median instead:
         if dev > threshold {
@@ -97,6 +104,17 @@ where
         } else {
             input
         }
+    }
+}
+
+impl<T, N> Configurable for Hampel<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    type Config = Config<T>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
     }
 }
 
@@ -122,14 +140,14 @@ where
     }
 }
 
-impl<T, N> InitialState<()> for Hampel<T, N>
+impl<'a, T, N> InitialState<&'a Config<T>> for Hampel<T, N>
 where
     T: Clone,
     N: ArrayLength<ListNode<T>>,
 {
-    fn initial_state(_: ()) -> Self::State {
-        let inner = Median::default();
-        State { inner }
+    fn initial_state(_config: &'a Config<T>) -> Self::State {
+        let median = Median::default();
+        State { median }
     }
 }
 
@@ -139,7 +157,7 @@ where
     N: ArrayLength<ListNode<T>>,
 {
     fn reset(&mut self) {
-        self.state = Self::initial_state(());
+        self.state = Self::initial_state(self.config());
     }
 }
 
@@ -190,7 +208,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Hampel<_, U7> = Hampel::new(2.0);
+        let filter: Hampel<_, U7> = Hampel::new(Config { threshold: 2.0 });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

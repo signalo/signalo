@@ -9,13 +9,22 @@ use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
 
+use signalo_traits::Configurable;
+
+/// The threshold filter's configuration.
+#[derive(Clone, Debug)]
+pub struct Config<T, U> {
+    /// input threshold.
+    pub threshold: T,
+    /// [off, on] outputs.
+    pub outputs: GenericArray<U, U2>,
+}
+
 /// A threshold filter.
 #[derive(Clone, Debug)]
 pub struct Threshold<T, U> {
-    /// input threshold.
-    threshold: T,
-    /// [off, on] outputs.
-    outputs: GenericArray<U, U2>,
+    /// The filter's configuration.
+    config: Config<T, U>,
 }
 
 impl<T, U> Threshold<T, U>
@@ -24,8 +33,16 @@ where
 {
     /// Creates a new `Threshold` filter with given `threshold` and `outputs` (`[off, on]`).
     #[inline]
-    pub fn new(threshold: T, outputs: GenericArray<U, U2>) -> Self {
-        Threshold { threshold, outputs }
+    pub fn new(config: Config<T, U>) -> Self {
+        Threshold { config }
+    }
+}
+
+impl<T, U> Configurable for Threshold<T, U> {
+    type Config = Config<T, U>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
     }
 }
 
@@ -38,8 +55,8 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let index = (input >= self.threshold) as usize;
-        self.outputs[index].clone()
+        let index = (input >= self.config.threshold) as usize;
+        self.config.outputs[index].clone()
     }
 }
 
@@ -50,7 +67,10 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Threshold::new(10, u8::classes());
+        let filter = Threshold::new(Config {
+            threshold: 10,
+            outputs: u8::classes(),
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = vec![
             0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,

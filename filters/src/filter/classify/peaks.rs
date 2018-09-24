@@ -10,11 +10,11 @@ use generic_array::GenericArray;
 use signalo_traits::filter::Filter;
 
 use filter::classify::{
-    slopes::{Slope, Slopes, State as SlopesState},
+    slopes::{Config as SlopesConfig, Slope, Slopes, State as SlopesState},
     Classification,
 };
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -39,7 +39,14 @@ impl Classification<Peak, U3> for Peak {
     }
 }
 
-/// A peak detection filter's internal state.
+/// The peak detection filter's configuration.
+#[derive(Clone, Debug)]
+pub struct Config<T> {
+    /// [rising, flat, falling] outputs.
+    pub outputs: GenericArray<T, U3>,
+}
+
+/// A peak detection filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
     pub slopes: Slopes<T, Slope>,
@@ -49,9 +56,8 @@ pub struct State<T> {
 /// A peak detection filter.
 #[derive(Clone, Debug)]
 pub struct Peaks<T, U> {
+    config: Config<U>,
     state: State<T>,
-    /// rising, flat, falling outputs.
-    outputs: GenericArray<U, U3>,
 }
 
 impl<T, U> Peaks<T, U>
@@ -60,9 +66,9 @@ where
 {
     /// Creates a new `Peaks` filter with given `threshold` and `outputs` (`[max, none, min]`).
     #[inline]
-    pub fn new(outputs: GenericArray<U, U3>) -> Self {
-        let state = Self::initial_state(());
-        Peaks { state, outputs }
+    pub fn new(config: Config<U>) -> Self {
+        let state = Self::initial_state(&config);
+        Peaks { config, state }
     }
 
     fn filter_internal(&mut self, slope: Slope) -> (Slope, usize) {
@@ -94,6 +100,14 @@ where
     }
 }
 
+impl<T, U> Configurable for Peaks<T, U> {
+    type Config = Config<U>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
 impl<T, U> Stateful for Peaks<T, U> {
     type State = State<T>;
 }
@@ -108,9 +122,11 @@ unsafe impl<T, U> StatefulUnsafe for Peaks<T, U> {
     }
 }
 
-impl<T, U> InitialState<()> for Peaks<T, U> {
-    fn initial_state(_: ()) -> Self::State {
-        let slopes = Slopes::new(Slope::classes());
+impl<'a, T, U> InitialState<&'a Config<U>> for Peaks<T, U> {
+    fn initial_state(_config: &'a Config<U>) -> Self::State {
+        let slopes = Slopes::new(SlopesConfig {
+            outputs: Slope::classes(),
+        });
         let slope = None;
         State { slopes, slope }
     }
@@ -118,7 +134,7 @@ impl<T, U> InitialState<()> for Peaks<T, U> {
 
 impl<T, U> Resettable for Peaks<T, U> {
     fn reset(&mut self) {
-        self.state = Self::initial_state(());
+        self.state = Self::initial_state(self.config());
     }
 }
 
@@ -134,7 +150,7 @@ where
         let slope = self.state.slopes.filter(input);
         let (state, index) = self.filter_internal(slope);
         self.state.slope = Some(state);
-        self.outputs[index].clone()
+        self.config.outputs[index].clone()
     }
 }
 
@@ -152,7 +168,7 @@ where
             *inner_state = SlopesState { input: Some(slope) };
         }
         self.state.slope = Some(state);
-        self.outputs[index].clone()
+        self.config.outputs[index].clone()
     }
 }
 
@@ -165,7 +181,9 @@ mod tests {
     fn values() {
         use self::Peak::*;
 
-        let filter = Peaks::new(Peak::classes());
+        let filter = Peaks::new(Config {
+            outputs: Peak::classes(),
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = vec![
             0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
@@ -188,7 +206,9 @@ mod tests {
     fn slopes() {
         use self::Peak::*;
 
-        let filter = Peaks::new(Peak::classes());
+        let filter = Peaks::new(Config {
+            outputs: Peak::classes(),
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = {
             use self::Slope::*;

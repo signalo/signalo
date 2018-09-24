@@ -8,17 +8,36 @@ use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
-use filter::mean::exp::Mean;
+use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
 
-/// A filter producing the approximated exponential moving median over a given signal.
+use filter::mean::exp::mean::{Config as MeanConfig, Mean};
+
+/// The median filter's configuration.
 #[derive(Clone, Debug)]
-pub struct Median<T> {
-    beta: T,
-    mean: (Mean<T>, Mean<T>),
-    state: Option<T>,
+pub struct Config<T> {
+    pub alpha: T,
+    pub beta: T,
+    pub gamma: T,
 }
 
-impl<T> Median<T> {
+/// The median filter's state.
+#[derive(Clone, Debug)]
+pub struct State<T> {
+    mean: (Mean<T>, Mean<T>),
+    median: Option<T>,
+}
+
+/// A median filter producing the approximated exponential moving median over a given signal.
+#[derive(Clone, Debug)]
+pub struct Median<T> {
+    config: Config<T>,
+    state: State<T>,
+}
+
+impl<T> Median<T>
+where
+    T: Clone,
+{
     /// Creates a new `Median` filter with given `alpha`, `beta` and `gamma` coefficients.
     ///
     /// Note: `alpha`, `beta` and `gamma` are required to be in the range between `0.0` and `1.0`.
@@ -28,31 +47,58 @@ impl<T> Median<T> {
     /// - `beta`: `0.0 .. 1.0`
     /// - `gamma`: `beta * 0.5`
     #[inline]
-    pub fn new(alpha: T, beta: T, gamma: T) -> Self {
-        let mean = (Mean::new(alpha), Mean::new(gamma));
-        Median {
-            beta,
-            mean,
-            state: None,
-        }
+    pub fn new(config: Config<T>) -> Self {
+        let state = Self::initial_state(&config);
+        Median { config, state }
+    }
+}
+
+impl<T> Configurable for Median<T> {
+    type Config = Config<T>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl<T> Stateful for Median<T> {
+    type State = State<T>;
+}
+
+unsafe impl<T> StatefulUnsafe for Median<T> {
+    unsafe fn state(&self) -> &Self::State {
+        &self.state
     }
 
-    /// Returns the filter's `alpha` coefficient.
-    #[inline]
-    pub fn alpha(&self) -> &T {
-        self.mean.0.beta()
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
     }
+}
 
-    /// Returns the filter's `beta` coefficient.
-    #[inline]
-    pub fn beta(&self) -> &T {
-        &self.beta
+impl<'a, T> InitialState<&'a Config<T>> for Median<T>
+where
+    T: Clone,
+{
+    fn initial_state(config: &'a Config<T>) -> Self::State {
+        let mean = (
+            Mean::new(MeanConfig {
+                beta: config.alpha.clone(),
+            }),
+            Mean::new(MeanConfig {
+                beta: config.gamma.clone(),
+            }),
+        );
+        let median = None;
+        State { mean, median }
     }
+}
 
-    /// Returns the filter's `gamma` coefficient.
-    #[inline]
-    pub fn gamma(&self) -> &T {
-        &self.mean.1.beta()
+impl<T> Resettable for Median<T>
+where
+    T: Clone,
+{
+    fn reset(&mut self) {
+        self.state = Self::initial_state(self.config());
     }
 }
 
@@ -64,17 +110,17 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         // We calculate the mean and use it as an estimate of the median:
-        let mean = self.mean.0.filter(input.clone());
+        let mean = self.state.mean.0.filter(input.clone());
         // We then calculate the approximate of the median:
-        let median = match &self.state {
+        let median = match &self.state.median {
             None => mean,
-            Some(ref state) => state.clone() + ((mean - state.clone()) * self.beta.clone()),
+            Some(ref state) => state.clone() + ((mean - state.clone()) * self.config.beta.clone()),
         };
         // The approximated median tends to oscillate,
         // so we apply another mean to smoothen those out:
-        let state = self.mean.1.filter(median);
+        let state = self.state.mean.1.filter(median);
         // And we're done. Store a copy and return the result:
-        self.state = Some(state.clone());
+        self.state.median = Some(state.clone());
         state
     }
 }
@@ -104,11 +150,11 @@ mod tests {
 
     #[test]
     fn test() {
-        let alpha = 0.5;
-        let beta = 0.5;
-        let gamma = 0.25;
-
-        let filter = Median::new(alpha, beta, gamma);
+        let filter = Median::new(Config {
+            alpha: 0.5,
+            beta: 0.5,
+            gamma: 0.25,
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
