@@ -6,7 +6,7 @@
 
 use generic_array::typenum::*;
 
-use super::Convolve;
+use super::{Config, Convolve};
 
 /// Trait for Savitzky-Golay convolution filters.
 pub trait SavitzkyGolay: Sized {
@@ -18,12 +18,16 @@ macro_rules! savitzky_golay_impl_float {
     ($width:ident => [$($coeffs:expr),*]) => {
         impl SavitzkyGolay for Convolve<f32, $width> {
             fn savitzky_golay() -> Self {
-                Convolve::new(arr![f32; $($coeffs),*])
+                Convolve::new(Config {
+                    coefficients: arr![f32; $($coeffs),*]
+                })
             }
         }
         impl SavitzkyGolay for Convolve<f64, $width> {
             fn savitzky_golay() -> Self {
-                Convolve::new(arr![f64; $($coeffs),*])
+                Convolve::new(Config {
+                    coefficients: arr![f64; $($coeffs),*]
+                })
             }
         }
     };

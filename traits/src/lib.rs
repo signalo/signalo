@@ -28,6 +28,14 @@ pub mod prelude {
     pub use source::{self, Source};
 }
 
+/// Trait for **configurable** systems.
+pub trait Configurable: Sized {
+    /// The filter's internal configuration.
+    type Config;
+
+    fn config(&self) -> &Self::Config;
+}
+
 /// Trait for **stateful** systems.
 ///
 /// # Background:

@@ -4,8 +4,5 @@
 
 //! Exponential moving average filters.
 
-mod mean;
-mod mean_variance;
-
-pub use self::mean::Mean;
-pub use self::mean_variance::MeanVariance;
+pub mod mean;
+pub mod mean_variance;

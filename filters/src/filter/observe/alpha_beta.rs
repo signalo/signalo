@@ -8,9 +8,18 @@ use num_traits::{Num, Zero};
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
 
-/// A Kalman filter's internal state.
+/// The alpha-beta filter's configuration.
+#[derive(Clone, Debug)]
+pub struct Config<T> {
+    /// Alpha coefficient
+    pub alpha: T,
+    /// Beta coefficient
+    pub beta: T,
+}
+
+/// The alpha-beta filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
     /// Velocity
@@ -19,14 +28,10 @@ pub struct State<T> {
     pub value: Option<T>,
 }
 
-/// An Alpha-Beta filter.
+/// An alpha-beta filter.
 #[derive(Clone, Debug)]
 pub struct AlphaBeta<T> {
-    /// Alpha coefficient
-    alpha: T,
-    /// Beta coefficient
-    beta: T,
-    /// State
+    config: Config<T>,
     state: State<T>,
 }
 
@@ -45,9 +50,17 @@ where
     /// - `alpha`: the `alpha` coefficient
     /// - `beta`: the `beta` coefficient
     #[inline]
-    pub fn new(alpha: T, beta: T) -> Self {
-        let state = Self::initial_state(());
-        AlphaBeta { alpha, beta, state }
+    pub fn new(config: Config<T>) -> Self {
+        let state = Self::initial_state(&config);
+        Self { config, state }
+    }
+}
+
+impl<T> Configurable for AlphaBeta<T> {
+    type Config = Config<T>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
     }
 }
 
@@ -65,11 +78,11 @@ unsafe impl<T> StatefulUnsafe for AlphaBeta<T> {
     }
 }
 
-impl<T> InitialState<()> for AlphaBeta<T>
+impl<'a, T> InitialState<&'a Config<T>> for AlphaBeta<T>
 where
     T: Zero,
 {
-    fn initial_state(_: ()) -> Self::State {
+    fn initial_state(_config: &'a Config<T>) -> Self::State {
         let velocity = T::zero();
         let value = None;
         State { velocity, value }
@@ -81,7 +94,7 @@ where
     T: Zero,
 {
     fn reset(&mut self) {
-        self.state = Self::initial_state(());
+        self.state = Self::initial_state(self.config());
     }
 }
 
@@ -102,8 +115,8 @@ where
                 let residual = input - state.clone();
 
                 // Correction:
-                state = state + (self.alpha.clone() * residual.clone());
-                velocity = velocity.clone() + (self.beta.clone() * residual);
+                state = state + (self.config.alpha.clone() * residual.clone());
+                velocity = velocity.clone() + (self.config.beta.clone() * residual);
 
                 (velocity, state)
             }
@@ -141,7 +154,7 @@ mod tests {
     fn test() {
         let alpha = 0.5;
         let beta = 0.125;
-        let filter = AlphaBeta::new(alpha, beta);
+        let filter = AlphaBeta::new(Config { alpha, beta });
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();

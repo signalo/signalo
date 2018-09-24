@@ -8,9 +8,39 @@ use num_traits::{Num, One, Zero};
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
 
-/// A Kalman filter's internal state.
+/// The kalman filter's configuration.
+#[derive(Clone, Debug)]
+pub struct Config<T> {
+    /// Process noise covariance
+    pub r: T,
+    /// Measurement noise covariance
+    pub q: T,
+    /// State transition
+    pub a: T,
+    /// Control transition
+    pub b: T,
+    /// Measurement
+    pub c: T,
+}
+
+impl<T> Default for Config<T>
+where
+    T: Zero + One,
+{
+    #[inline]
+    fn default() -> Self {
+        let r = T::one();
+        let q = T::one();
+        let a = T::one();
+        let b = T::zero();
+        let c = T::one();
+        Config { r, q, a, b, c }
+    }
+}
+
+/// The kalman filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
     /// Covariance (uncertainty)
@@ -19,20 +49,10 @@ pub struct State<T> {
     pub value: Option<T>,
 }
 
-/// A 1-dimensional Kalman filter.
+/// A 1-dimensional kalman filter.
 #[derive(Clone, Debug)]
 pub struct Kalman<T> {
-    /// Process noise covariance
-    r: T,
-    /// Measurement noise covariance
-    q: T,
-    /// State transition
-    a: T,
-    /// Control transition
-    b: T,
-    /// Measurement
-    c: T,
-    /// internal state
+    config: Config<T>,
     state: State<T>,
 }
 
@@ -49,16 +69,9 @@ where
     /// - `b`: Control transition
     /// - `c`: Measurement
     #[inline]
-    pub fn new(r: T, q: T, a: T, b: T, c: T) -> Self {
-        let state = Self::initial_state(());
-        Kalman {
-            r,
-            q,
-            a,
-            b,
-            c,
-            state,
-        }
+    pub fn new(config: Config<T>) -> Self {
+        let state = Self::initial_state(&config);
+        Kalman { config, state }
     }
 }
 
@@ -67,28 +80,37 @@ where
     T: Clone + Num,
 {
     fn process(&mut self, (input, control): (T, T)) -> T {
-        let c_squared = self.c.clone() * self.c.clone();
-        let (value, cov) = match &self.state.value {
-            None => {
-                let value = input / self.c.clone();
-                let cov = self.q.clone() / c_squared;
-                (value, cov)
-            }
-            Some(ref value) => {
-                // Compute prediction:
-                let pred_state = (self.a.clone() * value.clone()) + (self.b.clone() * control);
-                let pred_cov =
-                    (self.a.clone() * self.state.cov.clone() * self.a.clone()) + self.r.clone();
+        let Config {
+            ref r,
+            ref q,
+            ref a,
+            ref b,
+            ref c,
+        } = self.config;
+        let (value, cov) = {
+            let State { ref cov, ref value } = self.state;
+            let c_squared = c.clone() * c.clone();
+            match value {
+                None => {
+                    let value = input / c.clone();
+                    let cov = q.clone() / c_squared;
+                    (value, cov)
+                }
+                Some(ref value) => {
+                    // Compute prediction:
+                    let pred_state = (a.clone() * value.clone()) + (b.clone() * control);
+                    let pred_cov = (a.clone() * cov.clone() * a.clone()) + r.clone();
 
-                // Compute Kalman gain:
-                let gain = pred_cov.clone() * self.c.clone()
-                    / ((pred_cov.clone() * c_squared) + self.q.clone());
+                    // Compute Kalman gain:
+                    let gain =
+                        pred_cov.clone() * c.clone() / ((pred_cov.clone() * c_squared) + q.clone());
 
-                // Correction:
-                let value =
-                    pred_state.clone() + gain.clone() * (input - (self.c.clone() * pred_state));
-                let cov = pred_cov.clone() - (gain * self.c.clone() * pred_cov);
-                (value, cov)
+                    // Correction:
+                    let value =
+                        pred_state.clone() + gain.clone() * (input - (c.clone() * pred_state));
+                    let cov = pred_cov.clone() - (gain * c.clone() * pred_cov);
+                    (value, cov)
+                }
             }
         };
         self.state.value = Some(value.clone());
@@ -103,12 +125,15 @@ where
 {
     #[inline]
     fn default() -> Self {
-        let r = T::one();
-        let q = T::one();
-        let a = T::one();
-        let b = T::zero();
-        let c = T::one();
-        Kalman::new(r, q, a, b, c)
+        Kalman::new(Config::default())
+    }
+}
+
+impl<T> Configurable for Kalman<T> {
+    type Config = Config<T>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
     }
 }
 
@@ -126,11 +151,11 @@ unsafe impl<T> StatefulUnsafe for Kalman<T> {
     }
 }
 
-impl<T> InitialState<()> for Kalman<T>
+impl<'a, T> InitialState<&'a Config<T>> for Kalman<T>
 where
     T: Zero,
 {
-    fn initial_state(_: ()) -> Self::State {
+    fn initial_state(_config: &'a Config<T>) -> Self::State {
         let cov = T::zero();
         let value = None;
         State { cov, value }
@@ -142,7 +167,7 @@ where
     T: Zero,
 {
     fn reset(&mut self) {
-        self.state = Self::initial_state(());
+        self.state = Self::initial_state(self.config());
     }
 }
 
@@ -193,12 +218,13 @@ mod tests {
 
     #[test]
     fn test() {
-        let r = 0.0001; // Process noise
-        let q = 0.001; // Measurement noise
-        let a = 1.0; // State
-        let b = 0.0; // Control
-        let c = 1.0; // Measurement
-        let filter = Kalman::new(r, q, a, b, c);
+        let filter = Kalman::new(Config {
+            r: 0.0001, // Process noise
+            q: 0.001,  // Measurement noise
+            a: 1.0,    // State
+            b: 0.0,    // Control
+            c: 1.0,    // Measurement
+        });
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();

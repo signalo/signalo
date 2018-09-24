@@ -15,7 +15,7 @@ use signalo_traits::filter::Filter;
 
 use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
-/// A mean filter's internal state.
+/// The mean filter's state.
 #[derive(Clone)]
 pub struct State<T, N>
 where
@@ -40,7 +40,7 @@ where
     }
 }
 
-/// A filter producing the moving median over a given signal.
+/// A mean filter producing the moving median over a given signal.
 #[derive(Clone)]
 pub struct Mean<T, N>
 where

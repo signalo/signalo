@@ -10,13 +10,13 @@ use signalo_traits::filter::Filter;
 
 use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
-/// A differentiate filter's internal state.
+/// The differentiate filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
     pub value: Option<T>,
 }
 
-/// A filter that produces the derivative of the signal.
+/// A differentiate filter that produces the derivative of the signal.
 #[derive(Clone, Debug)]
 pub struct Differentiate<T> {
     state: State<T>,

@@ -15,7 +15,7 @@ use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 pub mod exp;
 
-/// A median filter's internal state.
+/// The median filter's state.
 #[derive(Clone)]
 pub struct State<T, N>
 where
@@ -65,7 +65,7 @@ where
     }
 }
 
-/// An implementation of a median filter of fixed width with linear complexity.
+/// A median filter of fixed width with linear complexity.
 ///
 /// While the common naïve implementation of a median filter
 /// has a worst-case complexity of `O(n^2)` (due to having to sort the sliding window)

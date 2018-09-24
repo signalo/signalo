@@ -16,7 +16,7 @@ use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 
 use super::mean::Mean;
 
-/// A mean filter's internal state.
+/// The mean/variance filter's state.
 #[derive(Clone)]
 pub struct State<T, N>
 where
@@ -39,7 +39,7 @@ where
     }
 }
 
-/// A filter producing the moving average and variance over a given signal.
+/// A mean/variance filter producing the moving average and variance over a given signal.
 #[derive(Clone)]
 pub struct MeanVariance<T, N>
 where

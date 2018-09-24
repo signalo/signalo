@@ -9,21 +9,28 @@ use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
 
-/// A Schmitt trigger's internal state.
+/// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s configuration.
+#[derive(Clone, Debug)]
+pub struct Config<T, U> {
+    /// [low, high] input thresholds.
+    pub thresholds: GenericArray<T, U2>,
+    /// [off, on] outputs.
+    pub outputs: GenericArray<U, U2>,
+}
+
+/// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s state.
 #[derive(Clone, Debug)]
 pub struct State {
     pub on: bool,
 }
 
-/// A [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger) filter.
+/// A [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger).
 #[derive(Clone, Debug)]
 pub struct Schmitt<T, U> {
-    /// [low, high] input thresholds.
-    thresholds: GenericArray<T, U2>,
-    /// [off, on] outputs.
-    outputs: GenericArray<U, U2>,
+    /// The filter's configuration.
+    config: Config<T, U>,
     /// Current internal state.
     state: State,
 }
@@ -34,13 +41,17 @@ where
 {
     /// Creates a new `Schmitt` filter with given `thresholds` (`[low, high]`) and `outputs` (`[off, on]`).
     #[inline]
-    pub fn new(thresholds: GenericArray<T, U2>, outputs: GenericArray<U, U2>) -> Self {
-        let state = Self::initial_state(());
-        Schmitt {
-            thresholds,
-            outputs,
-            state,
-        }
+    pub fn new(config: Config<T, U>) -> Self {
+        let state = Self::initial_state(&config);
+        Schmitt { config, state }
+    }
+}
+
+impl<T, U> Configurable for Schmitt<T, U> {
+    type Config = Config<T, U>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
     }
 }
 
@@ -58,8 +69,8 @@ unsafe impl<T, U> StatefulUnsafe for Schmitt<T, U> {
     }
 }
 
-impl<T, U> InitialState<()> for Schmitt<T, U> {
-    fn initial_state(_: ()) -> Self::State {
+impl<'a, T, U> InitialState<&'a Config<T, U>> for Schmitt<T, U> {
+    fn initial_state(_config: &'a Config<T, U>) -> Self::State {
         let on = false;
         State { on }
     }
@@ -67,7 +78,7 @@ impl<T, U> InitialState<()> for Schmitt<T, U> {
 
 impl<T, U> Resettable for Schmitt<T, U> {
     fn reset(&mut self) {
-        self.state = Self::initial_state(());
+        self.state = Self::initial_state(self.config());
     }
 }
 
@@ -80,11 +91,11 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         self.state.on = match self.state.on {
-            false => input > self.thresholds[1],
-            true => input >= self.thresholds[0],
+            false => input > self.config.thresholds[1],
+            true => input >= self.config.thresholds[0],
         };
         let index = self.state.on as usize;
-        self.outputs[index].clone()
+        self.config.outputs[index].clone()
     }
 }
 
@@ -95,7 +106,10 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Schmitt::new(arr![u8; 5, 10], u8::classes());
+        let filter = Schmitt::new(Config {
+            thresholds: arr![u8; 5, 10],
+            outputs: u8::classes(),
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = vec![
             0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,

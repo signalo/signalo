@@ -13,11 +13,21 @@ use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
 
 pub mod savitzky_golay;
 
-/// A convolution filter's internal state.
+/// The convolution filter's configuration.
+#[derive(Clone, Debug)]
+pub struct Config<T, N>
+where
+    N: ArrayLength<T>,
+{
+    /// The convolution coefficients.
+    pub coefficients: GenericArray<T, N>,
+}
+
+/// The convolution filter's state.
 #[derive(Clone)]
 pub struct State<T, N>
 where
@@ -43,7 +53,7 @@ pub struct Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
-    coefficients: GenericArray<T, N>,
+    config: Config<T, N>,
     state: State<T, N>,
 }
 
@@ -53,18 +63,9 @@ where
 {
     /// Creates a new `Convolve` filter with given `coefficients`.
     #[inline]
-    pub fn new(coefficients: GenericArray<T, N>) -> Self {
-        let state = Self::initial_state(());
-        Convolve {
-            coefficients,
-            state,
-        }
-    }
-
-    /// Returns the filter's coefficients.
-    #[inline]
-    pub fn coefficients(&self) -> &[T] {
-        &self.coefficients
+    pub fn new(config: Config<T, N>) -> Self {
+        let state = Self::initial_state(&config);
+        Convolve { config, state }
     }
 }
 
@@ -75,21 +76,31 @@ where
 {
     /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
     #[inline]
-    pub fn normalized(mut coefficients: GenericArray<T, N>) -> Self {
-        let sum = coefficients
+    pub fn normalized(mut config: Config<T, N>) -> Self {
+        // let mut coefficients: GenericArray<T, N>
+        let sum = config
+            .coefficients
             .as_slice()
             .iter()
             .fold(T::zero(), |sum, coeff| sum + coeff.clone());
         if !sum.is_zero() {
-            for coeff in coefficients.as_mut_slice() {
+            for coeff in config.coefficients.as_mut_slice() {
                 *coeff = coeff.clone() / sum.clone();
             }
         }
-        let state = Self::initial_state(());
-        Convolve {
-            coefficients,
-            state,
-        }
+        let state = Self::initial_state(&config);
+        Convolve { config, state }
+    }
+}
+
+impl<T, N> Configurable for Convolve<T, N>
+where
+    N: ArrayLength<T>,
+{
+    type Config = Config<T, N>;
+
+    fn config(&self) -> &Self::Config {
+        &self.config
     }
 }
 
@@ -113,11 +124,11 @@ where
     }
 }
 
-impl<T, N> InitialState<()> for Convolve<T, N>
+impl<'a, T, N> InitialState<&'a Config<T, N>> for Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
-    fn initial_state(_: ()) -> Self::State {
+    fn initial_state(_config: &'a Config<T, N>) -> Self::State {
         let taps = ArrayDeque::new();
         State { taps }
     }
@@ -128,7 +139,7 @@ where
     N: ArrayLength<T>,
 {
     fn reset(&mut self) {
-        self.state = Self::initial_state(());
+        self.state = Self::initial_state(self.config());
     }
 }
 
@@ -148,7 +159,7 @@ where
         }
 
         let state_iter = self.state.taps.iter();
-        let coeff_iter = self.coefficients.as_slice().iter().rev();
+        let coeff_iter = self.config.coefficients.as_slice().iter().rev();
 
         let output = state_iter
             .zip(coeff_iter)
@@ -186,7 +197,9 @@ mod tests {
     #[test]
     fn test() {
         // Effectively calculates the derivative:
-        let filter = Convolve::new(arr![f32; 1.000, -1.000]);
+        let filter = Convolve::new(Config {
+            coefficients: arr![f32; 1.000, -1.000],
+        });
         let input = get_input();
         let output: Vec<_> = input
             .iter()
