@@ -14,6 +14,7 @@ pub mod mean;
 pub mod median;
 pub mod observe;
 pub mod ops;
+pub mod wavelet;
 
 pub use self::differentiate::Differentiate;
 pub use self::identity::Identity;
