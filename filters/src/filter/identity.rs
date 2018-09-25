@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Identify function filters.
+
 use signalo_traits::filter::Filter;
 
 /// A filter that simply returns the values it receives.
