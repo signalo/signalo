@@ -28,11 +28,12 @@ where
     pub high_pass: ConvolveConfig<T, N>,
 }
 
-/// The wavelet filter's configuration.
+/// The wavelet filter's borrowing configuration.
 #[derive(Clone, Debug)]
 pub struct ConfigRef<'a, T, N>
 where
-    N: ArrayLength<T>,
+    T: 'a,
+    N: 'a + ArrayLength<T>,
 {
     /// The low-pass convolution' configuration.
     pub low_pass: &'a ConvolveConfig<T, N>,
