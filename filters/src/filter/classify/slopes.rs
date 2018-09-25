@@ -10,7 +10,9 @@ use generic_array::GenericArray;
 use signalo_traits::filter::Filter;
 
 use filter::classify::Classification;
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -55,22 +57,21 @@ pub struct Slopes<T, U> {
     state: State<T>,
 }
 
-impl<T, U> Slopes<T, U>
-where
-    U: Clone,
-{
-    /// Creates a new `Slopes` filter with given `threshold` and `outputs` (`[rising, none, falling]`).
-    #[inline]
-    pub fn new(config: Config<U>) -> Self {
+impl<T, U> WithConfig for Slopes<T, U> {
+    type Config = Config<U>;
+
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
         let state = Self::initial_state(&config);
-        Slopes { config, state }
+        Self { config, state }
     }
 }
 
-impl<T, U> Configurable for Slopes<T, U> {
-    type Config = Config<U>;
+impl<'a, T, U> ConfigTrait for &'a Slopes<T, U> {
+    type ConfigRef = &'a Config<U>;
 
-    fn config(&self) -> &Self::Config {
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -132,7 +133,7 @@ mod tests {
     fn test() {
         use self::Slope::*;
 
-        let filter = Slopes::new(Config {
+        let filter = Slopes::with_config(Config {
             outputs: Slope::classes(),
         });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture

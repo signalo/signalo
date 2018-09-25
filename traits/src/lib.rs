@@ -29,11 +29,24 @@ pub mod prelude {
 }
 
 /// Trait for **configurable** systems.
-pub trait Configurable: Sized {
-    /// The filter's internal configuration.
+pub trait WithConfig: Sized {
+    /// The filter's configuration.
     type Config;
 
-    fn config(&self) -> &Self::Config;
+    /// The return type of `fn with_config(…)`.
+    type Output;
+
+    /// Creates an instance from a given config.
+    fn with_config(config: Self::Config) -> Self::Output;
+}
+
+/// Trait for **configurable** systems.
+pub trait Config {
+    /// A reference to the filter's configuration.
+    type ConfigRef;
+
+    /// Returns a reference to its configuration.
+    fn config(self) -> Self::ConfigRef;
 }
 
 /// Trait for **stateful** systems.

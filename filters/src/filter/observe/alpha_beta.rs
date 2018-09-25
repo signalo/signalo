@@ -8,9 +8,20 @@ use num_traits::{Num, Zero};
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 /// The alpha-beta filter's configuration.
+///
+/// Note: _Values of `alpha` and `beta` typically are adjusted experimentally.
+/// In general, larger alpha and beta gains tend to produce faster response
+/// for tracking transient changes, while smaller alpha and beta gains reduce
+/// the level of noise in the state estimates._
+///
+/// Coefficients:
+/// - `alpha`: the `alpha` coefficient
+/// - `beta`: the `beta` coefficient
 #[derive(Clone, Debug)]
 pub struct Config<T> {
     /// Alpha coefficient
@@ -35,31 +46,24 @@ pub struct AlphaBeta<T> {
     state: State<T>,
 }
 
-impl<T> AlphaBeta<T>
+impl<T> WithConfig for AlphaBeta<T>
 where
-    T: Zero,
+    T: Clone + Zero,
 {
-    /// Creates a new `AlphaBeta` filter with given `r`, `q`, `a`, `b`, and `c` coefficients.
-    ///
-    /// Note: _Values of `alpha` and `beta` typically are adjusted experimentally.
-    /// In general, larger alpha and beta gains tend to produce faster response
-    /// for tracking transient changes, while smaller alpha and beta gains reduce
-    /// the level of noise in the state estimates._
-    ///
-    /// Coefficients:
-    /// - `alpha`: the `alpha` coefficient
-    /// - `beta`: the `beta` coefficient
-    #[inline]
-    pub fn new(config: Config<T>) -> Self {
+    type Config = Config<T>;
+
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
         let state = Self::initial_state(&config);
         Self { config, state }
     }
 }
 
-impl<T> Configurable for AlphaBeta<T> {
-    type Config = Config<T>;
+impl<'a, T> ConfigTrait for &'a AlphaBeta<T> {
+    type ConfigRef = &'a Config<T>;
 
-    fn config(&self) -> &Self::Config {
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -154,7 +158,7 @@ mod tests {
     fn test() {
         let alpha = 0.5;
         let beta = 0.125;
-        let filter = AlphaBeta::new(Config { alpha, beta });
+        let filter = AlphaBeta::with_config(Config { alpha, beta });
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();

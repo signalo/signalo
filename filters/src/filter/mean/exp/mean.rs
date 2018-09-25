@@ -8,20 +8,25 @@ use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 /// The filter's configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T> {
     /// The inverse filter width.
-    /// (`beta = 1.0 / n` with `n` being the filter's width.)
-    pub beta: T,
+    /// (`inverse_width = 1.0 / n` with `n` being the filter's width.)
+    ///
+    /// Important: `inverse_width` is required to be in the range between `0.0` and `1.0`.
+    pub inverse_width: T,
 }
 
 /// A mean filter's internal state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
-    pub value: Option<T>,
+    /// The current mean value.
+    pub mean: Option<T>,
 }
 
 /// A mean filter producing the exponential moving average over a given signal.
@@ -31,21 +36,21 @@ pub struct Mean<T> {
     state: State<T>,
 }
 
-impl<T> Mean<T> {
-    /// Creates a new `Mean` filter with `beta = 1.0 / n` with `n` being the filter width.
-    ///
-    /// Note: `beta` is required to be in the range between `0.0` and `1.0`.
-    #[inline]
-    pub fn new(config: Config<T>) -> Self {
+impl<T> WithConfig for Mean<T> {
+    type Config = Config<T>;
+
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
         let state = Self::initial_state(&config);
-        Mean { config, state }
+        Self { config, state }
     }
 }
 
-impl<T> Configurable for Mean<T> {
-    type Config = Config<T>;
+impl<'a, T> ConfigTrait for &'a Mean<T> {
+    type ConfigRef = &'a Config<T>;
 
-    fn config(&self) -> &Self::Config {
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -66,8 +71,8 @@ unsafe impl<T> StatefulUnsafe for Mean<T> {
 
 impl<'a, T> InitialState<&'a Config<T>> for Mean<T> {
     fn initial_state(_config: &'a Config<T>) -> Self::State {
-        let value = None;
-        State { value }
+        let mean = None;
+        State { mean }
     }
 }
 
@@ -84,11 +89,13 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let mean = match &self.state.value {
+        let mean = match &self.state.mean {
             None => input,
-            Some(ref state) => state.clone() + ((input - state.clone()) * self.config.beta.clone()),
+            Some(ref state) => {
+                state.clone() + ((input - state.clone()) * self.config.inverse_width.clone())
+            }
         };
-        self.state.value = Some(mean.clone());
+        self.state.mean = Some(mean.clone());
         mean
     }
 }
@@ -118,7 +125,9 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Mean::new(Config { beta: 0.25 });
+        let filter = Mean::with_config(Config {
+            inverse_width: 0.25,
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

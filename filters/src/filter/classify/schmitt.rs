@@ -9,7 +9,9 @@ use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 /// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s configuration.
 #[derive(Clone, Debug)]
@@ -23,6 +25,7 @@ pub struct Config<T, U> {
 /// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s state.
 #[derive(Clone, Debug)]
 pub struct State {
+    /// The current state.
     pub on: bool,
 }
 
@@ -35,22 +38,21 @@ pub struct Schmitt<T, U> {
     state: State,
 }
 
-impl<T, U> Schmitt<T, U>
-where
-    U: Clone,
-{
-    /// Creates a new `Schmitt` filter with given `thresholds` (`[low, high]`) and `outputs` (`[off, on]`).
-    #[inline]
-    pub fn new(config: Config<T, U>) -> Self {
+impl<T, U> WithConfig for Schmitt<T, U> {
+    type Config = Config<T, U>;
+
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
         let state = Self::initial_state(&config);
-        Schmitt { config, state }
+        Self { config, state }
     }
 }
 
-impl<T, U> Configurable for Schmitt<T, U> {
-    type Config = Config<T, U>;
+impl<'a, T, U> ConfigTrait for &'a Schmitt<T, U> {
+    type ConfigRef = &'a Config<T, U>;
 
-    fn config(&self) -> &Self::Config {
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -106,7 +108,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Schmitt::new(Config {
+        let filter = Schmitt::with_config(Config {
             thresholds: arr![u8; 5, 10],
             outputs: u8::classes(),
         });

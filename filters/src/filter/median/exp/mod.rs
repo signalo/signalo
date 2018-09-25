@@ -8,22 +8,36 @@ use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 use filter::mean::exp::mean::{Config as MeanConfig, Mean};
 
 /// The median filter's configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T> {
-    pub alpha: T,
-    pub beta: T,
-    pub gamma: T,
+    /// Pre-processing mean smoothing factor.
+    ///
+    /// Import: value required to be in the range between `0.0` and `1.0`.
+    pub pre: MeanConfig<T>,
+    /// Pre-processing median smoothing factor.
+    ///
+    /// Recommended value: `mid = pre`.
+    /// Import: value required to be in the range between `0.0` and `1.0`.
+    pub mid: T,
+    /// Post-processing mean smoothing factor.
+    ///
+    /// Recommended value: `post = pre * 0.5`.
+    /// Import: value required to be in the range between `0.0` and `1.0`.
+    pub post: MeanConfig<T>,
 }
 
 /// The median filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
-    mean: (Mean<T>, Mean<T>),
+    mean_pre: Mean<T>,
+    mean_post: Mean<T>,
     median: Option<T>,
 }
 
@@ -34,29 +48,24 @@ pub struct Median<T> {
     state: State<T>,
 }
 
-impl<T> Median<T>
+impl<T> WithConfig for Median<T>
 where
     T: Clone,
 {
-    /// Creates a new `Median` filter with given `alpha`, `beta` and `gamma` coefficients.
-    ///
-    /// Note: `alpha`, `beta` and `gamma` are required to be in the range between `0.0` and `1.0`.
-    ///
-    /// Recommended values:
-    /// - `alpha`: `beta`
-    /// - `beta`: `0.0 .. 1.0`
-    /// - `gamma`: `beta * 0.5`
-    #[inline]
-    pub fn new(config: Config<T>) -> Self {
+    type Config = Config<T>;
+
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
         let state = Self::initial_state(&config);
-        Median { config, state }
+        Self { config, state }
     }
 }
 
-impl<T> Configurable for Median<T> {
-    type Config = Config<T>;
+impl<'a, T> ConfigTrait for &'a Median<T> {
+    type ConfigRef = &'a Config<T>;
 
-    fn config(&self) -> &Self::Config {
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -80,16 +89,14 @@ where
     T: Clone,
 {
     fn initial_state(config: &'a Config<T>) -> Self::State {
-        let mean = (
-            Mean::new(MeanConfig {
-                beta: config.alpha.clone(),
-            }),
-            Mean::new(MeanConfig {
-                beta: config.gamma.clone(),
-            }),
-        );
+        let mean_pre = Mean::with_config(config.pre.clone());
+        let mean_post = Mean::with_config(config.post.clone());
         let median = None;
-        State { mean, median }
+        State {
+            mean_pre,
+            mean_post,
+            median,
+        }
     }
 }
 
@@ -110,15 +117,15 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         // We calculate the mean and use it as an estimate of the median:
-        let mean = self.state.mean.0.filter(input.clone());
+        let mean = self.state.mean_pre.filter(input.clone());
         // We then calculate the approximate of the median:
         let median = match &self.state.median {
             None => mean,
-            Some(ref state) => state.clone() + ((mean - state.clone()) * self.config.beta.clone()),
+            Some(ref state) => state.clone() + ((mean - state.clone()) * self.config.mid.clone()),
         };
         // The approximated median tends to oscillate,
         // so we apply another mean to smoothen those out:
-        let state = self.state.mean.1.filter(median);
+        let state = self.state.mean_post.filter(median);
         // And we're done. Store a copy and return the result:
         self.state.median = Some(state.clone());
         state
@@ -150,10 +157,12 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Median::new(Config {
-            alpha: 0.5,
-            beta: 0.5,
-            gamma: 0.25,
+        let filter = Median::with_config(Config {
+            pre: MeanConfig { inverse_width: 0.5 },
+            mid: 0.5,
+            post: MeanConfig {
+                inverse_width: 0.25,
+            }, // 0.25,
         });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();

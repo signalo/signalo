@@ -11,7 +11,9 @@ use num_traits::{Num, Signed};
 
 use filter::median::{ListNode, Median};
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 /// The hampel filter's configuration.
 #[derive(Clone, Debug)]
@@ -40,24 +42,6 @@ where
 {
     config: Config<T>,
     state: State<T, N>,
-}
-
-impl<T, N> Hampel<T, N>
-where
-    T: Clone + PartialOrd,
-    N: ArrayLength<ListNode<T>>,
-{
-    /// Creates a new median filter with a given window size.
-    pub fn new(config: Config<T>) -> Self {
-        let state = Self::initial_state(&config);
-        Self { config, state }
-    }
-
-    /// Returns the window size of the filter.
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.state.median.len()
-    }
 }
 
 impl<T, N> Hampel<T, N>
@@ -107,13 +91,28 @@ where
     }
 }
 
-impl<T, N> Configurable for Hampel<T, N>
+impl<T, N> WithConfig for Hampel<T, N>
 where
+    T: Clone,
     N: ArrayLength<ListNode<T>>,
 {
     type Config = Config<T>;
 
-    fn config(&self) -> &Self::Config {
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = Self::initial_state(&config);
+        Self { config, state }
+    }
+}
+
+impl<'a, T, N> ConfigTrait for &'a Hampel<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    type ConfigRef = &'a Config<T>;
+
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -208,7 +207,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Hampel<_, U7> = Hampel::new(Config { threshold: 2.0 });
+        let filter: Hampel<_, U7> = Hampel::with_config(Config { threshold: 2.0 });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

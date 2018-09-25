@@ -6,11 +6,12 @@ use std::cmp::PartialEq;
 
 use generic_array::typenum::U2;
 use generic_array::GenericArray;
-use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 /// The [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter's configuration.
 #[derive(Clone, Debug)]
@@ -39,22 +40,21 @@ pub struct Debounce<T, U> {
     state: State,
 }
 
-impl<T, U> Debounce<T, U>
-where
-    T: Clone + Zero,
-{
-    /// Creates a new `Debounce` filter with given `threshold`, `predicate` and `outputs` (`[off, on]`).
-    #[inline]
-    pub fn new(config: Config<T, U>) -> Self {
+impl<T, U> WithConfig for Debounce<T, U> {
+    type Config = Config<T, U>;
+
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
         let state = Self::initial_state(&config);
-        Debounce { config, state }
+        Self { config, state }
     }
 }
 
-impl<T, U> Configurable for Debounce<T, U> {
-    type Config = Config<T, U>;
+impl<'a, T, U> ConfigTrait for &'a Debounce<T, U> {
+    type ConfigRef = &'a Config<T, U>;
 
-    fn config(&self) -> &Self::Config {
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Debounce::new(Config {
+        let filter = Debounce::with_config(Config {
             threshold: 3,
             predicate: 1,
             outputs: u8::classes(),
