@@ -6,6 +6,7 @@
 
 pub mod classify;
 pub mod convolve;
+pub mod delay;
 pub mod differentiate;
 pub mod hampel;
 pub mod identity;
