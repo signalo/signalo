@@ -8,7 +8,9 @@ use num_traits::{Num, Signed};
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 use super::mean::{Config as MeanConfig, Mean};
 
@@ -16,14 +18,18 @@ use super::mean::{Config as MeanConfig, Mean};
 #[derive(Clone, Debug)]
 pub struct Config<T> {
     /// The inverse filter width.
-    /// (`beta = 1.0 / n` with `n` being the filter's width.)
-    pub beta: T,
+    /// (`inverse_width = 1.0 / n` with `n` being the filter's width.)
+    ///
+    /// Important: `inverse_width` is required to be in the range between `0.0` and `1.0`.
+    pub inverse_width: T,
 }
 
 /// The mean/variance filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
+    /// The current mean value.
     pub mean: Mean<T>,
+    /// The current variance value.
     pub variance: Mean<T>,
 }
 
@@ -34,24 +40,24 @@ pub struct MeanVariance<T> {
     state: State<T>,
 }
 
-impl<T> MeanVariance<T>
+impl<T> WithConfig for MeanVariance<T>
 where
     T: Clone,
 {
-    /// Creates a new `MeanVariance` filter with `beta = 1.0 / n` with `n` being the filter width.
-    ///
-    /// Note: `beta` is required to be in the range between `0.0` and `1.0`.
-    #[inline]
-    pub fn new(config: Config<T>) -> Self {
+    type Config = Config<T>;
+
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
         let state = Self::initial_state(&config);
-        MeanVariance { config, state }
+        Self { config, state }
     }
 }
 
-impl<T> Configurable for MeanVariance<T> {
-    type Config = Config<T>;
+impl<'a, T> ConfigTrait for &'a MeanVariance<T> {
+    type ConfigRef = &'a Config<T>;
 
-    fn config(&self) -> &Self::Config {
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -75,11 +81,11 @@ where
     T: Clone,
 {
     fn initial_state(config: &'a Config<T>) -> Self::State {
-        let mean = Mean::new(MeanConfig {
-            beta: config.beta.clone(),
+        let mean = Mean::with_config(MeanConfig {
+            inverse_width: config.inverse_width.clone(),
         });
-        let variance = Mean::new(MeanConfig {
-            beta: config.beta.clone(),
+        let variance = Mean::with_config(MeanConfig {
+            inverse_width: config.inverse_width.clone(),
         });
         State { mean, variance }
     }
@@ -106,7 +112,7 @@ where
             self.state
                 .mean
                 .state()
-                .value
+                .mean
                 .clone()
                 .unwrap_or(input.clone())
         };
@@ -155,7 +161,9 @@ mod tests {
 
     #[test]
     fn mean() {
-        let filter = MeanVariance::new(Config { beta: 0.25 });
+        let filter = MeanVariance::with_config(Config {
+            inverse_width: 0.25,
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
@@ -167,7 +175,9 @@ mod tests {
 
     #[test]
     fn variance() {
-        let filter = MeanVariance::new(Config { beta: 0.25 });
+        let filter = MeanVariance::with_config(Config {
+            inverse_width: 0.25,
+        });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

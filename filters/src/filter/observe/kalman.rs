@@ -8,7 +8,9 @@ use num_traits::{Num, One, Zero};
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 /// The kalman filter's configuration.
 #[derive(Clone, Debug)]
@@ -54,25 +56,6 @@ pub struct State<T> {
 pub struct Kalman<T> {
     config: Config<T>,
     state: State<T>,
-}
-
-impl<T> Kalman<T>
-where
-    T: Zero,
-{
-    /// Creates a new `Kalman` filter with given `r`, `q`, `a`, `b`, and `c` coefficients.
-    ///
-    /// Coefficients:
-    /// - `r`: Process noise covariance
-    /// - `q`: Measurement noise covariance
-    /// - `a`: State transition
-    /// - `b`: Control transition
-    /// - `c`: Measurement
-    #[inline]
-    pub fn new(config: Config<T>) -> Self {
-        let state = Self::initial_state(&config);
-        Kalman { config, state }
-    }
 }
 
 impl<T> Kalman<T>
@@ -125,14 +108,28 @@ where
 {
     #[inline]
     fn default() -> Self {
-        Kalman::new(Config::default())
+        Kalman::with_config(Config::default())
     }
 }
 
-impl<T> Configurable for Kalman<T> {
+impl<T> WithConfig for Kalman<T>
+where
+    T: Zero,
+{
     type Config = Config<T>;
 
-    fn config(&self) -> &Self::Config {
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = Self::initial_state(&config);
+        Self { config, state }
+    }
+}
+
+impl<'a, T> ConfigTrait for &'a Kalman<T> {
+    type ConfigRef = &'a Config<T>;
+
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -218,7 +215,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Kalman::new(Config {
+        let filter = Kalman::with_config(Config {
             r: 0.0001, // Process noise
             q: 0.001,  // Measurement noise
             a: 1.0,    // State

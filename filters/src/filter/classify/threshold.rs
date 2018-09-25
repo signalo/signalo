@@ -9,7 +9,7 @@ use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::Configurable;
+use signalo_traits::{Config as ConfigTrait, WithConfig};
 
 /// The threshold filter's configuration.
 #[derive(Clone, Debug)]
@@ -27,21 +27,20 @@ pub struct Threshold<T, U> {
     config: Config<T, U>,
 }
 
-impl<T, U> Threshold<T, U>
-where
-    U: Clone,
-{
-    /// Creates a new `Threshold` filter with given `threshold` and `outputs` (`[off, on]`).
-    #[inline]
-    pub fn new(config: Config<T, U>) -> Self {
-        Threshold { config }
+impl<T, U> WithConfig for Threshold<T, U> {
+    type Config = Config<T, U>;
+
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        Self { config }
     }
 }
 
-impl<T, U> Configurable for Threshold<T, U> {
-    type Config = Config<T, U>;
+impl<'a, T, U> ConfigTrait for &'a Threshold<T, U> {
+    type ConfigRef = &'a Config<T, U>;
 
-    fn config(&self) -> &Self::Config {
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -67,7 +66,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Threshold::new(Config {
+        let filter = Threshold::with_config(Config {
             threshold: 10,
             outputs: u8::classes(),
         });

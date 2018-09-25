@@ -4,8 +4,6 @@
 
 //! Convolution filters.
 
-use std::fmt;
-
 use arraydeque::{ArrayDeque, Wrapping};
 use generic_array::{ArrayLength, GenericArray};
 
@@ -13,7 +11,9 @@ use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 pub mod savitzky_golay;
 
@@ -28,7 +28,7 @@ where
 }
 
 /// The convolution filter's state.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct State<T, N>
 where
     N: ArrayLength<T>,
@@ -37,36 +37,14 @@ where
     pub taps: ArrayDeque<GenericArray<T, N>, Wrapping>,
 }
 
-impl<T, N> fmt::Debug for State<T, N>
-where
-    T: fmt::Debug,
-    N: ArrayLength<T>,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("State").field("taps", &self.taps).finish()
-    }
-}
-
 /// A convolution filter.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
     config: Config<T, N>,
     state: State<T, N>,
-}
-
-impl<T, N> Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
-    /// Creates a new `Convolve` filter with given `coefficients`.
-    #[inline]
-    pub fn new(config: Config<T, N>) -> Self {
-        let state = Self::initial_state(&config);
-        Convolve { config, state }
-    }
 }
 
 impl<T, N> Convolve<T, N>
@@ -88,18 +66,31 @@ where
                 *coeff = coeff.clone() / sum.clone();
             }
         }
-        let state = Self::initial_state(&config);
-        Convolve { config, state }
+        Self::with_config(config)
     }
 }
 
-impl<T, N> Configurable for Convolve<T, N>
+impl<T, N> WithConfig for Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
     type Config = Config<T, N>;
 
-    fn config(&self) -> &Self::Config {
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = Self::initial_state(&config);
+        Self { config, state }
+    }
+}
+
+impl<'a, T, N> ConfigTrait for &'a Convolve<T, N>
+where
+    N: ArrayLength<T>,
+{
+    type ConfigRef = &'a Config<T, N>;
+
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -197,7 +188,7 @@ mod tests {
     #[test]
     fn test() {
         // Effectively calculates the derivative:
-        let filter = Convolve::new(Config {
+        let filter = Convolve::with_config(Config {
             coefficients: arr![f32; 1.000, -1.000],
         });
         let input = get_input();

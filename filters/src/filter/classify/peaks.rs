@@ -14,7 +14,9 @@ use filter::classify::{
     Classification,
 };
 
-use signalo_traits::{Configurable, InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+};
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -64,13 +66,6 @@ impl<T, U> Peaks<T, U>
 where
     U: Clone,
 {
-    /// Creates a new `Peaks` filter with given `threshold` and `outputs` (`[max, none, min]`).
-    #[inline]
-    pub fn new(config: Config<U>) -> Self {
-        let state = Self::initial_state(&config);
-        Peaks { config, state }
-    }
-
     fn filter_internal(&mut self, slope: Slope) -> (Slope, usize) {
         let index = match self.state.slope {
             None => 1,
@@ -100,10 +95,21 @@ where
     }
 }
 
-impl<T, U> Configurable for Peaks<T, U> {
+impl<T, U> WithConfig for Peaks<T, U> {
     type Config = Config<U>;
 
-    fn config(&self) -> &Self::Config {
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = Self::initial_state(&config);
+        Self { config, state }
+    }
+}
+
+impl<'a, T, U> ConfigTrait for &'a Peaks<T, U> {
+    type ConfigRef = &'a Config<U>;
+
+    fn config(self) -> Self::ConfigRef {
         &self.config
     }
 }
@@ -124,7 +130,7 @@ unsafe impl<T, U> StatefulUnsafe for Peaks<T, U> {
 
 impl<'a, T, U> InitialState<&'a Config<U>> for Peaks<T, U> {
     fn initial_state(_config: &'a Config<U>) -> Self::State {
-        let slopes = Slopes::new(SlopesConfig {
+        let slopes = Slopes::with_config(SlopesConfig {
             outputs: Slope::classes(),
         });
         let slope = None;
@@ -181,7 +187,7 @@ mod tests {
     fn values() {
         use self::Peak::*;
 
-        let filter = Peaks::new(Config {
+        let filter = Peaks::with_config(Config {
             outputs: Peak::classes(),
         });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
@@ -206,7 +212,7 @@ mod tests {
     fn slopes() {
         use self::Peak::*;
 
-        let filter = Peaks::new(Config {
+        let filter = Peaks::with_config(Config {
             outputs: Peak::classes(),
         });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture

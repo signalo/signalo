@@ -22,7 +22,9 @@ pub struct State<T, N>
 where
     N: ArrayLength<T>,
 {
+    /// The current mean value.
     pub mean: Mean<T, N>,
+    /// The current variance value.
     pub variance: Mean<T, N>,
 }
 
@@ -128,7 +130,7 @@ where
             self.state
                 .mean
                 .state()
-                .value
+                .mean
                 .clone()
                 .unwrap_or(input.clone())
         };

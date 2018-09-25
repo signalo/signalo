@@ -21,8 +21,11 @@ pub struct State<T, N>
 where
     N: ArrayLength<T>,
 {
-    pub value: Option<T>,
-    pub buffer: ArrayDeque<GenericArray<T, N>, Wrapping>,
+    /// The current mean value.
+    pub mean: Option<T>,
+    /// The current taps buffer.
+    pub taps: ArrayDeque<GenericArray<T, N>, Wrapping>,
+    /// The current weight.
     pub weight: T,
 }
 
@@ -33,8 +36,8 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
-            .field("value", &self.value)
-            .field("buffer", &self.buffer)
+            .field("mean", &self.mean)
+            .field("taps", &self.taps)
             .field("weight", &self.weight)
             .finish()
     }
@@ -98,14 +101,10 @@ where
     N: ArrayLength<T>,
 {
     fn initial_state(_: ()) -> Self::State {
-        let value = None;
-        let buffer = ArrayDeque::default();
+        let mean = None;
+        let taps = ArrayDeque::default();
         let weight = T::zero();
-        State {
-            value,
-            buffer,
-            weight,
-        }
+        State { mean, taps, weight }
     }
 }
 
@@ -127,9 +126,9 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let old_mean = self.state.value.clone().unwrap_or(input.clone());
+        let old_mean = self.state.mean.clone().unwrap_or(input.clone());
         let old_weight = self.state.weight.clone();
-        let (mean, weight) = match self.state.buffer.push_back(input.clone()) {
+        let (mean, weight) = match self.state.taps.push_back(input.clone()) {
             Some(old_input) => {
                 let mean = old_mean - old_input + input.clone();
                 (mean, old_weight)
@@ -140,7 +139,7 @@ where
                 (mean, weight)
             }
         };
-        self.state.value = Some(mean.clone());
+        self.state.mean = Some(mean.clone());
         self.state.weight = weight.clone();
         mean / weight
     }
