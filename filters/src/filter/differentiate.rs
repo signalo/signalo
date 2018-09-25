@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Differentiation filters.
+
 use std::ops::Sub;
 
 use num_traits::Zero;
@@ -13,6 +15,7 @@ use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
 /// The differentiate filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
+    /// Current value.
     pub value: Option<T>,
 }
 
