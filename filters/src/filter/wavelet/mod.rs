@@ -5,6 +5,7 @@
 //! Wavelet decomposition filters.
 
 pub mod analyze;
+pub mod daubechies;
 pub mod synthesize;
 
 /// Result of a wavelet analysis (or input of a wavelet synthesis).
