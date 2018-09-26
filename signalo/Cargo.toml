@@ -21,7 +21,7 @@ name = "signalo"
 readme = "../README.md"
 repository = "https://github.com/signalo/signalo"
 homepage = "https://github.com/signalo/signalo/tree/master/signalo"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies.signalo_traits]
 version = "~0.2"
@@ -29,12 +29,12 @@ path = "../traits"
 default-features = false
 
 [dependencies.signalo_filters]
-version = "~0.2"
+version = "~0.3"
 path = "../filters"
 default-features = false
 
 [dependencies.signalo_pipes]
-version = "~0.2"
+version = "~0.3"
 path = "../pipes"
 default-features = false
 
