@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Monotonically incrementing sources.
+
 use std::ops::AddAssign;
 
 use signalo_traits::source::Source;
@@ -14,7 +16,7 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Increment;
+/// use signalo_filters::source::increment::Increment;
 /// let increment = Increment::new(0, 2);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 2 │─▶│ 4 │─▶│ 6 │─▶│ 8 │─▶ ...

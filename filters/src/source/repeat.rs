@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Value repeating sources.
+
 use signalo_traits::source::Source;
 
 use source::constant::Constant;
@@ -15,7 +17,7 @@ use source::take::Take;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Repeat;
+/// use signalo_filters::source::repeat::Repeat;
 /// let repeat = Repeat::new(42, 3);
 /// // ╭────╮  ╭────╮  ╭────╮
 /// // │ 42 │─▶│ 42 │─▶│ 42 │

@@ -2,9 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Constant padding sources.
+
 use signalo_traits::source::Source;
 
-use source::Repeat;
+use source::repeat::Repeat;
 
 #[derive(Clone, Debug)]
 enum PadState {
@@ -24,20 +26,20 @@ enum PadState {
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Increment;
+/// use signalo_filters::source::increment::Increment;
 /// let increment = Increment::new(0, 1);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │─▶ ...
 /// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::Take;
+/// use signalo_filters::source::take::Take;
 /// let take = Take::new(increment, 3);
 /// // ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │
 /// // ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::PadConstant;
-/// let pad_constant = PadConstant::new(take, 42, 2);
+/// use signalo_filters::source::pad::constant::Pad;
+/// let pad_constant = Pad::new(take, 42, 2);
 /// // ╭────╮  ╭────╮  ╭───╮  ╭───╮  ╭───╮  ╭────╮  ╭────╮
 /// // │ 42 │─▶│ 42 │─▶│ 0 │─▶│ 1 │─▶│ 2 │─▶│ 42 │─▶│ 42 │
 /// // ╰────╯  ╰────╯  ╰───╯  ╰───╯  ╰───╯  ╰────╯  ╰────╯
@@ -103,7 +105,7 @@ where
 mod tests {
     use super::*;
 
-    use source::FromIter;
+    use source::from_iter::FromIter;
 
     #[test]
     fn empty() {

@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Iterator bridging sources.
+
 use signalo_traits::source::Source;
 
 /// A wrapper type for turning iterators into sources.
@@ -12,7 +14,7 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::FromIter;
+/// use signalo_filters::source::from_iter::FromIter;
 /// let iter = FromIter::from(vec![0, 1, 2, 3]);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │

@@ -11,7 +11,7 @@ pub mod macros {
     macro_rules! sink_pipe {
         ($($filters:expr),*) => ({
             #[allow(unused_imports)]
-            use sink::{Pipe, UnitPipe};
+            use sink::{pipe::Pipe, unit_pipe::UnitPipe};
             sink_pipe!(@internal $($filters),*)
         });
         (@internal $lhs:expr, $rhs:expr, $($filter:expr),*) => {
@@ -28,11 +28,8 @@ pub mod macros {
     }
 }
 
-mod pipe;
-mod unit_pipe;
-
-pub use self::pipe::*;
-pub use self::unit_pipe::*;
+pub mod pipe;
+pub mod unit_pipe;
 
 #[cfg(test)]
 mod tests {
@@ -70,7 +67,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let _: UnitPipe<_> = sink_pipe!(DummySink);
-        let _: Pipe<_, _> = sink_pipe!(DummyFilter, DummySink);
+        let _: unit_pipe::UnitPipe<_> = sink_pipe!(DummySink);
+        let _: pipe::Pipe<_, _> = sink_pipe!(DummyFilter, DummySink);
     }
 }

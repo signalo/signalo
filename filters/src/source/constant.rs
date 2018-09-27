@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Constant value sources.
+
 use signalo_traits::source::Source;
 
 /// A source that returns an constant value on each call.
@@ -12,7 +14,7 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Constant;
+/// use signalo_filters::source::constant::Constant;
 /// let constant = Constant::new(42);
 /// // ╭────╮  ╭────╮  ╭────╮  ╭────╮  ╭────╮
 /// // │ 42 │─▶│ 42 │─▶│ 42 │─▶│ 42 │─▶│ 42 │─▶ ...

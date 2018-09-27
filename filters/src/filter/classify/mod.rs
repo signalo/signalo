@@ -7,20 +7,12 @@
 use generic_array::typenum::*;
 use generic_array::{ArrayLength, GenericArray};
 
-mod debounce;
-mod schmitt;
-mod threshold;
+pub mod debounce;
+pub mod schmitt;
+pub mod threshold;
 
-mod peaks;
-mod slopes;
-
-pub use self::debounce::Debounce;
-pub use self::schmitt::Schmitt;
-pub use self::threshold::Threshold;
-
-pub use self::slopes::{Slope, Slopes};
-
-pub use self::peaks::{Peak, Peaks};
+pub mod peaks;
+pub mod slopes;
 
 /// A trait describing a classification value.
 pub trait Classification<T, N>: Sized
