@@ -58,6 +58,7 @@ pub struct Pad<S, T> {
 
 impl<S, T> Pad<S, T>
 where
+    S: Source<Output = T>,
     T: Clone,
 {
     /// Creates a new `Pad` source from an inner source and specified padding.
@@ -74,8 +75,8 @@ where
 
 impl<S, T> Source for Pad<S, T>
 where
-    T: Clone,
     S: Source<Output = T>,
+    T: Clone,
 {
     type Output = T;
 
