@@ -21,18 +21,4 @@ pub mod sink;
 pub mod source;
 
 /// The crate's prelude.
-pub mod prelude {
-    pub use {
-        filter::{macros::*, Pipe as FilterPipe, UnitPipe as FilterUnitPipe},
-        sink::{
-            Pipe as SinkPipe,
-            // macros::*,
-            UnitPipe as SinkUnitPipe,
-        },
-        source::{
-            Pipe as SourcePipe,
-            // macros::*,
-            UnitPipe as SourceUnitPipe,
-        },
-    };
-}
+pub mod prelude {}
