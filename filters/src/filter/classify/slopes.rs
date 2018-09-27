@@ -49,6 +49,7 @@ pub struct Config<U> {
 /// The slope detection filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
+    /// Current memorized input.
     pub input: Option<T>,
 }
 
