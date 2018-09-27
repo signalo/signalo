@@ -22,11 +22,7 @@ pub use sink::Sink;
 pub use source::Source;
 
 /// The crate's prelude.
-pub mod prelude {
-    pub use filter::{self, Filter};
-    pub use sink::{self, Sink};
-    pub use source::{self, Source};
-}
+pub mod prelude {}
 
 /// Trait for **configurable** systems.
 pub trait WithConfig: Sized {
