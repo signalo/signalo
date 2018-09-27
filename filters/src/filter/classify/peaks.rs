@@ -53,7 +53,9 @@ pub struct Config<T> {
 /// A peak detection filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
+    /// Slope detection filter.
     pub slopes: Slopes<T, Slope>,
+    /// Current slope.
     pub slope: Option<Slope>,
 }
 
