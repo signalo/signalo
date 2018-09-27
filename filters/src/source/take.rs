@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Trimming sources.
+
 use signalo_traits::source::Source;
 
 /// A source that returns only up to a specified number of values.
@@ -12,14 +14,14 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Increment;
+/// use signalo_filters::source::increment::Increment;
 ///
 /// let increment: Increment<_> = Increment::new(0, 1);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │─▶ ...
 /// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::Take;
+/// use signalo_filters::source::take::Take;
 ///
 /// let take: Take<_> = Take::new(increment, 3);
 /// // ╭───╮  ╭───╮  ╭───╮
@@ -64,7 +66,8 @@ mod tests {
 
     #[test]
     fn test() {
-        use source::Increment;
+        use source::increment::Increment;
+
         let increment = Increment::new(0, 2);
         let mut source = Take::new(increment, 5);
         let mut subject: Vec<usize> = vec![];

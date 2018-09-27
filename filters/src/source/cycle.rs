@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Cycle sources.
+
 use signalo_traits::source::Source;
 
 /// A source that repeats an auto-incremented value on each call.
@@ -12,14 +14,14 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::FromIter;
+/// use signalo_filters::source::from_iter::FromIter;
 ///
 /// let iter = FromIter::from(vec![0, 1, 2]);
 /// // ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │
 /// // ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::Cycle;
+/// use signalo_filters::source::cycle::Cycle;
 /// let cycle = Cycle::new(iter);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 0 │─▶│ 1 │─▶│ 2 │─▶ ...
@@ -66,7 +68,7 @@ where
 mod tests {
     use super::*;
 
-    use source::FromIter;
+    use source::from_iter::FromIter;
 
     #[test]
     fn non_empty() {

@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Chain sources.
+
 use signalo_traits::source::Source;
 
 #[derive(Clone, Debug)]
@@ -21,7 +23,7 @@ enum ChainState {
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::FromIter;
+/// use signalo_filters::source::from_iter::FromIter;
 /// let front = FromIter::from(vec![0, 1, 2]);
 /// // ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │
@@ -31,7 +33,7 @@ enum ChainState {
 /// // │ 3 │─▶│ 4 │
 /// // ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::Chain;
+/// use signalo_filters::source::chain::Chain;
 /// let chain = Chain::new(front, back);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │
@@ -80,7 +82,7 @@ where
 mod tests {
     use super::*;
 
-    use source::FromIter;
+    use source::from_iter::FromIter;
 
     #[test]
     fn head_empty() {

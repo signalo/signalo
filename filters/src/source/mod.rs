@@ -4,24 +4,13 @@
 
 //! Implementations of `trait Source`.
 
-mod chain;
-mod constant;
-mod cycle;
-mod from_iter;
-mod increment;
-mod into_iter;
-mod pad;
-mod repeat;
-mod skip;
-mod take;
-
-pub use self::chain::Chain;
-pub use self::constant::Constant;
-pub use self::cycle::Cycle;
-pub use self::from_iter::FromIter;
-pub use self::increment::Increment;
-pub use self::into_iter::IntoIter;
-pub use self::pad::{PadConstant, PadEdge};
-pub use self::repeat::Repeat;
-pub use self::skip::Skip;
-pub use self::take::Take;
+pub mod chain;
+pub mod constant;
+pub mod cycle;
+pub mod from_iter;
+pub mod increment;
+pub mod into_iter;
+pub mod pad;
+pub mod repeat;
+pub mod skip;
+pub mod take;

@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Integration sinks.
+
 use num_traits::Num;
 
 use signalo_traits::sink::Sink;
@@ -17,19 +19,19 @@ use signalo_traits::sink::Sink;
 /// use signalo_filters::traits::Source;
 /// use signalo_filters::traits::Sink;
 ///
-/// use signalo_filters::source::Increment;
+/// use signalo_filters::source::increment::Increment;
 /// let increment: Increment<_> = Increment::new(0, 1);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │─▶ ...
 /// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::Take;
+/// use signalo_filters::source::take::Take;
 /// let mut take: Take<_> = Take::new(increment, 3);
 /// // ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │
 /// // ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::sink::Integrate;
+/// use signalo_filters::sink::integrate::Integrate;
 /// let mut integrate = Integrate::default();
 /// while let Some(value) = take.source() {
 ///     integrate.sink(value);

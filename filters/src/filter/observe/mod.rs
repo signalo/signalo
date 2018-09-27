@@ -4,8 +4,5 @@
 
 //! [State observing](https://en.wikipedia.org/wiki/State_observer) filters.
 
-mod alpha_beta;
-mod kalman;
-
-pub use self::alpha_beta::AlphaBeta;
-pub use self::kalman::Kalman;
+pub mod alpha_beta;
+pub mod kalman;

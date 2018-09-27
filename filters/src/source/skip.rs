@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Skipping sources.
+
 use signalo_traits::source::Source;
 
 /// A source that returns only up to a specified number of values.
@@ -13,14 +15,14 @@ use signalo_traits::source::Source;
 /// # extern crate signalo_filters;
 /// #
 /// # fn main() {
-/// use signalo_filters::source::Increment;
+/// use signalo_filters::source::increment::Increment;
 ///
 /// let increment = Increment::new(0, 1);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │─▶ ...
 /// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::Skip;
+/// use signalo_filters::source::skip::Skip;
 ///
 /// let skip = Skip::new(increment, 2);
 /// // ╭───╮  ╭───╮  ╭───╮
@@ -62,7 +64,7 @@ where
 mod tests {
     use super::*;
 
-    use source::FromIter;
+    use source::from_iter::FromIter;
 
     #[test]
     fn test() {

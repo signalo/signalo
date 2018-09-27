@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+//! Iterator bridging sources.
+
 use signalo_traits::source::Source;
 
 /// A wrapper type for turning iterators into sources.
@@ -15,19 +17,19 @@ use signalo_traits::source::Source;
 /// use signalo_filters::traits::Source;
 /// use signalo_filters::traits::Sink;
 ///
-/// use signalo_filters::source::Increment;
+/// use signalo_filters::source::increment::Increment;
 /// let increment: Increment<_> = Increment::new(0, 1);
 /// // ╭───╮  ╭───╮  ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │─▶│ 3 │─▶│ 4 │─▶ ...
 /// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::Take;
+/// use signalo_filters::source::take::Take;
 /// let mut take: Take<_> = Take::new(increment, 3);
 /// // ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │
 /// // ╰───╯  ╰───╯  ╰───╯
 ///
-/// use signalo_filters::source::IntoIter;
+/// use signalo_filters::source::into_iter::IntoIter;
 /// let iter = IntoIter::from(take);
 /// // ╭───╮  ╭───╮  ╭───╮
 /// // │ 0 │─▶│ 1 │─▶│ 2 │
@@ -67,7 +69,7 @@ where
 mod tests {
     use super::*;
 
-    use source::FromIter;
+    use source::from_iter::FromIter;
 
     #[test]
     fn test() {

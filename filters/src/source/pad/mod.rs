@@ -1,5 +1,4 @@
-mod constant;
-mod edge;
+//! Padding sources.
 
-pub use self::constant::Pad as PadConstant;
-pub use self::edge::Pad as PadEdge;
+pub mod constant;
+pub mod edge;

@@ -4,18 +4,11 @@
 
 //! Arithmetic operation filters.
 
-mod add;
-mod div;
-mod mul;
-mod rem;
-mod sub;
+pub mod add;
+pub mod div;
+pub mod mul;
+pub mod rem;
+pub mod sub;
 
-mod neg;
-mod square;
-
-pub use self::add::Add;
-pub use self::div::Div;
-pub use self::mul::Mul;
-pub use self::sub::Sub;
-
-pub use self::square::Square;
+pub mod neg;
+pub mod square;
