@@ -7,12 +7,11 @@
 use num_traits::Num;
 
 use signalo_traits::filter::Filter;
-
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
 };
 
-/// The filter's configuration.
+/// The mean filter's configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T> {
     /// The inverse filter width.
@@ -36,49 +35,49 @@ pub struct Mean<T> {
     state: State<T>,
 }
 
-impl<T> WithConfig for Mean<T> {
+impl<T> ConfigTrait for Mean<T> {
     type Config = Config<T>;
+}
 
+impl<T> StateTrait for Mean<T> {
+    type State = State<T>;
+}
+
+impl<T> WithConfig for Mean<T> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
+        let state = {
+            let mean = None;
+            State { mean }
+        };
         Self { config, state }
     }
 }
 
-impl<'a, T> ConfigTrait for &'a Mean<T> {
-    type ConfigRef = &'a Config<T>;
-
-    fn config(self) -> Self::ConfigRef {
+impl<T> ConfigRef for Mean<T> {
+    fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T> Stateful for Mean<T> {
-    type State = State<T>;
-}
-
-unsafe impl<T> StatefulUnsafe for Mean<T> {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
-
+impl<T> StateMut for Mean<T> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T> InitialState<&'a Config<T>> for Mean<T> {
-    fn initial_state(_config: &'a Config<T>) -> Self::State {
-        let mean = None;
-        State { mean }
+impl<T> Destruct for Mean<T> {
+    type Output = (Config<T>, State<T>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T> Resettable for Mean<T> {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+impl<T> Reset for Mean<T> {
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 

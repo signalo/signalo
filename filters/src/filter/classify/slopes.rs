@@ -9,11 +9,12 @@ use std::cmp::{Ordering, PartialOrd};
 use generic_array::typenum::*;
 use generic_array::GenericArray;
 
-use signalo_traits::filter::Filter;
-
 use filter::classify::Classification;
+
+use signalo_traits::filter::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 /// A slope's kind.
@@ -60,48 +61,46 @@ pub struct Slopes<T, U> {
     state: State<T>,
 }
 
-impl<T, U> WithConfig for Slopes<T, U> {
+impl<T, U> ConfigTrait for Slopes<T, U> {
     type Config = Config<U>;
+}
 
+impl<T, U> WithConfig for Slopes<T, U> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
+        let state = State { input: None };
         Self { config, state }
     }
 }
 
-impl<'a, T, U> ConfigTrait for &'a Slopes<T, U> {
-    type ConfigRef = &'a Config<U>;
+impl<T, U> StateTrait for Slopes<T, U> {
+    type State = State<T>;
+}
 
-    fn config(self) -> Self::ConfigRef {
+impl<T, U> ConfigRef for Slopes<T, U> {
+    fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, U> Stateful for Slopes<T, U> {
-    type State = State<T>;
-}
-
-unsafe impl<T, U> StatefulUnsafe for Slopes<T, U> {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
-
+impl<T, U> StateMut for Slopes<T, U> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T, U> InitialState<&'a Config<U>> for Slopes<T, U> {
-    fn initial_state(_config: &'a Config<U>) -> Self::State {
-        State { input: None }
+impl<T, U> Destruct for Slopes<T, U> {
+    type Output = (Config<U>, State<T>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T, U> Resettable for Slopes<T, U> {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+impl<T, U> Reset for Slopes<T, U> {
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 

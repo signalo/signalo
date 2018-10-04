@@ -4,16 +4,16 @@
 
 //! Moving median filters.
 
-use signalo_traits::filter::Filter;
-
 use generic_array::ArrayLength;
 use num_traits::{Num, Signed};
 
-use filter::median::{ListNode, Median};
-
+use signalo_traits::filter::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
+
+use filter::median::{ListNode, Median};
 
 /// The hampel filter's configuration.
 #[derive(Clone, Debug)]
@@ -28,8 +28,8 @@ pub struct State<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
-    // Median filter
-    median: Median<T, N>,
+    /// Median filter.
+    pub median: Median<T, N>,
 }
 
 /// A hampel filter of fixed width.
@@ -91,72 +91,72 @@ where
     }
 }
 
-impl<T, N> WithConfig for Hampel<T, N>
+impl<T, N> ConfigTrait for Hampel<T, N>
 where
-    T: Clone,
     N: ArrayLength<ListNode<T>>,
 {
     type Config = Config<T>;
-
-    type Output = Self;
-
-    fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
-        Self { config, state }
-    }
 }
 
-impl<'a, T, N> ConfigTrait for &'a Hampel<T, N>
+impl<T, N> StateTrait for Hampel<T, N>
 where
-    N: ArrayLength<ListNode<T>>,
-{
-    type ConfigRef = &'a Config<T>;
-
-    fn config(self) -> Self::ConfigRef {
-        &self.config
-    }
-}
-
-impl<T, N> Stateful for Hampel<T, N>
-where
-    T: Clone,
     N: ArrayLength<ListNode<T>>,
 {
     type State = State<T, N>;
 }
 
-unsafe impl<T, N> StatefulUnsafe for Hampel<T, N>
+impl<T, N> WithConfig for Hampel<T, N>
 where
-    T: Clone,
+    N: ArrayLength<ListNode<T>>,
+    Median<T, N>: Default,
+{
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = {
+            let median = Median::default();
+            State { median }
+        };
+        Self { config, state }
+    }
+}
+
+impl<T, N> ConfigRef for Hampel<T, N>
+where
     N: ArrayLength<ListNode<T>>,
 {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
     }
+}
 
+impl<T, N> StateMut for Hampel<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T, N> InitialState<&'a Config<T>> for Hampel<T, N>
+impl<T, N> Destruct for Hampel<T, N>
 where
-    T: Clone,
     N: ArrayLength<ListNode<T>>,
 {
-    fn initial_state(_config: &'a Config<T>) -> Self::State {
-        let median = Median::default();
-        State { median }
+    type Output = (Config<T>, State<T, N>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T, N> Resettable for Hampel<T, N>
+impl<T, N> Reset for Hampel<T, N>
 where
-    T: Clone,
     N: ArrayLength<ListNode<T>>,
+    Median<T, N>: Default,
 {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 

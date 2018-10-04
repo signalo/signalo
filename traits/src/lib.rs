@@ -25,10 +25,13 @@ pub use source::Source;
 pub mod prelude {}
 
 /// Trait for **configurable** systems.
-pub trait WithConfig: Sized {
+pub trait Config {
     /// The filter's configuration.
     type Config;
+}
 
+/// Trait for **config-constructable** systems.
+pub trait WithConfig: Config {
     /// The return type of `fn with_config(…)`.
     type Output;
 
@@ -37,12 +40,15 @@ pub trait WithConfig: Sized {
 }
 
 /// Trait for **configurable** systems.
-pub trait Config {
-    /// A reference to the filter's configuration.
-    type ConfigRef;
+pub trait ConfigClone: Config {
+    /// Returns the config.
+    fn config(&self) -> Self::Config;
+}
 
-    /// Returns a reference to its configuration.
-    fn config(self) -> Self::ConfigRef;
+/// Trait for **configurable** systems.
+pub trait ConfigRef: Config {
+    /// Returns a reference to the config.
+    fn config_ref(&self) -> &Self::Config;
 }
 
 /// Trait for **stateful** systems.
@@ -50,50 +56,45 @@ pub trait Config {
 /// # Background:
 ///
 /// Stateful systems **can react to the same input differently depending on the current state**.
-pub trait Stateful: Sized {
+pub trait State: Sized {
     /// The filter's internal state.
     type State;
 }
 
-/// Unsafe trait for accessing the state of **stateful** systems.
-///
-/// # Caution:
-///
-/// Use methods ins this trait with caution and care, as their use harms encapsulation. If possible avoid.
-/// As such any state exposed through `StatefulUnsafe` is to be considered an unstable implementation
-/// detail, as internal refactoring can cause breaking changes in connected systems any time.
-pub unsafe trait StatefulUnsafe: Stateful {
+/// Trait for systems with mutably accessible state.
+pub trait StateMut: State {
     /// Returns a mutable reference to the internal state of the filter.
-    unsafe fn state(&self) -> &Self::State;
-
-    /// Returns a mutable reference to the internal state of the filter.
+    /// # Important:
+    ///
+    /// Relying on the internal structure of an object breaks encapsulation.
     unsafe fn state_mut(&mut self) -> &mut Self::State;
 }
 
-/// Axiliary trait for **stateful** systems.
-///
-/// # Background:
-///
-/// `InitialState` is an auxiliary trait intended for use in combination with `Resettable`:
-///
-/// ```rust, ignore
-/// impl Resettable for Scale {
-///     fn reset(&mut self) {
-///         self.state = Self::initial_state(...);
-///     }
-/// }
-/// ```
-pub trait InitialState<T>: Stateful {
-    /// Returns the filter's initial state for a given parameter.
-    fn initial_state(parameter: T) -> Self::State;
+/// Trait for **destructable** systems.
+pub trait Destruct: Sized {
+    /// The return type of `fn into_guts(…)`.
+    type Output;
+
+    /// Destructs `self` into its `self.config` and `self.state` components.
+    fn destruct(self) -> Self::Output;
 }
 
 /// Trait for **resettable** systems.
 ///
 /// # Background:
 ///
-/// Resettable systems **can be reset to their initial state**.
-pub trait Resettable: Stateful {
-    /// Resets the internal state of the filter.
-    fn reset(&mut self);
+/// Reset systems **can be reset to their initial state**.
+pub trait Reset: Sized {
+    /// Returns an instance with a freshly reset internal state.
+    fn reset(self) -> Self;
+
+    /// Resets the internal state.
+    fn reset_mut(&mut self) {
+        use std::{mem, ptr};
+
+        unsafe {
+            let owned_self = ptr::replace(self, mem::uninitialized());
+            ptr::write(self, owned_self.reset());
+        }
+    }
 }

@@ -10,9 +10,8 @@ use generic_array::typenum::U2;
 use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
-
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
 };
 
 /// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s configuration.
@@ -40,49 +39,49 @@ pub struct Schmitt<T, U> {
     state: State,
 }
 
-impl<T, U> WithConfig for Schmitt<T, U> {
+impl<T, U> ConfigTrait for Schmitt<T, U> {
     type Config = Config<T, U>;
+}
 
+impl<T, U> StateTrait for Schmitt<T, U> {
+    type State = State;
+}
+
+impl<T, U> WithConfig for Schmitt<T, U> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
+        let state = {
+            let on = false;
+            State { on }
+        };
         Self { config, state }
     }
 }
 
-impl<'a, T, U> ConfigTrait for &'a Schmitt<T, U> {
-    type ConfigRef = &'a Config<T, U>;
-
-    fn config(self) -> Self::ConfigRef {
+impl<T, U> ConfigRef for Schmitt<T, U> {
+    fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, U> Stateful for Schmitt<T, U> {
-    type State = State;
-}
-
-unsafe impl<T, U> StatefulUnsafe for Schmitt<T, U> {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
-
+impl<T, U> StateMut for Schmitt<T, U> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T, U> InitialState<&'a Config<T, U>> for Schmitt<T, U> {
-    fn initial_state(_config: &'a Config<T, U>) -> Self::State {
-        let on = false;
-        State { on }
+impl<T, U> Destruct for Schmitt<T, U> {
+    type Output = (Config<T, U>, State);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T, U> Resettable for Schmitt<T, U> {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+impl<T, U> Reset for Schmitt<T, U> {
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 

@@ -10,14 +10,14 @@ use generic_array::typenum::*;
 use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
+use signalo_traits::{
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
+};
 
 use filter::classify::{
     slopes::{Config as SlopesConfig, Slope, Slopes, State as SlopesState},
     Classification,
-};
-
-use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
 };
 
 /// A slope's kind.
@@ -99,52 +99,52 @@ where
     }
 }
 
-impl<T, U> WithConfig for Peaks<T, U> {
+impl<T, U> ConfigTrait for Peaks<T, U> {
     type Config = Config<U>;
+}
 
+impl<T, U> StateTrait for Peaks<T, U> {
+    type State = State<T>;
+}
+
+impl<T, U> WithConfig for Peaks<T, U> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
+        let state = {
+            let slopes = Slopes::with_config(SlopesConfig {
+                outputs: Slope::classes(),
+            });
+            let slope = None;
+            State { slopes, slope }
+        };
         Self { config, state }
     }
 }
 
-impl<'a, T, U> ConfigTrait for &'a Peaks<T, U> {
-    type ConfigRef = &'a Config<U>;
-
-    fn config(self) -> Self::ConfigRef {
+impl<T, U> ConfigRef for Peaks<T, U> {
+    fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, U> Stateful for Peaks<T, U> {
-    type State = State<T>;
-}
-
-unsafe impl<T, U> StatefulUnsafe for Peaks<T, U> {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
-
+impl<T, U> StateMut for Peaks<T, U> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T, U> InitialState<&'a Config<U>> for Peaks<T, U> {
-    fn initial_state(_config: &'a Config<U>) -> Self::State {
-        let slopes = Slopes::with_config(SlopesConfig {
-            outputs: Slope::classes(),
-        });
-        let slope = None;
-        State { slopes, slope }
+impl<T, U> Destruct for Peaks<T, U> {
+    type Output = (Config<U>, State<T>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T, U> Resettable for Peaks<T, U> {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+impl<T, U> Reset for Peaks<T, U> {
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 

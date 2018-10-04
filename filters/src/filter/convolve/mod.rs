@@ -12,7 +12,7 @@ use num_traits::Num;
 use signalo_traits::filter::Filter;
 
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
 };
 
 pub mod savitzky_golay;
@@ -70,67 +70,70 @@ where
     }
 }
 
-impl<T, N> WithConfig for Convolve<T, N>
+impl<T, N> ConfigTrait for Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
     type Config = Config<T, N>;
-
-    type Output = Self;
-
-    fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
-        Self { config, state }
-    }
 }
 
-impl<'a, T, N> ConfigTrait for &'a Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
-    type ConfigRef = &'a Config<T, N>;
-
-    fn config(self) -> Self::ConfigRef {
-        &self.config
-    }
-}
-
-impl<T, N> Stateful for Convolve<T, N>
+impl<T, N> StateTrait for Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
     type State = State<T, N>;
 }
 
-unsafe impl<T, N> StatefulUnsafe for Convolve<T, N>
+impl<T, N> WithConfig for Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
+    type Output = Self;
 
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = {
+            let taps = ArrayDeque::new();
+            State { taps }
+        };
+        Self { config, state }
+    }
+}
+
+impl<T, N> ConfigRef for Convolve<T, N>
+where
+    N: ArrayLength<T>,
+{
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl<T, N> StateMut for Convolve<T, N>
+where
+    N: ArrayLength<T>,
+{
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T, N> InitialState<&'a Config<T, N>> for Convolve<T, N>
+impl<T, N> Destruct for Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
-    fn initial_state(_config: &'a Config<T, N>) -> Self::State {
-        let taps = ArrayDeque::new();
-        State { taps }
+    type Output = (Config<T, N>, State<T, N>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T, N> Resettable for Convolve<T, N>
+impl<T, N> Reset for Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 

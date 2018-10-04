@@ -9,8 +9,13 @@ use std::ops::Sub;
 use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
+use signalo_traits::{
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
+};
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+/// The differentiate filter's configuration.
+#[derive(Default, Clone, Debug)]
+pub struct Config {}
 
 /// The differentiate filter's state.
 #[derive(Clone, Debug)]
@@ -22,43 +27,65 @@ pub struct State<T> {
 /// A differentiate filter that produces the derivative of the signal.
 #[derive(Clone, Debug)]
 pub struct Differentiate<T> {
+    config: Config,
     state: State<T>,
 }
 
 impl<T> Default for Differentiate<T>
 where
-    T: Default,
+    Config: Default,
 {
     fn default() -> Self {
-        let state = Self::initial_state(());
-        Self { state }
+        Self::with_config(Config::default())
     }
 }
 
-impl<T> Stateful for Differentiate<T> {
+impl<T> ConfigTrait for Differentiate<T> {
+    type Config = Config;
+}
+
+impl<T> StateTrait for Differentiate<T> {
     type State = State<T>;
 }
 
-unsafe impl<T> StatefulUnsafe for Differentiate<T> {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
+impl<T> WithConfig for Differentiate<T> {
+    type Output = Self;
 
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = {
+            let value = None;
+            State { value }
+        };
+        Self { config, state }
+    }
+}
+
+impl<T> ConfigRef for Differentiate<T>
+where
+    Config: Clone,
+{
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl<T> StateMut for Differentiate<T> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T> InitialState<()> for Differentiate<T> {
-    fn initial_state(_: ()) -> Self::State {
-        let value = None;
-        State { value }
+impl<T> Destruct for Differentiate<T> {
+    type Output = (Config, State<T>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T> Resettable for Differentiate<T> {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(());
+impl<T> Reset for Differentiate<T> {
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 

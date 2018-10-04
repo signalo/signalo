@@ -7,9 +7,8 @@
 use num_traits::Num;
 
 use signalo_traits::filter::Filter;
-
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
 };
 
 use filter::mean::exp::mean::{Config as MeanConfig, Mean};
@@ -36,9 +35,12 @@ pub struct Config<T> {
 /// The median filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
-    mean_pre: Mean<T>,
-    mean_post: Mean<T>,
-    median: Option<T>,
+    /// Pre-processing low-pass filter.
+    pub mean_pre: Mean<T>,
+    /// Post-processing low-pass filter.
+    pub mean_post: Mean<T>,
+    /// Current median value.
+    pub median: Option<T>,
 }
 
 /// A median filter producing the approximated exponential moving median over a given signal.
@@ -48,64 +50,61 @@ pub struct Median<T> {
     state: State<T>,
 }
 
+impl<T> ConfigTrait for Median<T> {
+    type Config = Config<T>;
+}
+
+impl<T> StateTrait for Median<T> {
+    type State = State<T>;
+}
+
 impl<T> WithConfig for Median<T>
 where
     T: Clone,
 {
-    type Config = Config<T>;
-
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
+        let state = {
+            let mean_pre = Mean::with_config(config.pre.clone());
+            let mean_post = Mean::with_config(config.post.clone());
+            let median = None;
+            State {
+                mean_pre,
+                mean_post,
+                median,
+            }
+        };
         Self { config, state }
     }
 }
 
-impl<'a, T> ConfigTrait for &'a Median<T> {
-    type ConfigRef = &'a Config<T>;
-
-    fn config(self) -> Self::ConfigRef {
+impl<T> ConfigRef for Median<T> {
+    fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T> Stateful for Median<T> {
-    type State = State<T>;
-}
-
-unsafe impl<T> StatefulUnsafe for Median<T> {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
-
+impl<T> StateMut for Median<T> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T> InitialState<&'a Config<T>> for Median<T>
-where
-    T: Clone,
-{
-    fn initial_state(config: &'a Config<T>) -> Self::State {
-        let mean_pre = Mean::with_config(config.pre.clone());
-        let mean_post = Mean::with_config(config.post.clone());
-        let median = None;
-        State {
-            mean_pre,
-            mean_post,
-            median,
-        }
+impl<T> Destruct for Median<T> {
+    type Output = (Config<T>, State<T>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T> Resettable for Median<T>
+impl<T> Reset for Median<T>
 where
     T: Clone,
 {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 
