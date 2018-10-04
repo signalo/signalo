@@ -5,15 +5,15 @@
 //! Wavelet analysis (i.e. decomposition) filters.
 
 use generic_array::ArrayLength;
+
 use num_traits::Num;
 
 use signalo_traits::filter::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigClone, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
 };
 
 use filter::convolve::{Config as ConvolveConfig, Convolve};
-
 use filter::wavelet::Decomposition;
 
 /// The wavelet filter's configuration.
@@ -28,41 +28,16 @@ where
     pub high_pass: ConvolveConfig<T, N>,
 }
 
-/// The wavelet filter's configuration.
-#[derive(Clone, Debug)]
-pub struct ConfigRef<'a, T, N>
-where
-    T: 'a,
-    N: 'a + ArrayLength<T>,
-{
-    /// The low-pass convolution' configuration.
-    pub low_pass: &'a ConvolveConfig<T, N>,
-    /// The high-pass convolution' configuration.
-    pub high_pass: &'a ConvolveConfig<T, N>,
-}
-
-impl<'a, T, N> ConfigRef<'a, T, N>
-where
-    T: Clone,
-    N: ArrayLength<T>,
-    ConvolveConfig<T, N>: Clone,
-{
-    fn to_owned(self) -> Config<T, N> {
-        Config {
-            low_pass: self.low_pass.clone(),
-            high_pass: self.high_pass.clone(),
-        }
-    }
-}
-
 /// A wavelet filter's internal state.
 #[derive(Clone, Debug)]
 pub struct State<T, N>
 where
     N: ArrayLength<T>,
 {
-    low_pass: Convolve<T, N>,
-    high_pass: Convolve<T, N>,
+    /// Low-pass convolution.
+    pub low_pass: Convolve<T, N>,
+    /// Low-pass convolution.
+    pub high_pass: Convolve<T, N>,
 }
 
 /// A wavelet filter.
@@ -74,81 +49,83 @@ where
     state: State<T, N>,
 }
 
-impl<T, N> WithConfig for Analyze<T, N>
+impl<T, N> ConfigTrait for Analyze<T, N>
 where
-    T: Clone,
     N: ArrayLength<T>,
-    ConvolveConfig<T, N>: Clone,
 {
     type Config = Config<T, N>;
-
-    type Output = Self;
-
-    fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
-        Self { state }
-    }
 }
 
-impl<'a, T, N> ConfigTrait for &'a Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
-    type ConfigRef = ConfigRef<'a, T, N>;
-
-    fn config(self) -> Self::ConfigRef {
-        ConfigRef {
-            low_pass: self.state.low_pass.config(),
-            high_pass: self.state.high_pass.config(),
-        }
-    }
-}
-
-impl<T, N> Stateful for Analyze<T, N>
+impl<T, N> StateTrait for Analyze<T, N>
 where
     N: ArrayLength<T>,
 {
     type State = State<T, N>;
 }
 
-unsafe impl<T, N> StatefulUnsafe for Analyze<T, N>
+impl<T, N> WithConfig for Analyze<T, N>
 where
     N: ArrayLength<T>,
 {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
+    type Output = Self;
 
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
-        &mut self.state
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = {
+            let low_pass = Convolve::with_config(config.low_pass);
+            let high_pass = Convolve::with_config(config.high_pass);
+            State {
+                low_pass,
+                high_pass,
+            }
+        };
+        Self { state }
     }
 }
 
-impl<'a, T, N> InitialState<&'a Config<T, N>> for Analyze<T, N>
+impl<T, N> ConfigClone for Analyze<T, N>
 where
-    T: Clone,
     N: ArrayLength<T>,
-    ConvolveConfig<T, N>: Clone,
+    Convolve<T, N>: ConfigClone<Config = ConvolveConfig<T, N>>,
 {
-    fn initial_state(config: &'a Config<T, N>) -> Self::State {
-        let low_pass = Convolve::with_config(config.low_pass.clone());
-        let high_pass = Convolve::with_config(config.high_pass.clone());
-        State {
+    fn config(&self) -> Self::Config {
+        let low_pass = self.state.low_pass.config();
+        let high_pass = self.state.high_pass.config();
+        Config {
             low_pass,
             high_pass,
         }
     }
 }
 
-impl<T, N> Resettable for Analyze<T, N>
+impl<T, N> StateMut for Analyze<T, N>
 where
-    T: Clone,
     N: ArrayLength<T>,
-    ConvolveConfig<T, N>: Clone,
 {
-    fn reset(&mut self) {
-        let config = self.config().to_owned();
-        self.state = Self::initial_state(&config);
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, N> Destruct for Analyze<T, N>
+where
+    N: ArrayLength<T>,
+    Self: ConfigClone<Config = Config<T, N>>,
+{
+    type Output = (Config<T, N>, State<T, N>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config(), self.state)
+    }
+}
+
+impl<T, N> Reset for Analyze<T, N>
+where
+    N: ArrayLength<T>,
+    Self: ConfigClone<Config = Config<T, N>>,
+    Self: WithConfig<Output = Self>,
+{
+    fn reset(self) -> Self {
+        Self::with_config(self.config())
     }
 }
 

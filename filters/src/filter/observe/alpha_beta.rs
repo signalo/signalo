@@ -7,9 +7,9 @@
 use num_traits::{Num, Zero};
 
 use signalo_traits::filter::Filter;
-
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 /// The alpha-beta filter's configuration.
@@ -46,59 +46,56 @@ pub struct AlphaBeta<T> {
     state: State<T>,
 }
 
+impl<T> ConfigTrait for AlphaBeta<T> {
+    type Config = Config<T>;
+}
+
+impl<T> StateTrait for AlphaBeta<T> {
+    type State = State<T>;
+}
+
 impl<T> WithConfig for AlphaBeta<T>
 where
-    T: Clone + Zero,
+    T: Zero,
 {
-    type Config = Config<T>;
-
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
+        let state = {
+            let velocity = T::zero();
+            let value = None;
+            State { velocity, value }
+        };
         Self { config, state }
     }
 }
 
-impl<'a, T> ConfigTrait for &'a AlphaBeta<T> {
-    type ConfigRef = &'a Config<T>;
-
-    fn config(self) -> Self::ConfigRef {
+impl<T> ConfigRef for AlphaBeta<T> {
+    fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T> Stateful for AlphaBeta<T> {
-    type State = State<T>;
-}
-
-unsafe impl<T> StatefulUnsafe for AlphaBeta<T> {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
-
+impl<T> StateMut for AlphaBeta<T> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T> InitialState<&'a Config<T>> for AlphaBeta<T>
-where
-    T: Zero,
-{
-    fn initial_state(_config: &'a Config<T>) -> Self::State {
-        let velocity = T::zero();
-        let value = None;
-        State { velocity, value }
+impl<T> Destruct for AlphaBeta<T> {
+    type Output = (Config<T>, State<T>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T> Resettable for AlphaBeta<T>
+impl<T> Reset for AlphaBeta<T>
 where
     T: Zero,
 {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 

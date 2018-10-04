@@ -11,10 +11,16 @@ use generic_array::ArrayLength;
 use num_traits::{Num, Signed, Zero};
 
 use signalo_traits::filter::Filter;
-
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::{
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
+};
 
 use super::mean::Mean;
+
+/// The mean/variance filter's config.
+#[derive(Default, Clone, Debug)]
+pub struct Config {}
 
 /// The mean/variance filter's state.
 #[derive(Clone)]
@@ -47,6 +53,7 @@ pub struct MeanVariance<T, N>
 where
     N: ArrayLength<T>,
 {
+    config: Config,
     state: State<T, N>,
 }
 
@@ -56,8 +63,7 @@ where
     N: ArrayLength<T>,
 {
     fn default() -> Self {
-        let state = Self::initial_state(());
-        Self { state }
+        Self::with_config(Config::default())
     }
 }
 
@@ -73,47 +79,73 @@ where
     }
 }
 
-impl<T, N> Stateful for MeanVariance<T, N>
+impl<T, N> ConfigTrait for MeanVariance<T, N>
 where
-    T: Clone,
+    N: ArrayLength<T>,
+{
+    type Config = Config;
+}
+
+impl<T, N> StateTrait for MeanVariance<T, N>
+where
     N: ArrayLength<T>,
 {
     type State = State<T, N>;
 }
 
-unsafe impl<T, N> StatefulUnsafe for MeanVariance<T, N>
+impl<T, N> WithConfig for MeanVariance<T, N>
 where
-    T: Clone,
+    N: ArrayLength<T>,
+    Mean<T, N>: Default,
+{
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = {
+            let mean = Mean::default();
+            let variance = Mean::default();
+            State { mean, variance }
+        };
+        Self { config, state }
+    }
+}
+
+impl<T, N> ConfigRef for MeanVariance<T, N>
+where
     N: ArrayLength<T>,
 {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
     }
+}
 
+impl<T, N> StateMut for MeanVariance<T, N>
+where
+    N: ArrayLength<T>,
+{
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> InitialState<()> for MeanVariance<T, N>
+impl<T, N> Destruct for MeanVariance<T, N>
 where
-    T: Clone + Default + Zero,
     N: ArrayLength<T>,
 {
-    fn initial_state(_: ()) -> Self::State {
-        let mean = Mean::default();
-        let variance = Mean::default();
-        State { mean, variance }
+    type Output = (Config, State<T, N>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T, N> Resettable for MeanVariance<T, N>
+impl<T, N> Reset for MeanVariance<T, N>
 where
-    T: Clone + Default + Zero,
     N: ArrayLength<T>,
+    Mean<T, N>: Default,
 {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(());
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 
@@ -129,7 +161,7 @@ where
         let mean_old = unsafe {
             self.state
                 .mean
-                .state()
+                .state_mut()
                 .mean
                 .clone()
                 .unwrap_or(input.clone())

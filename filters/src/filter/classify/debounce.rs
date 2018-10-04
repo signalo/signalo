@@ -10,9 +10,8 @@ use generic_array::typenum::U2;
 use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
-
 use signalo_traits::{
-    Config as ConfigTrait, InitialState, Resettable, Stateful, StatefulUnsafe, WithConfig,
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
 };
 
 /// The [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter's configuration.
@@ -30,7 +29,7 @@ pub struct Config<T, U> {
 #[derive(Clone, Debug)]
 pub struct State {
     /// Counter of how long input was the same.
-    count: usize,
+    pub count: usize,
 }
 
 /// A [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter.
@@ -42,49 +41,49 @@ pub struct Debounce<T, U> {
     state: State,
 }
 
-impl<T, U> WithConfig for Debounce<T, U> {
+impl<T, U> ConfigTrait for Debounce<T, U> {
     type Config = Config<T, U>;
+}
 
+impl<T, U> StateTrait for Debounce<T, U> {
+    type State = State;
+}
+
+impl<T, U> WithConfig for Debounce<T, U> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let state = Self::initial_state(&config);
+        let state = {
+            let count = 0;
+            State { count }
+        };
         Self { config, state }
     }
 }
 
-impl<'a, T, U> ConfigTrait for &'a Debounce<T, U> {
-    type ConfigRef = &'a Config<T, U>;
-
-    fn config(self) -> Self::ConfigRef {
+impl<T, U> ConfigRef for Debounce<T, U> {
+    fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, U> Stateful for Debounce<T, U> {
-    type State = State;
-}
-
-unsafe impl<T, U> StatefulUnsafe for Debounce<T, U> {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
-
+impl<T, U> StateMut for Debounce<T, U> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<'a, T, U> InitialState<&'a Config<T, U>> for Debounce<T, U> {
-    fn initial_state(_config: &'a Config<T, U>) -> Self::State {
-        let count = 0;
-        State { count }
+impl<T, U> Destruct for Debounce<T, U> {
+    type Output = (Config<T, U>, State);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T, U> Resettable for Debounce<T, U> {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(self.config());
+impl<T, U> Reset for Debounce<T, U> {
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 
@@ -99,7 +98,7 @@ where
         if input == self.config.predicate {
             self.state.count = (self.state.count + 1).min(self.config.threshold);
         } else {
-            self.reset();
+            self.reset_mut();
         }
         let index = (self.state.count >= self.config.threshold) as usize;
         self.config.outputs[index].clone()

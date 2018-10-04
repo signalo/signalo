@@ -4,16 +4,22 @@
 
 //! Moving median filters.
 
-use signalo_traits::filter::Filter;
-
 use std::fmt;
 use std::ptr;
 
 use generic_array::{ArrayBuilder, ArrayLength, GenericArray};
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+use signalo_traits::filter::Filter;
+use signalo_traits::{
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
+};
 
 pub mod exp;
+
+/// The median filter's config.
+#[derive(Default, Clone, Debug)]
+pub struct Config {}
 
 /// The median filter's state.
 #[derive(Clone)]
@@ -110,17 +116,164 @@ pub struct Median<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
+    config: Config,
     state: State<T, N>,
 }
 
 impl<T, N> Default for Median<T, N>
 where
-    T: Clone,
     N: ArrayLength<ListNode<T>>,
+    Config: Default,
 {
     fn default() -> Self {
-        let state = Self::initial_state(());
-        Self { state }
+        Self::with_config(Config::default())
+    }
+}
+
+impl<T, N> ConfigTrait for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    type Config = Config;
+}
+
+impl<T, N> StateTrait for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    type State = State<T, N>;
+}
+
+impl<T, N> WithConfig for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = {
+            let buffer = unsafe {
+                let mut builder = ArrayBuilder::new();
+                {
+                    let size = N::to_usize();
+                    let (mut iter, index) = builder.iter_position();
+                    while let Some(destination) = iter.next() {
+                        let node = ListNode {
+                            value: None,
+                            previous: (*index + size - 1) % size,
+                            next: (*index + 1) % size,
+                        };
+                        ptr::write(destination, node);
+                        *index += 1;
+                    }
+                }
+                builder.into_inner()
+            };
+            let cursor = 0;
+            let head = 0;
+            let median = 0;
+            State {
+                buffer,
+                cursor,
+                head,
+                median,
+            }
+        };
+        Self { config, state }
+    }
+}
+
+impl<T, N> ConfigRef for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl<T, N> StateMut for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    unsafe fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, N> Destruct for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    type Output = (Config, State<T, N>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
+    }
+}
+
+impl<T, N> Reset for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
+    }
+}
+
+impl<T, N> Filter<T> for Median<T, N>
+where
+    T: Clone + PartialOrd,
+    N: ArrayLength<ListNode<T>>,
+{
+    type Output = T;
+
+    fn filter(&mut self, input: T) -> Self::Output {
+        // If the current head is about to be overwritten
+        // we need to make sure to have the head point to
+        // the next node after the current head:
+        unsafe {
+            self.move_head_forward();
+        }
+
+        // Remove the node that is about to be overwritten
+        // from the linked list:
+        unsafe {
+            self.remove_node();
+        }
+
+        // Initialize `self.median` pointing
+        // to the first (smallest) node in the sorted list:
+        unsafe {
+            self.initialize_median();
+        }
+
+        // Search for the insertion index in the linked list
+        // in regards to `value` as the insertion index.
+        unsafe {
+            self.insert_value(&input);
+        }
+
+        // Update head to newly inserted node if
+        // cursor's value <= head's value or head is empty:
+        unsafe {
+            self.update_head(&input);
+        }
+
+        // If the filter has an even window size, then shift the median
+        // back one slot, so that it points to the left one
+        // of the middle pair of median values
+        unsafe {
+            self.adjust_median_for_even_length();
+        }
+
+        // Increment and wrap data in pointer:
+        unsafe {
+            self.increment_cursor();
+        }
+
+        // Read node value from buffer at `self.medium`:
+        unsafe { self.median_unchecked() }
     }
 }
 
@@ -272,129 +425,6 @@ where
     #[inline]
     unsafe fn median_unchecked(&mut self) -> T {
         self.median().unwrap()
-    }
-}
-
-impl<T, N> Stateful for Median<T, N>
-where
-    T: Clone,
-    N: ArrayLength<ListNode<T>>,
-{
-    type State = State<T, N>;
-}
-
-unsafe impl<T, N> StatefulUnsafe for Median<T, N>
-where
-    T: Clone,
-    N: ArrayLength<ListNode<T>>,
-{
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
-
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
-        &mut self.state
-    }
-}
-
-impl<T, N> InitialState<()> for Median<T, N>
-where
-    T: Clone,
-    N: ArrayLength<ListNode<T>>,
-{
-    fn initial_state(_: ()) -> Self::State {
-        let buffer = unsafe {
-            let mut builder = ArrayBuilder::new();
-            {
-                let size = N::to_usize();
-                let (mut iter, index) = builder.iter_position();
-                while let Some(destination) = iter.next() {
-                    let node = ListNode {
-                        value: None,
-                        previous: (*index + size - 1) % size,
-                        next: (*index + 1) % size,
-                    };
-                    ptr::write(destination, node);
-                    *index += 1;
-                }
-            }
-            builder.into_inner()
-        };
-        let cursor = 0;
-        let head = 0;
-        let median = 0;
-        State {
-            buffer,
-            cursor,
-            head,
-            median,
-        }
-    }
-}
-
-impl<T, N> Resettable for Median<T, N>
-where
-    T: Clone + Default,
-    N: ArrayLength<ListNode<T>>,
-{
-    fn reset(&mut self) {
-        self.state = Self::initial_state(());
-    }
-}
-
-impl<T, N> Filter<T> for Median<T, N>
-where
-    T: Clone + PartialOrd,
-    N: ArrayLength<ListNode<T>>,
-{
-    type Output = T;
-
-    fn filter(&mut self, input: T) -> Self::Output {
-        // If the current head is about to be overwritten
-        // we need to make sure to have the head point to
-        // the next node after the current head:
-        unsafe {
-            self.move_head_forward();
-        }
-
-        // Remove the node that is about to be overwritten
-        // from the linked list:
-        unsafe {
-            self.remove_node();
-        }
-
-        // Initialize `self.median` pointing
-        // to the first (smallest) node in the sorted list:
-        unsafe {
-            self.initialize_median();
-        }
-
-        // Search for the insertion index in the linked list
-        // in regards to `value` as the insertion index.
-        unsafe {
-            self.insert_value(&input);
-        }
-
-        // Update head to newly inserted node if
-        // cursor's value <= head's value or head is empty:
-        unsafe {
-            self.update_head(&input);
-        }
-
-        // If the filter has an even window size, then shift the median
-        // back one slot, so that it points to the left one
-        // of the middle pair of median values
-        unsafe {
-            self.adjust_median_for_even_length();
-        }
-
-        // Increment and wrap data in pointer:
-        unsafe {
-            self.increment_cursor();
-        }
-
-        // Read node value from buffer at `self.medium`:
-        unsafe { self.median_unchecked() }
     }
 }
 

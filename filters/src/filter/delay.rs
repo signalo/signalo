@@ -7,13 +7,20 @@
 use std::fmt;
 
 use arraydeque::{ArrayDeque, Wrapping};
+
 use generic_array::{ArrayLength, GenericArray};
 
 use num_traits::{Num, Zero};
 
 use signalo_traits::filter::Filter;
+use signalo_traits::{
+    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
+};
 
-use signalo_traits::{InitialState, Resettable, Stateful, StatefulUnsafe};
+/// The delay filter's config.
+#[derive(Default, Clone, Debug)]
+pub struct Config {}
 
 /// The delay filter's state.
 #[derive(Clone)]
@@ -41,6 +48,7 @@ pub struct Delay<T, N>
 where
     N: ArrayLength<T>,
 {
+    config: Config,
     state: State<T, N>,
 }
 
@@ -50,8 +58,7 @@ where
     N: ArrayLength<T>,
 {
     fn default() -> Self {
-        let state = Self::initial_state(());
-        Self { state }
+        Self::with_config(Config::default())
     }
 }
 
@@ -65,46 +72,70 @@ where
     }
 }
 
-impl<T, N> Stateful for Delay<T, N>
+impl<T, N> ConfigTrait for Delay<T, N>
 where
-    T: Clone,
+    N: ArrayLength<T>,
+{
+    type Config = Config;
+}
+
+impl<T, N> StateTrait for Delay<T, N>
+where
     N: ArrayLength<T>,
 {
     type State = State<T, N>;
 }
 
-unsafe impl<T, N> StatefulUnsafe for Delay<T, N>
+impl<T, N> WithConfig for Delay<T, N>
 where
-    T: Clone,
     N: ArrayLength<T>,
 {
-    unsafe fn state(&self) -> &Self::State {
-        &self.state
-    }
+    type Output = Self;
 
+    fn with_config(config: Self::Config) -> Self::Output {
+        let state = {
+            let taps = ArrayDeque::default();
+            State { taps }
+        };
+        Self { config, state }
+    }
+}
+
+impl<T, N> ConfigRef for Delay<T, N>
+where
+    N: ArrayLength<T>,
+{
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl<T, N> StateMut for Delay<T, N>
+where
+    N: ArrayLength<T>,
+{
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> InitialState<()> for Delay<T, N>
+impl<T, N> Destruct for Delay<T, N>
 where
-    T: Clone + Default + Zero,
     N: ArrayLength<T>,
 {
-    fn initial_state(_: ()) -> Self::State {
-        let taps = ArrayDeque::default();
-        State { taps }
+    type Output = (Config, State<T, N>);
+
+    fn destruct(self) -> Self::Output {
+        (self.config, self.state)
     }
 }
 
-impl<T, N> Resettable for Delay<T, N>
+impl<T, N> Reset for Delay<T, N>
 where
-    T: Clone + Default + Zero,
     N: ArrayLength<T>,
 {
-    fn reset(&mut self) {
-        self.state = Self::initial_state(());
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
     }
 }
 
