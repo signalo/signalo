@@ -9,13 +9,7 @@ use std::ops::Sub;
 use num_traits::Zero;
 
 use signalo_traits::filter::Filter;
-use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
-};
-
-/// The differentiate filter's configuration.
-#[derive(Default, Clone, Debug)]
-pub struct Config {}
+use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
 
 /// The differentiate filter's state.
 #[derive(Clone, Debug)]
@@ -27,46 +21,21 @@ pub struct State<T> {
 /// A differentiate filter that produces the derivative of the signal.
 #[derive(Clone, Debug)]
 pub struct Differentiate<T> {
-    config: Config,
     state: State<T>,
 }
 
-impl<T> Default for Differentiate<T>
-where
-    Config: Default,
-{
+impl<T> Default for Differentiate<T> {
     fn default() -> Self {
-        Self::with_config(Config::default())
-    }
-}
-
-impl<T> ConfigTrait for Differentiate<T> {
-    type Config = Config;
-}
-
-impl<T> StateTrait for Differentiate<T> {
-    type State = State<T>;
-}
-
-impl<T> WithConfig for Differentiate<T> {
-    type Output = Self;
-
-    fn with_config(config: Self::Config) -> Self::Output {
         let state = {
             let value = None;
             State { value }
         };
-        Self { config, state }
+        Self { state }
     }
 }
 
-impl<T> ConfigRef for Differentiate<T>
-where
-    Config: Clone,
-{
-    fn config_ref(&self) -> &Self::Config {
-        &self.config
-    }
+impl<T> StateTrait for Differentiate<T> {
+    type State = State<T>;
 }
 
 impl<T> StateMut for Differentiate<T> {
@@ -76,16 +45,16 @@ impl<T> StateMut for Differentiate<T> {
 }
 
 impl<T> Destruct for Differentiate<T> {
-    type Output = (Config, State<T>);
+    type Output = State<T>;
 
     fn destruct(self) -> Self::Output {
-        (self.config, self.state)
+        self.state
     }
 }
 
 impl<T> Reset for Differentiate<T> {
     fn reset(self) -> Self {
-        Self::with_config(self.config)
+        Self::default()
     }
 }
 

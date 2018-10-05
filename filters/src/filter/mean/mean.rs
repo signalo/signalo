@@ -12,13 +12,7 @@ use generic_array::{ArrayLength, GenericArray};
 use num_traits::{Num, Zero};
 
 use signalo_traits::filter::Filter;
-use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
-};
-
-/// The mean filter's config.
-#[derive(Default, Clone, Debug)]
-pub struct Config {}
+use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
 
 /// The mean filter's state.
 #[derive(Clone)]
@@ -54,17 +48,22 @@ pub struct Mean<T, N>
 where
     N: ArrayLength<T>,
 {
-    config: Config,
     state: State<T, N>,
 }
 
 impl<T, N> Default for Mean<T, N>
 where
-    T: Clone + Default + Zero,
+    T: Zero,
     N: ArrayLength<T>,
 {
     fn default() -> Self {
-        Self::with_config(Config::default())
+        let state = {
+            let mean = None;
+            let taps = ArrayDeque::default();
+            let weight = T::zero();
+            State { mean, taps, weight }
+        };
+        Self { state }
     }
 }
 
@@ -78,45 +77,11 @@ where
     }
 }
 
-impl<T, N> ConfigTrait for Mean<T, N>
-where
-    N: ArrayLength<T>,
-{
-    type Config = Config;
-}
-
 impl<T, N> StateTrait for Mean<T, N>
 where
     N: ArrayLength<T>,
 {
     type State = State<T, N>;
-}
-
-impl<T, N> WithConfig for Mean<T, N>
-where
-    T: Zero,
-    N: ArrayLength<T>,
-{
-    type Output = Self;
-
-    fn with_config(config: Self::Config) -> Self::Output {
-        let state = {
-            let mean = None;
-            let taps = ArrayDeque::default();
-            let weight = T::zero();
-            State { mean, taps, weight }
-        };
-        Self { config, state }
-    }
-}
-
-impl<T, N> ConfigRef for Mean<T, N>
-where
-    N: ArrayLength<T>,
-{
-    fn config_ref(&self) -> &Self::Config {
-        &self.config
-    }
 }
 
 impl<T, N> StateMut for Mean<T, N>
@@ -132,10 +97,10 @@ impl<T, N> Destruct for Mean<T, N>
 where
     N: ArrayLength<T>,
 {
-    type Output = (Config, State<T, N>);
+    type Output = State<T, N>;
 
     fn destruct(self) -> Self::Output {
-        (self.config, self.state)
+        self.state
     }
 }
 
@@ -145,7 +110,7 @@ where
     N: ArrayLength<T>,
 {
     fn reset(self) -> Self {
-        Self::with_config(self.config)
+        Self::default()
     }
 }
 
