@@ -8,19 +8,12 @@ use std::fmt;
 
 use generic_array::ArrayLength;
 
-use num_traits::{Num, Signed, Zero};
+use num_traits::{Num, Signed};
 
 use signalo_traits::filter::Filter;
-use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
-    WithConfig,
-};
+use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
 
 use super::mean::Mean;
-
-/// The mean/variance filter's config.
-#[derive(Default, Clone, Debug)]
-pub struct Config {}
 
 /// The mean/variance filter's state.
 #[derive(Clone)]
@@ -53,17 +46,21 @@ pub struct MeanVariance<T, N>
 where
     N: ArrayLength<T>,
 {
-    config: Config,
     state: State<T, N>,
 }
 
 impl<T, N> Default for MeanVariance<T, N>
 where
-    T: Clone + Default + Zero,
     N: ArrayLength<T>,
+    Mean<T, N>: Default,
 {
     fn default() -> Self {
-        Self::with_config(Config::default())
+        let state = {
+            let mean = Mean::default();
+            let variance = Mean::default();
+            State { mean, variance }
+        };
+        Self { state }
     }
 }
 
@@ -79,44 +76,11 @@ where
     }
 }
 
-impl<T, N> ConfigTrait for MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-{
-    type Config = Config;
-}
-
 impl<T, N> StateTrait for MeanVariance<T, N>
 where
     N: ArrayLength<T>,
 {
     type State = State<T, N>;
-}
-
-impl<T, N> WithConfig for MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-    Mean<T, N>: Default,
-{
-    type Output = Self;
-
-    fn with_config(config: Self::Config) -> Self::Output {
-        let state = {
-            let mean = Mean::default();
-            let variance = Mean::default();
-            State { mean, variance }
-        };
-        Self { config, state }
-    }
-}
-
-impl<T, N> ConfigRef for MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-{
-    fn config_ref(&self) -> &Self::Config {
-        &self.config
-    }
 }
 
 impl<T, N> StateMut for MeanVariance<T, N>
@@ -132,10 +96,10 @@ impl<T, N> Destruct for MeanVariance<T, N>
 where
     N: ArrayLength<T>,
 {
-    type Output = (Config, State<T, N>);
+    type Output = State<T, N>;
 
     fn destruct(self) -> Self::Output {
-        (self.config, self.state)
+        self.state
     }
 }
 
@@ -145,7 +109,7 @@ where
     Mean<T, N>: Default,
 {
     fn reset(self) -> Self {
-        Self::with_config(self.config)
+        Self::default()
     }
 }
 

@@ -10,16 +10,9 @@ use std::ptr;
 use generic_array::{ArrayBuilder, ArrayLength, GenericArray};
 
 use signalo_traits::filter::Filter;
-use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
-    WithConfig,
-};
+use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
 
 pub mod exp;
-
-/// The median filter's config.
-#[derive(Default, Clone, Debug)]
-pub struct Config {}
 
 /// The median filter's state.
 #[derive(Clone)]
@@ -116,41 +109,14 @@ pub struct Median<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
-    config: Config,
     state: State<T, N>,
 }
 
 impl<T, N> Default for Median<T, N>
 where
     N: ArrayLength<ListNode<T>>,
-    Config: Default,
 {
     fn default() -> Self {
-        Self::with_config(Config::default())
-    }
-}
-
-impl<T, N> ConfigTrait for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
-    type Config = Config;
-}
-
-impl<T, N> StateTrait for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
-    type State = State<T, N>;
-}
-
-impl<T, N> WithConfig for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
-    type Output = Self;
-
-    fn with_config(config: Self::Config) -> Self::Output {
         let state = {
             let buffer = unsafe {
                 let mut builder = ArrayBuilder::new();
@@ -179,17 +145,15 @@ where
                 median,
             }
         };
-        Self { config, state }
+        Self { state }
     }
 }
 
-impl<T, N> ConfigRef for Median<T, N>
+impl<T, N> StateTrait for Median<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
-    fn config_ref(&self) -> &Self::Config {
-        &self.config
-    }
+    type State = State<T, N>;
 }
 
 impl<T, N> StateMut for Median<T, N>
@@ -205,10 +169,10 @@ impl<T, N> Destruct for Median<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
-    type Output = (Config, State<T, N>);
+    type Output = State<T, N>;
 
     fn destruct(self) -> Self::Output {
-        (self.config, self.state)
+        self.state
     }
 }
 
@@ -217,7 +181,7 @@ where
     N: ArrayLength<ListNode<T>>,
 {
     fn reset(self) -> Self {
-        Self::with_config(self.config)
+        Self::default()
     }
 }
 

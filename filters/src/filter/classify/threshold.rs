@@ -10,9 +10,7 @@ use generic_array::typenum::U2;
 use generic_array::GenericArray;
 
 use signalo_traits::filter::Filter;
-use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
-};
+use signalo_traits::{Config as ConfigTrait, ConfigRef, Destruct, Reset, WithConfig};
 
 /// The threshold filter's configuration.
 #[derive(Clone, Debug)]
@@ -23,31 +21,21 @@ pub struct Config<T, U> {
     pub outputs: GenericArray<U, U2>,
 }
 
-/// The threshold filter's state.
-#[derive(Clone, Debug)]
-pub struct State {}
-
 /// A threshold filter.
 #[derive(Clone, Debug)]
 pub struct Threshold<T, U> {
     config: Config<T, U>,
-    state: State,
 }
 
 impl<T, U> ConfigTrait for Threshold<T, U> {
     type Config = Config<T, U>;
 }
 
-impl<T, U> StateTrait for Threshold<T, U> {
-    type State = State;
-}
-
 impl<T, U> WithConfig for Threshold<T, U> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let state = State {};
-        Self { config, state }
+        Self { config }
     }
 }
 
@@ -57,17 +45,11 @@ impl<T, U> ConfigRef for Threshold<T, U> {
     }
 }
 
-impl<T, U> StateMut for Threshold<T, U> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
-        &mut self.state
-    }
-}
-
 impl<T, U> Destruct for Threshold<T, U> {
-    type Output = (Config<T, U>, State);
+    type Output = Config<T, U>;
 
     fn destruct(self) -> Self::Output {
-        (self.config, self.state)
+        self.config
     }
 }
 
