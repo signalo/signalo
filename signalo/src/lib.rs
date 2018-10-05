@@ -13,9 +13,13 @@
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-extern crate signalo_filters;
-extern crate signalo_pipes;
-extern crate signalo_traits;
+pub extern crate signalo_filters;
+pub extern crate signalo_pipes;
+pub extern crate signalo_traits;
+
+pub use signalo_filters as filters;
+pub use signalo_pipes as pipes;
+pub use signalo_traits as traits;
 
 /// The crate's prelude.
 pub mod prelude {
