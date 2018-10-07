@@ -16,15 +16,6 @@ extern crate core as std;
 
 extern crate num_traits;
 
-extern crate arraydeque;
-
-#[macro_use]
-extern crate generic_array;
-
-#[cfg(test)]
-#[macro_use]
-extern crate nearly_eq;
-
 pub extern crate signalo_traits;
 
 pub use signalo_traits as traits;
@@ -32,15 +23,13 @@ pub use signalo_traits as traits;
 /// The crate's prelude.
 pub mod prelude {}
 
-pub mod classify;
-pub mod convolve;
-pub mod delay;
-pub mod differentiate;
-pub mod hampel;
-pub mod identity;
-pub mod integrate;
-pub mod mean;
-pub mod median;
-pub mod observe;
-pub mod ops;
-pub mod wavelet;
+pub mod chain;
+pub mod constant;
+pub mod cycle;
+pub mod from_iter;
+pub mod increment;
+pub mod into_iter;
+pub mod pad;
+pub mod repeat;
+pub mod skip;
+pub mod take;
