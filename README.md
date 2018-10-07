@@ -2,14 +2,51 @@
 
 # signalo
 
+## Synopsis
+
+A DSP toolbox with focus on embedded environments.
+
+### [signalo](signalo)
+
 [![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
 [![Downloads](https://img.shields.io/crates/d/signalo.svg?style=flat-square)](https://crates.io/crates/signalo/)
 [![Version](https://img.shields.io/crates/v/signalo.svg?style=flat-square)](https://crates.io/crates/signalo/)
 [![License](https://img.shields.io/crates/l/signalo.svg?style=flat-square)](https://crates.io/crates/signalo/)
 
-## Synopsis
+### [signalo_traits](traits)
 
-A DSP toolbox with focus on embedded environments.
+[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+[![Downloads](https://img.shields.io/crates/d/signalo_traits.svg?style=flat-square)](https://crates.io/crates/signalo_traits/)
+[![Version](https://img.shields.io/crates/v/signalo_traits.svg?style=flat-square)](https://crates.io/crates/signalo_traits/)
+[![License](https://img.shields.io/crates/l/signalo_traits.svg?style=flat-square)](https://crates.io/crates/signalo_traits/)
+
+### [signalo_filters](filters)
+
+[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+[![Downloads](https://img.shields.io/crates/d/signalo_filters.svg?style=flat-square)](https://crates.io/crates/signalo_filters/)
+[![Version](https://img.shields.io/crates/v/signalo_filters.svg?style=flat-square)](https://crates.io/crates/signalo_filters/)
+[![License](https://img.shields.io/crates/l/signalo_filters.svg?style=flat-square)](https://crates.io/crates/signalo_filters/)
+
+### [signalo_sinks](sinks)
+
+[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+[![Downloads](https://img.shields.io/crates/d/signalo_sinks.svg?style=flat-square)](https://crates.io/crates/signalo_sinks/)
+[![Version](https://img.shields.io/crates/v/signalo_sinks.svg?style=flat-square)](https://crates.io/crates/signalo_sinks/)
+[![License](https://img.shields.io/crates/l/signalo_sinks.svg?style=flat-square)](https://crates.io/crates/signalo_sinks/)
+
+### [signalo_sources](sources)
+
+[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+[![Downloads](https://img.shields.io/crates/d/signalo_sources.svg?style=flat-square)](https://crates.io/crates/signalo_sources/)
+[![Version](https://img.shields.io/crates/v/signalo_sources.svg?style=flat-square)](https://crates.io/crates/signalo_sources/)
+[![License](https://img.shields.io/crates/l/signalo_sources.svg?style=flat-square)](https://crates.io/crates/signalo_sources/)
+
+### [signalo_pipes](pipes)
+
+[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+[![Downloads](https://img.shields.io/crates/d/signalo_pipes.svg?style=flat-square)](https://crates.io/crates/signalo_pipes/)
+[![Version](https://img.shields.io/crates/v/signalo_pipes.svg?style=flat-square)](https://crates.io/crates/signalo_pipes/)
+[![License](https://img.shields.io/crates/l/signalo_pipes.svg?style=flat-square)](https://crates.io/crates/signalo_pipes/)
 
 ## Contributing
 

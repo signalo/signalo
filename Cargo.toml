@@ -4,6 +4,8 @@ members = [
     "signalo",
     "traits",
     "filters",
+    "sinks",
+    "sources",
     "pipes",
 ]
 
@@ -11,4 +13,6 @@ members = [
 "signalo:0.2.1" = { path = "signalo" }
 "signalo_traits:0.2.2" = { path = "traits" }
 "signalo_filters:0.3.1" = { path = "filters" }
+"signalo_sinks:0.3.1" = { path = "sinks" }
+"signalo_sources:0.3.1" = { path = "sources" }
 "signalo_pipes:0.3.1" = { path = "pipes" }

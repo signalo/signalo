@@ -13,10 +13,8 @@
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-pub extern crate signalo_filters;
 pub extern crate signalo_traits;
 
-pub use signalo_filters as filters;
 pub use signalo_traits as traits;
 
 pub mod filter;

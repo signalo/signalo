@@ -33,6 +33,16 @@ version = "~0.3"
 path = "../filters"
 default-features = false
 
+[dependencies.signalo_sinks]
+version = "~0.3"
+path = "../sinks"
+default-features = false
+
+[dependencies.signalo_sources]
+version = "~0.3"
+path = "../sources"
+default-features = false
+
 [dependencies.signalo_pipes]
 version = "~0.3"
 path = "../pipes"
@@ -47,6 +57,8 @@ default = ["std"]
 std = [
     "signalo_traits/std",
     "signalo_filters/std",
+    "signalo_sinks/std",
+    "signalo_sources/std",
     "signalo_pipes/std",
 ]
 nightly = ["missing_mpl"]
