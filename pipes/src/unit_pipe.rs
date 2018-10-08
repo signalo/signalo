@@ -6,33 +6,21 @@
 
 use std::ops::BitOr;
 
-use signalo_traits::filter::Filter;
-use signalo_traits::sink::Sink;
-use signalo_traits::source::Source;
+use signalo_traits::{Filter, Finalize, Sink, Source};
 
-use filter::pipe::Pipe;
+use pipe::Pipe;
 
-/// A `UnitPipe` is a simple container wrapping a `Filter`
-///
-/// ```plain
-/// ════════════
-///  ╭────────╮
-///  │ Filter │
-///  ╰────────╯
-/// ════════════
-/// └─┬────────┘
-///   └ UnitPipe
-/// ```
+/// A `UnitPipe` is a simple container wrapping a `Filter`/`Source`/`Sink`/`Finalize` impl.
 #[derive(Default, Clone, Debug)]
 pub struct UnitPipe<T> {
-    filter: T,
+    inner: T,
 }
 
 impl<T> UnitPipe<T> {
-    /// Creates a new unit pipe wrapping `filter`.
+    /// Creates a new unit pipe wrapping `inner`.
     #[inline]
-    pub fn new(filter: T) -> Self {
-        Self { filter }
+    pub fn new(inner: T) -> Self {
+        Self { inner }
     }
 }
 
@@ -53,36 +41,41 @@ where
 
     #[inline]
     fn filter(&mut self, input: I) -> Self::Output {
-        self.filter.filter(input)
+        self.inner.filter(input)
     }
 }
 
 impl<T> Source for UnitPipe<T>
 where
-    T: Filter<()>,
+    T: Source,
 {
     type Output = T::Output;
 
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
-        Some(self.filter(()))
+        self.inner.source()
     }
 }
 
 impl<T, I> Sink<I> for UnitPipe<T>
 where
-    T: Filter<I, Output = ()>,
+    T: Sink<I>,
+{
+    #[inline]
+    fn sink(&mut self, input: I) {
+        self.inner.sink(input)
+    }
+}
+
+impl<T> Finalize for UnitPipe<T>
+where
+    T: Finalize,
 {
     type Output = T::Output;
 
     #[inline]
-    fn sink(&mut self, input: I) {
-        self.filter(input)
-    }
-
-    #[inline]
     fn finalize(self) -> Self::Output {
-        ()
+        self.inner.finalize()
     }
 }
 

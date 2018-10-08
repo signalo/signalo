@@ -4,9 +4,7 @@
 
 //! "Min value" sinks.
 
-use std::cmp::Ordering;
-
-use signalo_traits::Sink;
+use signalo_traits::{Filter, Finalize, Sink};
 
 /// A sink that computes the min and max of all received values of a signal.
 #[derive(Clone, Default, Debug)]
@@ -14,22 +12,41 @@ pub struct Min<T> {
     min: Option<T>,
 }
 
-impl<T> Sink<T> for Min<T>
+impl<T> Filter<T> for Min<T>
 where
     T: Clone + PartialOrd,
 {
-    type Output = Option<T>;
+    type Output = T;
 
     #[inline]
-    fn sink(&mut self, input: T) {
-        self.min = match &self.min {
-            Some(ref min) => match min.partial_cmp(&input) {
-                Some(Ordering::Greater) => Some(input),
-                _ => Some(min.clone()),
-            },
-            None => Some(input),
-        };
+    fn filter(&mut self, input: T) -> Self::Output {
+        let min = self
+            .min
+            .as_ref()
+            .map(|min| {
+                if &input < &min {
+                    input.clone()
+                } else {
+                    min.clone()
+                }
+            }).unwrap_or(input);
+        self.min = Some(min.clone());
+        min
     }
+}
+
+impl<T> Sink<T> for Min<T>
+where
+    Self: Filter<T>,
+{
+    #[inline]
+    fn sink(&mut self, input: T) {
+        let _ = self.filter(input);
+    }
+}
+
+impl<T> Finalize for Min<T> {
+    type Output = Option<T>;
 
     #[inline]
     fn finalize(self) -> Self::Output {

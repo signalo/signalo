@@ -6,7 +6,7 @@
 
 use num_traits::Num;
 
-use signalo_traits::Sink;
+use signalo_traits::{Filter, Finalize, Sink};
 
 #[derive(Clone, Debug)]
 struct State<T> {
@@ -23,14 +23,14 @@ pub struct Mean<T> {
     state: Option<State<T>>,
 }
 
-impl<T> Sink<T> for Mean<T>
+impl<T> Filter<T> for Mean<T>
 where
     T: Clone + PartialOrd + Num,
 {
-    type Output = Option<T>;
+    type Output = T;
 
     #[inline]
-    fn sink(&mut self, input: T) {
+    fn filter(&mut self, input: T) -> Self::Output {
         let (old_count, old_mean) = match &self.state {
             Some(State {
                 ref count,
@@ -42,8 +42,32 @@ where
         let count = old_count + T::one();
         let mean = old_mean.clone() + ((input.clone() - old_mean) / count.clone());
 
-        self.state = Some(State { count, mean });
+        let state = State {
+            count,
+            mean: mean.clone(),
+        };
+
+        self.state = Some(state);
+
+        mean
     }
+}
+
+impl<T> Sink<T> for Mean<T>
+where
+    Self: Filter<T>,
+{
+    #[inline]
+    fn sink(&mut self, input: T) {
+        let _ = self.filter(input);
+    }
+}
+
+impl<T> Finalize for Mean<T>
+where
+    T: Clone + PartialOrd + Num,
+{
+    type Output = Option<T>;
 
     #[inline]
     fn finalize(self) -> Self::Output {

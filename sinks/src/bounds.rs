@@ -4,7 +4,7 @@
 
 //! Bound sinks.
 
-use signalo_traits::Sink;
+use signalo_traits::{Filter, Finalize, Sink};
 
 use {max::Max, min::Min};
 
@@ -15,17 +15,38 @@ pub struct Bounds<T> {
     max: Max<T>,
 }
 
-impl<T> Sink<T> for Bounds<T>
+impl<T> Filter<T> for Bounds<T>
 where
-    T: Clone + PartialOrd,
+    T: Clone,
+    Min<T>: Filter<T, Output = T>,
+    Max<T>: Filter<T, Output = T>,
 {
-    type Output = Option<(T, T)>;
+    type Output = (T, T);
 
     #[inline]
-    fn sink(&mut self, input: T) {
-        self.min.sink(input.clone());
-        self.max.sink(input);
+    fn filter(&mut self, input: T) -> Self::Output {
+        let min = self.min.filter(input.clone());
+        let max = self.max.filter(input);
+        (min, max)
     }
+}
+
+impl<T> Sink<T> for Bounds<T>
+where
+    Self: Filter<T>,
+{
+    #[inline]
+    fn sink(&mut self, input: T) {
+        let _ = self.filter(input);
+    }
+}
+
+impl<T> Finalize for Bounds<T>
+where
+    Min<T>: Finalize<Output = Option<T>>,
+    Max<T>: Finalize<Output = Option<T>>,
+{
+    type Output = Option<(T, T)>;
 
     #[inline]
     fn finalize(self) -> Self::Output {
@@ -50,11 +71,11 @@ mod tests {
         let input = vec![
             0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
         ];
-        let mut sink = Bounds::default();
+        let mut bounds: Bounds<usize> = Bounds::default();
         for input in input {
-            sink.sink(input);
+            bounds.sink(input);
         }
-        let (min, max) = sink.finalize().unwrap();
+        let (min, max) = bounds.finalize().unwrap();
         assert_eq!(min, 0);
         assert_eq!(max, 20);
     }

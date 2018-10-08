@@ -14,10 +14,12 @@
 extern crate core as std;
 
 pub mod filter;
+pub mod finalize;
 pub mod sink;
 pub mod source;
 
 pub use filter::Filter;
+pub use finalize::Finalize;
 pub use sink::Sink;
 pub use source::Source;
 
