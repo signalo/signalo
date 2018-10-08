@@ -12,7 +12,8 @@ use num_traits::Num;
 use signalo_traits::Filter;
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 pub mod savitzky_golay;
@@ -105,6 +106,16 @@ where
 {
     fn config_ref(&self) -> &Self::Config {
         &self.config
+    }
+}
+
+impl<T, N> ConfigClone for Convolve<T, N>
+where
+    N: ArrayLength<T>,
+    Config<T, N>: Clone,
+{
+    fn config(&self) -> Self::Config {
+        self.config.clone()
     }
 }
 

@@ -9,7 +9,8 @@ use num_traits::{Num, Signed};
 use signalo_traits::Filter;
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 use super::mean::{Config as MeanConfig, Mean};
@@ -71,6 +72,15 @@ where
 impl<T> ConfigRef for MeanVariance<T> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
+    }
+}
+
+impl<T> ConfigClone for MeanVariance<T>
+where
+    Config<T>: Clone,
+{
+    fn config(&self) -> Self::Config {
+        self.config.clone()
     }
 }
 

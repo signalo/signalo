@@ -8,7 +8,8 @@ use num_traits::Num;
 
 use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 /// The mean filter's configuration.
@@ -58,6 +59,15 @@ impl<T> WithConfig for Mean<T> {
 impl<T> ConfigRef for Mean<T> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
+    }
+}
+
+impl<T> ConfigClone for Mean<T>
+where
+    Config<T>: Clone,
+{
+    fn config(&self) -> Self::Config {
+        self.config.clone()
     }
 }
 

@@ -11,7 +11,8 @@ use generic_array::GenericArray;
 
 use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 use classify::{
@@ -44,9 +45,9 @@ impl Classification<Peak, U3> for Peak {
 
 /// The peak detection filter's configuration.
 #[derive(Clone, Debug)]
-pub struct Config<T> {
+pub struct Config<U> {
     /// [rising, flat, falling] outputs.
-    pub outputs: GenericArray<T, U3>,
+    pub outputs: GenericArray<U, U3>,
 }
 
 /// A peak detection filter's state.
@@ -124,6 +125,15 @@ impl<T, U> WithConfig for Peaks<T, U> {
 impl<T, U> ConfigRef for Peaks<T, U> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
+    }
+}
+
+impl<T, U> ConfigClone for Peaks<T, U>
+where
+    Config<U>: Clone,
+{
+    fn config(&self) -> Self::Config {
+        self.config.clone()
     }
 }
 

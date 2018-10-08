@@ -11,7 +11,8 @@ use generic_array::GenericArray;
 
 use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 /// The [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter's configuration.
@@ -64,6 +65,15 @@ impl<T, U> WithConfig for Debounce<T, U> {
 impl<T, U> ConfigRef for Debounce<T, U> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
+    }
+}
+
+impl<T, U> ConfigClone for Debounce<T, U>
+where
+    Config<T, U>: Clone,
+{
+    fn config(&self) -> Self::Config {
+        self.config.clone()
     }
 }
 
