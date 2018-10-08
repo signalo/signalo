@@ -6,7 +6,7 @@
 
 use num_traits::Num;
 
-use signalo_traits::Sink;
+use signalo_traits::{Filter, Finalize, Sink};
 
 #[derive(Clone, Debug)]
 struct State<T> {
@@ -21,18 +21,17 @@ struct State<T> {
 /// A sink that computes the mean and variance of all received values of a signal.
 #[derive(Clone, Default, Debug)]
 pub struct MeanVariance<T> {
-    // The sink's state
     state: Option<State<T>>,
 }
 
-impl<T> Sink<T> for MeanVariance<T>
+impl<T> Filter<T> for MeanVariance<T>
 where
-    T: Clone + PartialOrd + Num,
+    T: Clone + Num,
 {
-    type Output = Option<(T, T)>;
+    type Output = (T, T);
 
     #[inline]
-    fn sink(&mut self, input: T) {
+    fn filter(&mut self, input: T) -> Self::Output {
         let (old_count, old_mean, old_variance) = match &self.state {
             Some(State {
                 ref count,
@@ -52,10 +51,29 @@ where
 
         self.state = Some(State {
             count,
-            mean,
-            variance,
+            mean: mean.clone(),
+            variance: variance.clone(),
         });
+
+        (mean, variance)
     }
+}
+
+impl<T> Sink<T> for MeanVariance<T>
+where
+    Self: Filter<T>,
+{
+    #[inline]
+    fn sink(&mut self, input: T) {
+        let _ = self.filter(input);
+    }
+}
+
+impl<T> Finalize for MeanVariance<T>
+where
+    T: PartialOrd + Num,
+{
+    type Output = Option<(T, T)>;
 
     #[inline]
     fn finalize(self) -> Self::Output {

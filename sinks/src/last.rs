@@ -4,7 +4,7 @@
 
 //! "Last value" sinks.
 
-use signalo_traits::Sink;
+use signalo_traits::{Finalize, Sink};
 
 /// A sink that memorizes the most recently received value of a signal.
 #[derive(Default, Clone, Debug)]
@@ -21,12 +21,14 @@ impl<T> Last<T> {
 }
 
 impl<T> Sink<T> for Last<T> {
-    type Output = Option<T>;
-
     #[inline]
     fn sink(&mut self, input: T) {
         self.state = Some(input);
     }
+}
+
+impl<T> Finalize for Last<T> {
+    type Output = Option<T>;
 
     #[inline]
     fn finalize(self) -> Self::Output {

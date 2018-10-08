@@ -4,9 +4,7 @@
 
 //! "Max value" sinks.
 
-use std::cmp::Ordering;
-
-use signalo_traits::{Filter, Sink};
+use signalo_traits::{Filter, Finalize, Sink};
 
 /// A sink that computes the max and max of all received values of a signal.
 #[derive(Clone, Default, Debug)]
@@ -22,13 +20,16 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let max = match &self.max {
-            Some(ref max) => match max.partial_cmp(&input) {
-                Some(Ordering::Less) => input,
-                _ => max.clone(),
-            },
-            None => input,
-        };
+        let max = self
+            .max
+            .as_ref()
+            .map(|max| {
+                if &input > &max {
+                    input.clone()
+                } else {
+                    max.clone()
+                }
+            }).unwrap_or(input);
         self.max = Some(max.clone());
         max
     }
@@ -36,14 +37,16 @@ where
 
 impl<T> Sink<T> for Max<T>
 where
-    T: Clone + PartialOrd,
+    Self: Filter<T>,
 {
-    type Output = Option<T>;
-
     #[inline]
     fn sink(&mut self, input: T) {
         let _ = self.filter(input);
     }
+}
+
+impl<T> Finalize for Max<T> {
+    type Output = Option<T>;
 
     #[inline]
     fn finalize(self) -> Self::Output {

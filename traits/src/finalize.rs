@@ -7,16 +7,21 @@
 /// A sink retrieves the current signal value each time it is called, performing arbitrary actions
 /// with it, such as writing values to a file or passing them to an audio-device.
 /// When the final value has been passed to it calling `sink.finalize()` returns an output.
-pub trait Sink<T>: Sized {
-    /// Processes the input value.
-    fn sink(&mut self, input: T);
+pub trait Finalize: Sized {
+    /// The sink's output type.
+    type Output;
+
+    /// Consumes `self`, returning an accumulated output.
+    fn finalize(self) -> Self::Output;
 }
 
-impl<F, T> Sink<T> for F
+impl<F, T> Finalize for F
 where
-    F: FnMut(T) -> (),
+    F: FnMut() -> T,
 {
-    fn sink(&mut self, input: T) {
-        self(input)
+    type Output = T;
+
+    fn finalize(mut self) -> Self::Output {
+        self()
     }
 }

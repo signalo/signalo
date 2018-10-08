@@ -6,21 +6,9 @@
 
 use std::ops::BitOr;
 
-use signalo_traits::filter::Filter;
-use signalo_traits::sink::Sink;
-use signalo_traits::source::Source;
+use signalo_traits::{Filter, Finalize, Sink, Source};
 
-/// A `Pipe` is a simple container joining a pair of `Filter`s
-///
-/// ```plain
-/// ════════════ + ════════════
-///  ╭────────╮  +  ╭────────╮
-///  │ Filter │  +  │ Filter │
-///  ╰────────╯  +  ╰────────╯
-/// ════════════ + ════════════
-/// └─┬───────────────────────┘
-///   └ Pipe
-/// ```
+/// A `Pipe` is a simple container joining a pair of `Filter`/`Source`/`Sink`/`Finalize` impls.
 #[derive(Default, Clone, Debug)]
 pub struct Pipe<T, U> {
     lhs: T,
@@ -32,14 +20,6 @@ impl<T, U> Pipe<T, U> {
     #[inline]
     pub fn new(lhs: T, rhs: U) -> Self {
         Self { lhs, rhs }
-    }
-}
-
-impl<T, U> From<(T, U)> for Pipe<T, U> {
-    #[inline]
-    fn from(parts: (T, U)) -> Self {
-        let (lhs, rhs) = parts;
-        Self::new(lhs, rhs)
     }
 }
 
@@ -83,12 +63,17 @@ where
     T: Filter<I>,
     U: Sink<T::Output>,
 {
-    type Output = U::Output;
-
     #[inline]
     fn sink(&mut self, input: I) {
         self.rhs.sink(self.lhs.filter(input))
     }
+}
+
+impl<T, U> Finalize for Pipe<T, U>
+where
+    U: Finalize,
+{
+    type Output = U::Output;
 
     #[inline]
     fn finalize(self) -> Self::Output {
