@@ -34,3 +34,4 @@ pub mod max;
 pub mod mean;
 pub mod mean_variance;
 pub mod min;
+pub mod statistics;
