@@ -8,6 +8,14 @@ use signalo_traits::{Filter, Finalize, Sink};
 
 use {max::Max, min::Min};
 
+/// Output of `Bounds` filter.
+pub struct Output<T> {
+    /// Smallest value.
+    pub min: T,
+    /// Largest value.
+    pub max: T,
+}
+
 /// A sink that computes the min and max of all received values of a signal.
 #[derive(Clone, Default, Debug)]
 pub struct Bounds<T> {
@@ -21,13 +29,13 @@ where
     Min<T>: Filter<T, Output = T>,
     Max<T>: Filter<T, Output = T>,
 {
-    type Output = (T, T);
+    type Output = Output<T>;
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         let min = self.min.filter(input.clone());
         let max = self.max.filter(input);
-        (min, max)
+        Output { min, max }
     }
 }
 
@@ -46,17 +54,16 @@ where
     Min<T>: Finalize<Output = Option<T>>,
     Max<T>: Finalize<Output = Option<T>>,
 {
-    type Output = Option<(T, T)>;
+    type Output = Option<Output<T>>;
 
     #[inline]
     fn finalize(self) -> Self::Output {
         let min = self.min.finalize();
         let max = self.max.finalize();
         match (min, max) {
-            (Some(min), Some(max)) => Some((min, max)),
+            (Some(min), Some(max)) => Some(Output { min, max }),
             (None, None) => None,
-            (Some(_), None) => unreachable!(),
-            (None, Some(_)) => unreachable!(),
+            _ => unreachable!(),
         }
     }
 }
@@ -75,7 +82,7 @@ mod tests {
         for input in input {
             bounds.sink(input);
         }
-        let (min, max) = bounds.finalize().unwrap();
+        let Output { min, max } = bounds.finalize().unwrap();
         assert_eq!(min, 0);
         assert_eq!(max, 20);
     }
