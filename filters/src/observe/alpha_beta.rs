@@ -8,7 +8,8 @@ use num_traits::{Num, Zero};
 
 use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigRef, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 /// The alpha-beta filter's configuration.
@@ -72,6 +73,15 @@ where
 impl<T> ConfigRef for AlphaBeta<T> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
+    }
+}
+
+impl<T> ConfigClone for AlphaBeta<T>
+where
+    Config<T>: Clone,
+{
+    fn config(&self) -> Self::Config {
+        self.config.clone()
     }
 }
 
