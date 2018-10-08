@@ -8,6 +8,14 @@ use num_traits::Num;
 
 use signalo_traits::{Filter, Finalize, Sink};
 
+/// Output of `MeanVariance` filter.
+pub struct Output<T> {
+    /// Mean of values.
+    pub mean: T,
+    /// Variance of values.
+    pub variance: T,
+}
+
 #[derive(Clone, Debug)]
 struct State<T> {
     // number of values seen so far
@@ -28,7 +36,7 @@ impl<T> Filter<T> for MeanVariance<T>
 where
     T: Clone + Num,
 {
-    type Output = (T, T);
+    type Output = Output<T>;
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
@@ -55,7 +63,7 @@ where
             variance: variance.clone(),
         });
 
-        (mean, variance)
+        Output { mean, variance }
     }
 }
 
@@ -73,7 +81,7 @@ impl<T> Finalize for MeanVariance<T>
 where
     T: PartialOrd + Num,
 {
-    type Output = Option<(T, T)>;
+    type Output = Option<Output<T>>;
 
     #[inline]
     fn finalize(self) -> Self::Output {
@@ -88,7 +96,7 @@ where
             } else {
                 variance
             };
-            (mean, variance)
+            Output { mean, variance }
         })
     }
 }
@@ -110,7 +118,7 @@ mod tests {
         for input in input {
             sink.sink(input);
         }
-        if let Some((mean, variance)) = sink.finalize() {
+        if let Some(Output { mean, variance }) = sink.finalize() {
             assert_nearly_eq!(mean, 26.56);
             assert_nearly_eq!(variance, 1347.68);
         } else {

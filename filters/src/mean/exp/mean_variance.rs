@@ -15,6 +15,14 @@ use signalo_traits::{
 
 use super::mean::{Config as MeanConfig, Mean};
 
+/// Output of `MeanVariance` filter.
+pub struct Output<T> {
+    /// Mean of values.
+    pub mean: T,
+    /// Variance of values.
+    pub variance: T,
+}
+
 /// The mean/variance filter's configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T> {
@@ -112,7 +120,7 @@ where
     T: Clone + Num + Signed,
 {
     /// (mean, variance)
-    type Output = (T, T);
+    type Output = Output<T>;
 
     fn filter(&mut self, input: T) -> Self::Output {
         let mean_old = unsafe {
@@ -123,12 +131,12 @@ where
                 .clone()
                 .unwrap_or(input.clone())
         };
-        let mean_new = self.state.mean.filter(input.clone());
+        let mean = self.state.mean.filter(input.clone());
         let deviation_old = (input.clone() - mean_old).abs();
-        let deviation_new = (input.clone() - mean_new.clone()).abs();
+        let deviation_new = (input.clone() - mean.clone()).abs();
         let squared = deviation_old * deviation_new;
         let variance = self.state.variance.filter(squared);
-        (mean_new, variance)
+        Output { mean, variance }
     }
 }
 
@@ -175,7 +183,7 @@ mod tests {
         let input = get_input();
         let output: Vec<_> = input
             .iter()
-            .scan(filter, |filter, &input| Some(filter.filter(input).0))
+            .scan(filter, |filter, &input| Some(filter.filter(input).mean))
             .collect();
         assert_nearly_eq!(output, get_mean(), 0.001);
     }
@@ -189,7 +197,7 @@ mod tests {
         let input = get_input();
         let output: Vec<_> = input
             .iter()
-            .scan(filter, |filter, &input| Some(filter.filter(input).1))
+            .scan(filter, |filter, &input| Some(filter.filter(input).variance))
             .collect();
         assert_nearly_eq!(output, get_variance(), 0.001);
     }
