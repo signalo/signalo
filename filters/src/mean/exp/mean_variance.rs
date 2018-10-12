@@ -16,6 +16,7 @@ use signalo_traits::{
 use super::mean::{Config as MeanConfig, Mean};
 
 /// Output of `MeanVariance` filter.
+#[derive(Clone, Debug)]
 pub struct Output<T> {
     /// Mean of values.
     pub mean: T,

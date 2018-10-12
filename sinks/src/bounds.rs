@@ -9,6 +9,7 @@ use signalo_traits::{Filter, Finalize, Sink};
 use {max::Max, min::Min};
 
 /// Output of `Bounds` filter.
+#[derive(Clone, Debug)]
 pub struct Output<T> {
     /// Smallest value.
     pub min: T,

@@ -16,6 +16,7 @@ use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
 use super::mean::Mean;
 
 /// Output of `MeanVariance` filter.
+#[derive(Clone, Debug)]
 pub struct Output<T> {
     /// Mean of values.
     pub mean: T,
