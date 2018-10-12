@@ -13,6 +13,7 @@ use mean_variance::{MeanVariance, Output as MeanVarianceOutput};
 use min::Min;
 
 /// Output of `Statistics` filter.
+#[derive(Clone, Debug)]
 pub struct Output<T> {
     /// Smallest value.
     pub min: T,

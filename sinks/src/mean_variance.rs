@@ -9,6 +9,7 @@ use num_traits::Num;
 use signalo_traits::{Filter, Finalize, Sink};
 
 /// Output of `MeanVariance` filter.
+#[derive(Clone, Debug)]
 pub struct Output<T> {
     /// Mean of values.
     pub mean: T,
