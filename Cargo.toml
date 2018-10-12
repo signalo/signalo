@@ -10,9 +10,9 @@ members = [
 ]
 
 [replace]
-"signalo:0.3.0" = { path = "signalo" }
+"signalo:0.5.0" = { path = "signalo" }
 "signalo_traits:0.3.0" = { path = "traits" }
-"signalo_filters:0.4.0" = { path = "filters" }
-"signalo_sinks:0.4.0" = { path = "sinks" }
-"signalo_sources:0.4.0" = { path = "sources" }
-"signalo_pipes:0.4.0" = { path = "pipes" }
+"signalo_filters:0.5.0" = { path = "filters" }
+"signalo_sinks:0.5.0" = { path = "sinks" }
+"signalo_sources:0.5.0" = { path = "sources" }
+"signalo_pipes:0.5.0" = { path = "pipes" }
