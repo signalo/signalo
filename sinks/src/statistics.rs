@@ -8,9 +8,8 @@ use num_traits::Num;
 
 use signalo_traits::{Filter, Finalize, Sink};
 
-use max::Max;
+use bounds::{Bounds, Output as BoundsOutput};
 use mean_variance::{MeanVariance, Output as MeanVarianceOutput};
-use min::Min;
 
 /// Output of `Statistics` filter.
 #[derive(Clone, Debug)]
@@ -27,8 +26,7 @@ pub struct Output<T> {
 
 #[derive(Clone, Default, Debug)]
 struct State<T> {
-    min: Min<T>,
-    max: Max<T>,
+    bounds: Bounds<T>,
     mean_variance: MeanVariance<T>,
 }
 
@@ -41,16 +39,14 @@ pub struct Statistics<T> {
 impl<T> Filter<T> for Statistics<T>
 where
     T: Clone + Num,
-    Min<T>: Filter<T, Output = T>,
-    Max<T>: Filter<T, Output = T>,
+    Bounds<T>: Filter<T, Output = BoundsOutput<T>>,
     MeanVariance<T>: Filter<T, Output = MeanVarianceOutput<T>>,
 {
     type Output = Output<T>;
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let min = self.state.min.filter(input.clone());
-        let max = self.state.max.filter(input.clone());
+        let BoundsOutput { min, max } = self.state.bounds.filter(input.clone());
         let MeanVarianceOutput { mean, variance } = self.state.mean_variance.filter(input.clone());
 
         Output {
@@ -80,12 +76,11 @@ where
 
     #[inline]
     fn finalize(self) -> Self::Output {
-        let min = self.state.min.finalize();
-        let max = self.state.max.finalize();
+        let min_max = self.state.bounds.finalize();
         let mean_variance = self.state.mean_variance.finalize();
-
-        match (min, max, mean_variance) {
-            (Some(min), Some(max), Some(mean_variance)) => {
+        match (min_max, mean_variance) {
+            (Some(min_max), Some(mean_variance)) => {
+                let BoundsOutput { min, max } = min_max;
                 let MeanVarianceOutput { mean, variance } = mean_variance;
                 Some(Output {
                     min,
@@ -94,7 +89,7 @@ where
                     variance,
                 })
             }
-            (None, None, None) => None,
+            (None, None) => None,
             _ => unreachable!(),
         }
     }
