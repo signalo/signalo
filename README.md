@@ -48,6 +48,10 @@ A DSP toolbox with focus on embedded environments.
 [![Version](https://img.shields.io/crates/v/signalo_pipes.svg?style=flat-square)](https://crates.io/crates/signalo_pipes/)
 [![License](https://img.shields.io/crates/l/signalo_pipes.svg?style=flat-square)](https://crates.io/crates/signalo_pipes/)
 
+### Workspace Dependencies
+
+![](dependencies.png)
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](../CONTRIBUTING.md) for details on our [code of conduct](https://www.rust-lang.org/conduct.html),
