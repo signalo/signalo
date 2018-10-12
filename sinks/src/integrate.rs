@@ -6,7 +6,7 @@
 
 use num_traits::Num;
 
-use signalo_traits::{Finalize, Sink};
+use signalo_traits::{Filter, Finalize, Sink};
 
 /// A sink that computes the integrate of all received values of a signal.
 #[derive(Clone, Default, Debug)]
@@ -14,14 +14,29 @@ pub struct Integrate<T> {
     sum: Option<T>,
 }
 
-impl<T> Sink<T> for Integrate<T>
+impl<T> Filter<T> for Integrate<T>
 where
     T: Clone + Num,
 {
+    type Output = T;
+
+    #[inline]
+    fn filter(&mut self, input: T) -> Self::Output {
+        let sum = self.sum.clone().unwrap_or(T::zero()) + input;
+
+        self.sum = Some(sum.clone());
+
+        sum
+    }
+}
+
+impl<T> Sink<T> for Integrate<T>
+where
+    Self: Filter<T>,
+{
     #[inline]
     fn sink(&mut self, input: T) {
-        let sum = self.sum.clone().unwrap_or(T::zero());
-        self.sum = Some(sum + input);
+        let _ = self.filter(input);
     }
 }
 
