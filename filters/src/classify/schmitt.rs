@@ -11,8 +11,8 @@ use generic_array::GenericArray;
 
 use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
-    WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
+    State as StateTrait, StateMut, WithConfig,
 };
 
 /// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s configuration.
@@ -81,10 +81,19 @@ impl<T, U> StateMut for Schmitt<T, U> {
     }
 }
 
-impl<T, U> Destruct for Schmitt<T, U> {
-    type Output = (Config<T, U>, State);
+impl<T, U> Guts for Schmitt<T, U> {
+    type Guts = (Config<T, U>, State);
+}
 
-    fn destruct(self) -> Self::Output {
+impl<T, U> FromGuts for Schmitt<T, U> {
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let (config, state) = guts;
+        Self { config, state }
+    }
+}
+
+impl<T, U> IntoGuts for Schmitt<T, U> {
+    fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }

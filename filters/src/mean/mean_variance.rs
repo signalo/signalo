@@ -11,7 +11,7 @@ use generic_array::ArrayLength;
 use num_traits::{Num, Signed};
 
 use signalo_traits::Filter;
-use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
+use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
 use super::mean::Mean;
 
@@ -101,13 +101,28 @@ where
     }
 }
 
-impl<T, N> Destruct for MeanVariance<T, N>
+impl<T, N> Guts for MeanVariance<T, N>
 where
     N: ArrayLength<T>,
 {
-    type Output = State<T, N>;
+    type Guts = State<T, N>;
+}
 
-    fn destruct(self) -> Self::Output {
+impl<T, N> FromGuts for MeanVariance<T, N>
+where
+    N: ArrayLength<T>,
+{
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let state = guts;
+        Self { state }
+    }
+}
+
+impl<T, N> IntoGuts for MeanVariance<T, N>
+where
+    N: ArrayLength<T>,
+{
+    fn into_guts(self) -> Self::Guts {
         self.state
     }
 }

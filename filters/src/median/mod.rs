@@ -10,7 +10,7 @@ use std::ptr;
 use generic_array::{ArrayBuilder, ArrayLength, GenericArray};
 
 use signalo_traits::Filter;
-use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
+use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
 pub mod exp;
 
@@ -165,13 +165,28 @@ where
     }
 }
 
-impl<T, N> Destruct for Median<T, N>
+impl<T, N> Guts for Median<T, N>
 where
     N: ArrayLength<ListNode<T>>,
 {
-    type Output = State<T, N>;
+    type Guts = State<T, N>;
+}
 
-    fn destruct(self) -> Self::Output {
+impl<T, N> FromGuts for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let state = guts;
+        Self { state }
+    }
+}
+
+impl<T, N> IntoGuts for Median<T, N>
+where
+    N: ArrayLength<ListNode<T>>,
+{
+    fn into_guts(self) -> Self::Guts {
         self.state
     }
 }

@@ -10,7 +10,8 @@ use num_traits::Num;
 
 use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, Destruct, Reset, State as StateTrait, StateMut, WithConfig,
+    Config as ConfigTrait, ConfigClone, FromGuts, Guts, IntoGuts, Reset, State as StateTrait,
+    StateMut, WithConfig,
 };
 
 use convolve::{Config as ConvolveConfig, Convolve};
@@ -106,15 +107,29 @@ where
     }
 }
 
-impl<T, N> Destruct for Synthesize<T, N>
+impl<T, N> Guts for Synthesize<T, N>
 where
     N: ArrayLength<T>,
-    Self: ConfigClone<Config = Config<T, N>>,
 {
-    type Output = (Config<T, N>, State<T, N>);
+    type Guts = State<T, N>;
+}
 
-    fn destruct(self) -> Self::Output {
-        (self.config(), self.state)
+impl<T, N> FromGuts for Synthesize<T, N>
+where
+    N: ArrayLength<T>,
+{
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let state = guts;
+        Self { state }
+    }
+}
+
+impl<T, N> IntoGuts for Synthesize<T, N>
+where
+    N: ArrayLength<T>,
+{
+    fn into_guts(self) -> Self::Guts {
+        self.state
     }
 }
 

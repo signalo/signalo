@@ -9,7 +9,7 @@ use std::ops::Sub;
 use num_traits::Zero;
 
 use signalo_traits::Filter;
-use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
+use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
 /// The differentiate filter's state.
 #[derive(Clone, Debug)]
@@ -47,10 +47,19 @@ impl<T> StateMut for Integrate<T> {
     }
 }
 
-impl<T> Destruct for Integrate<T> {
-    type Output = State<T>;
+impl<T> Guts for Integrate<T> {
+    type Guts = State<T>;
+}
 
-    fn destruct(self) -> Self::Output {
+impl<T> FromGuts for Integrate<T> {
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let state = guts;
+        Self { state }
+    }
+}
+
+impl<T> IntoGuts for Integrate<T> {
+    fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
