@@ -28,6 +28,7 @@ pub use signalo_traits as traits;
 pub mod prelude {}
 
 pub mod bounds;
+pub mod collect;
 pub mod integrate;
 pub mod last;
 pub mod max;
