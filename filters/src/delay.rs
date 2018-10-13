@@ -13,7 +13,7 @@ use generic_array::{ArrayLength, GenericArray};
 use num_traits::Num;
 
 use signalo_traits::Filter;
-use signalo_traits::{Destruct, Reset, State as StateTrait, StateMut};
+use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
 /// The delay filter's state.
 #[derive(Clone)]
@@ -83,13 +83,28 @@ where
     }
 }
 
-impl<T, N> Destruct for Delay<T, N>
+impl<T, N> Guts for Delay<T, N>
 where
     N: ArrayLength<T>,
 {
-    type Output = State<T, N>;
+    type Guts = State<T, N>;
+}
 
-    fn destruct(self) -> Self::Output {
+impl<T, N> FromGuts for Delay<T, N>
+where
+    N: ArrayLength<T>,
+{
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let state = guts;
+        Self { state }
+    }
+}
+
+impl<T, N> IntoGuts for Delay<T, N>
+where
+    N: ArrayLength<T>,
+{
+    fn into_guts(self) -> Self::Guts {
         self.state
     }
 }

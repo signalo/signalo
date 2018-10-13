@@ -10,7 +10,9 @@ use generic_array::typenum::U2;
 use generic_array::GenericArray;
 
 use signalo_traits::Filter;
-use signalo_traits::{Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, WithConfig};
+use signalo_traits::{
+    Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset, WithConfig,
+};
 
 /// The threshold filter's configuration.
 #[derive(Clone, Debug)]
@@ -54,10 +56,19 @@ where
     }
 }
 
-impl<T, U> Destruct for Threshold<T, U> {
-    type Output = Config<T, U>;
+impl<T, U> Guts for Threshold<T, U> {
+    type Guts = Config<T, U>;
+}
 
-    fn destruct(self) -> Self::Output {
+impl<T, U> FromGuts for Threshold<T, U> {
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let config = guts;
+        Self { config }
+    }
+}
+
+impl<T, U> IntoGuts for Threshold<T, U> {
+    fn into_guts(self) -> Self::Guts {
         self.config
     }
 }

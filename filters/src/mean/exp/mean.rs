@@ -8,8 +8,8 @@ use num_traits::Num;
 
 use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
-    WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
+    State as StateTrait, StateMut, WithConfig,
 };
 
 /// The mean filter's configuration.
@@ -77,10 +77,19 @@ impl<T> StateMut for Mean<T> {
     }
 }
 
-impl<T> Destruct for Mean<T> {
-    type Output = (Config<T>, State<T>);
+impl<T> Guts for Mean<T> {
+    type Guts = (Config<T>, State<T>);
+}
 
-    fn destruct(self) -> Self::Output {
+impl<T> FromGuts for Mean<T> {
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let (config, state) = guts;
+        Self { config, state }
+    }
+}
+
+impl<T> IntoGuts for Mean<T> {
+    fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }

@@ -11,8 +11,8 @@ use generic_array::GenericArray;
 
 use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Destruct, Reset, State as StateTrait, StateMut,
-    WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
+    State as StateTrait, StateMut, WithConfig,
 };
 
 use classify::{
@@ -143,10 +143,19 @@ impl<T, U> StateMut for Peaks<T, U> {
     }
 }
 
-impl<T, U> Destruct for Peaks<T, U> {
-    type Output = (Config<U>, State<T>);
+impl<T, U> Guts for Peaks<T, U> {
+    type Guts = (Config<U>, State<T>);
+}
 
-    fn destruct(self) -> Self::Output {
+impl<T, U> FromGuts for Peaks<T, U> {
+    unsafe fn from_guts(guts: Self::Guts) -> Self {
+        let (config, state) = guts;
+        Self { config, state }
+    }
+}
+
+impl<T, U> IntoGuts for Peaks<T, U> {
+    fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }

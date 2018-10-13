@@ -72,13 +72,22 @@ pub trait StateMut: State {
     unsafe fn state_mut(&mut self) -> &mut Self::State;
 }
 
-/// Trait for **destructable** systems.
-pub trait Destruct: Sized {
-    /// The return type of `fn into_guts(…)`.
-    type Output;
+/// Trait for **gut-exposing** systems.
+pub trait Guts: Sized {
+    /// The system's guts.
+    type Guts;
+}
 
-    /// Destructs `self` into its `self.config` and `self.state` components.
-    fn destruct(self) -> Self::Output;
+/// Trait for **gut-constructable** systems.
+pub trait FromGuts: Guts {
+    /// Constructs `self` from its raw guts.
+    unsafe fn from_guts(guts: Self::Guts) -> Self;
+}
+
+/// Trait for **gut-destructable** systems.
+pub trait IntoGuts: Guts {
+    /// Destructs `self` into its raw guts.
+    fn into_guts(self) -> Self::Guts;
 }
 
 /// Trait for **resettable** systems.
