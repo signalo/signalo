@@ -11,12 +11,3 @@ pub trait Sink<T>: Sized {
     /// Processes the input value.
     fn sink(&mut self, input: T);
 }
-
-impl<F, T> Sink<T> for F
-where
-    F: FnMut(T) -> (),
-{
-    fn sink(&mut self, input: T) {
-        self(input)
-    }
-}

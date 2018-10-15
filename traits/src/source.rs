@@ -13,14 +13,3 @@ pub trait Source: Sized {
     /// Produces the next value in the stream of values.
     fn source(&mut self) -> Option<Self::Output>;
 }
-
-impl<F, T> Source for F
-where
-    F: FnMut() -> Option<T>,
-{
-    type Output = T;
-
-    fn source(&mut self) -> Option<Self::Output> {
-        self()
-    }
-}
