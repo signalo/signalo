@@ -30,6 +30,11 @@ features = [
     "use_generic_array",
 ]
 
+[dependencies.dimensioned]
+version = "~0.7"
+optional = true
+default-features = false
+
 [dependencies.num-traits]
 version = "~0.2"
 default-features = false
@@ -56,5 +61,6 @@ std = [
     "signalo_traits/std",
     "arraydeque/std",
     "num-traits/std",
+    "dimensioned/std",
 ]
 nightly = ["missing_mpl"]
