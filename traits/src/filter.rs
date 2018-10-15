@@ -15,17 +15,6 @@ pub trait Filter<Input>: Sized {
     fn filter(&mut self, input: Input) -> Self::Output;
 }
 
-impl<F, T, U> Filter<T> for F
-where
-    F: FnMut(T) -> U,
-{
-    type Output = U;
-
-    fn filter(&mut self, input: T) -> Self::Output {
-        self(input)
-    }
-}
-
 /// Trait for **arbitrarily phase shifting** systems.
 ///
 /// # Background:

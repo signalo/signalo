@@ -14,14 +14,3 @@ pub trait Finalize: Sized {
     /// Consumes `self`, returning an accumulated output.
     fn finalize(self) -> Self::Output;
 }
-
-impl<F, T> Finalize for F
-where
-    F: FnMut() -> T,
-{
-    type Output = T;
-
-    fn finalize(mut self) -> Self::Output {
-        self()
-    }
-}
