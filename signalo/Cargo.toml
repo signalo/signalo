@@ -62,3 +62,8 @@ std = [
     "signalo_pipes/std",
 ]
 nightly = ["missing_mpl"]
+dimensioned = [
+    "signalo_filters/dimensioned",
+    "signalo_sinks/dimensioned",
+    "signalo_sources/dimensioned",
+]

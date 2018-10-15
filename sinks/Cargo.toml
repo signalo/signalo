@@ -27,6 +27,11 @@ version = "0.4.0"
 version = "~0.2"
 default-features = false
 
+[dependencies.dimensioned]
+version = "~0.7"
+optional = true
+default-features = false
+
 [dependencies.missing_mpl]
 optional = true
 version = "~0.1"
@@ -44,5 +49,6 @@ default = ["std"]
 std = [
     "signalo_traits/std",
     "num-traits/std",
+    "dimensioned/std",
 ]
 nightly = ["missing_mpl"]

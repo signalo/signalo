@@ -16,6 +16,9 @@ extern crate core as std;
 
 extern crate num_traits;
 
+#[cfg(dimensioned)]
+extern crate dimensioned;
+
 #[cfg(test)]
 #[macro_use]
 extern crate nearly_eq;
@@ -36,3 +39,4 @@ pub mod mean;
 pub mod mean_variance;
 pub mod min;
 pub mod statistics;
+pub mod unit_system;

@@ -18,6 +18,9 @@ extern crate num_traits;
 
 extern crate arraydeque;
 
+#[cfg(dimensioned)]
+extern crate dimensioned;
+
 #[macro_use]
 extern crate generic_array;
 
@@ -43,4 +46,5 @@ pub mod mean;
 pub mod median;
 pub mod observe;
 pub mod ops;
+pub mod unit_system;
 pub mod wavelet;

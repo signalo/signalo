@@ -16,6 +16,9 @@ extern crate core as std;
 
 extern crate num_traits;
 
+#[cfg(dimensioned)]
+extern crate dimensioned;
+
 pub extern crate signalo_traits;
 
 pub use signalo_traits as traits;
@@ -33,3 +36,4 @@ pub mod pad;
 pub mod repeat;
 pub mod skip;
 pub mod take;
+pub mod unit_system;
