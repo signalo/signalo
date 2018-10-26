@@ -18,7 +18,6 @@ extern crate num_traits;
 
 extern crate arraydeque;
 
-#[cfg(dimensioned)]
 extern crate dimensioned;
 
 #[macro_use]
