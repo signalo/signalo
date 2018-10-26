@@ -17,7 +17,7 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
-/// A differentiate filter that produces the derivative of the signal.
+/// A filter wrapper that preserves the signal's dimensional unit.
 #[derive(Clone, Debug)]
 pub struct UnitSystem<T> {
     /// Inner filter.

@@ -15,7 +15,7 @@ use dimensioned::{
 
 use signalo_traits::Source;
 
-/// A sink that computes the integrate of all received values of a signal.
+/// A source wrapper that preserves the signal's dimensional unit.
 #[derive(Clone, Debug)]
 pub struct UnitSystem<S, T> {
     /// Inner sink.
