@@ -16,7 +16,7 @@ extern crate core as std;
 
 pub extern crate num_traits;
 
-extern crate dimensioned;
+pub extern crate dimensioned;
 
 #[cfg(test)]
 #[macro_use]
