@@ -14,7 +14,7 @@
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-extern crate num_traits;
+pub extern crate num_traits;
 
 extern crate dimensioned;
 

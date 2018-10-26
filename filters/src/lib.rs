@@ -14,14 +14,14 @@
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-extern crate num_traits;
+pub extern crate num_traits;
 
-extern crate arraydeque;
+pub extern crate arraydeque;
 
 extern crate dimensioned;
 
 #[macro_use]
-extern crate generic_array;
+pub extern crate generic_array;
 
 #[cfg(test)]
 #[macro_use]
