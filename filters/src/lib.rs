@@ -18,7 +18,7 @@ pub extern crate num_traits;
 
 pub extern crate arraydeque;
 
-extern crate dimensioned;
+pub extern crate dimensioned;
 
 #[macro_use]
 pub extern crate generic_array;
