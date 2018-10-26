@@ -16,7 +16,6 @@ extern crate core as std;
 
 extern crate num_traits;
 
-#[cfg(dimensioned)]
 extern crate dimensioned;
 
 pub extern crate signalo_traits;

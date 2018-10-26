@@ -4,7 +4,7 @@
 
 //! Dimensional analysis wrapper sinks.
 
-#![cfg(dimensioned)]
+#![cfg(feature = "dimensioned")]
 
 use std::marker::PhantomData;
 

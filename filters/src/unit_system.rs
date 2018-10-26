@@ -4,7 +4,7 @@
 
 //! Dimensional analysis wrapper filters.
 
-#![cfg(dimensioned)]
+#![cfg(feature = "dimensioned")]
 
 use dimensioned::{
     traits::{Dimensioned, MapUnsafe},
