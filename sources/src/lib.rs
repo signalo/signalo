@@ -37,6 +37,7 @@ pub mod from_iter;
 pub mod increment;
 pub mod into_iter;
 pub mod pad;
+pub mod peek;
 pub mod repeat;
 pub mod skip;
 pub mod take;
