@@ -18,6 +18,10 @@ pub extern crate num_traits;
 
 pub extern crate dimensioned;
 
+#[cfg(test)]
+#[macro_use]
+extern crate nearly_eq;
+
 pub extern crate signalo_traits;
 
 pub use signalo_traits as traits;
@@ -25,6 +29,7 @@ pub use signalo_traits as traits;
 /// The crate's prelude.
 pub mod prelude {}
 
+pub mod cache;
 pub mod chain;
 pub mod constant;
 pub mod cycle;
