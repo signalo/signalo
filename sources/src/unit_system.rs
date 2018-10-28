@@ -15,18 +15,25 @@ use dimensioned::{
 
 use signalo_traits::Source;
 
+/// The source's state.
+#[derive(Clone, Debug)]
+pub struct State<S> {
+    /// Inner sink.
+    pub inner: S,
+}
+
 /// A source wrapper that preserves the signal's dimensional unit.
 #[derive(Clone, Debug)]
 pub struct UnitSystem<S, T> {
-    /// Inner sink.
-    pub inner: S,
+    state: State<S>,
     _phantom: PhantomData<T>,
 }
 
 impl<S, T> From<S> for UnitSystem<S, T> {
     fn from(inner: S) -> Self {
+        let state = State { inner };
         let _phantom = PhantomData;
-        Self { inner, _phantom }
+        Self { state, _phantom }
     }
 }
 
@@ -49,7 +56,7 @@ macro_rules! impl_dimensioned {
             type Output = $t<V, U>;
 
             fn source(&mut self) -> Option<Self::Output> {
-                self.inner.source().map(|value| $t::new(value))
+                self.state.inner.source().map(|value| $t::new(value))
             }
         }
     };

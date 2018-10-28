@@ -17,16 +17,23 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
-/// A filter wrapper that preserves the signal's dimensional unit.
+/// The filter's state.
 #[derive(Clone, Debug)]
-pub struct UnitSystem<T> {
+pub struct State<T> {
     /// Inner filter.
     pub inner: T,
 }
 
+/// A filter wrapper that preserves the signal's dimensional unit.
+#[derive(Clone, Debug)]
+pub struct UnitSystem<T> {
+    state: State<T>,
+}
+
 impl<T> From<T> for UnitSystem<T> {
     fn from(inner: T) -> Self {
-        Self { inner }
+        let state = State { inner };
+        Self { state }
     }
 }
 
@@ -35,8 +42,7 @@ where
     T: Default,
 {
     fn default() -> Self {
-        let inner = T::default();
-        Self { inner }
+        Self::from(T::default())
     }
 }
 
@@ -51,7 +57,7 @@ impl<T> StateTrait for UnitSystem<T>
 where
     T: StateTrait,
 {
-    type State = T::State;
+    type State = State<T>;
 }
 
 impl<T> WithConfig for UnitSystem<T>
@@ -61,8 +67,7 @@ where
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let inner = T::with_config(config);
-        Self { inner }
+        Self::from(T::with_config(config))
     }
 }
 
@@ -71,7 +76,7 @@ where
     T: ConfigRef,
 {
     fn config_ref(&self) -> &Self::Config {
-        self.inner.config_ref()
+        self.state.inner.config_ref()
     }
 }
 
@@ -80,7 +85,7 @@ where
     T: ConfigClone,
 {
     fn config(&self) -> Self::Config {
-        self.inner.config()
+        self.state.inner.config()
     }
 }
 
@@ -89,33 +94,24 @@ where
     T: StateMut,
 {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
-        self.inner.state_mut()
+        &mut self.state
     }
 }
 
-impl<T> Guts for UnitSystem<T>
-where
-    T: Guts,
-{
-    type Guts = T::Guts;
+impl<T> Guts for UnitSystem<T> {
+    type Guts = State<T>;
 }
 
-impl<T> FromGuts for UnitSystem<T>
-where
-    T: FromGuts,
-{
+impl<T> FromGuts for UnitSystem<T> {
     unsafe fn from_guts(guts: Self::Guts) -> Self {
-        let inner = T::from_guts(guts);
-        Self { inner }
+        let state = guts;
+        Self { state }
     }
 }
 
-impl<T> IntoGuts for UnitSystem<T>
-where
-    T: IntoGuts,
-{
+impl<T> IntoGuts for UnitSystem<T> {
     fn into_guts(self) -> Self::Guts {
-        self.inner.into_guts()
+        self.state
     }
 }
 
@@ -124,7 +120,7 @@ where
     T: Reset,
 {
     fn reset(mut self) -> Self {
-        self.inner.reset_mut();
+        self.state.inner.reset_mut();
         self
     }
 }
@@ -140,7 +136,7 @@ macro_rules! impl_dimensioned {
             type Output = $t<V, U>;
 
             fn filter(&mut self, input: $t<V, U>) -> Self::Output {
-                input.map_unsafe(|unitless| self.inner.filter(unitless))
+                input.map_unsafe(|unitless| self.state.inner.filter(unitless))
             }
         }
     };
