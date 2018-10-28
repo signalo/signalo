@@ -34,6 +34,7 @@ pub use signalo_traits as traits;
 /// The crate's prelude.
 pub mod prelude {}
 
+pub mod cache;
 pub mod classify;
 pub mod convolve;
 pub mod delay;
