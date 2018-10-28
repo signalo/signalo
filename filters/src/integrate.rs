@@ -11,14 +11,14 @@ use num_traits::Zero;
 use signalo_traits::Filter;
 use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
-/// The differentiate filter's state.
+/// The integration filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {
     /// Current value.
     pub value: T,
 }
 
-/// A differentiate filter that produces the derivative of the signal.
+/// A integration filter that produces the integral of the signal.
 #[derive(Clone, Debug)]
 pub struct Integrate<T> {
     state: State<T>,
