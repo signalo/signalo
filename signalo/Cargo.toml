@@ -8,7 +8,7 @@ categories = [
     "algorithms",
 ]
 description = "A DSP toolbox with focus on embedded environments."
-documentation = "https://docs.rs/svm"
+documentation = "https://docs.rs/signalo"
 keywords = [
     "dsp",
     "digital-signal",

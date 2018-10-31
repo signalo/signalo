@@ -8,7 +8,7 @@ categories = [
     "algorithms",
 ]
 description = "A collection of pipes used in 'signalo' umbrella crate."
-documentation = "https://docs.rs/svm"
+documentation = "https://docs.rs/signalo_pipes"
 keywords = [
     "dsp",
     "digital-signal",

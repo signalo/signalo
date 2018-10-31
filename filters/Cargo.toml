@@ -8,8 +8,7 @@ categories = [
     "algorithms",
 ]
 description = "A collection of filters used in 'signalo' umbrella crate."
-documentation = "https://docs.rs/svm"
-homepage = "https://github.com/signalo/signalo/tree/master/filters"
+documentation = "https://docs.rs/signalo_filters"
 keywords = [
     "dsp",
     "digital-signal",
@@ -21,6 +20,7 @@ license = "MPL-2.0"
 name = "signalo_filters"
 readme = "README.md"
 repository = "https://github.com/signalo/signalo"
+homepage = "https://github.com/signalo/signalo/tree/master/filters"
 version = "0.5.1"
 
 [dependencies.arraydeque]
