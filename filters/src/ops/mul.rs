@@ -18,7 +18,6 @@ where
 {
     type Output = <T as StdMul<U>>::Output;
 
-    #[inline]
     fn filter(&mut self, input: (T, U)) -> Self::Output {
         let (lhs, rhs) = input;
         lhs * rhs

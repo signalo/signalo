@@ -151,7 +151,6 @@ where
 {
     type Output = T;
 
-    #[inline]
     fn filter(&mut self, input: Decomposition<T>) -> Self::Output {
         let Decomposition { low, high } = input;
         let low = self.state.low_pass.filter(low);

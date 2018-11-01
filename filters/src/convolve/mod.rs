@@ -54,7 +54,6 @@ where
     N: ArrayLength<T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
-    #[inline]
     pub fn normalized(mut config: Config<T, N>) -> Self {
         // let mut coefficients: GenericArray<T, N>
         let sum = config
@@ -170,7 +169,6 @@ where
 {
     type Output = T;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         loop {
             if self.state.taps.push_back(input.clone()).is_some() {

@@ -13,7 +13,6 @@ pub struct Identity;
 impl<T> Filter<T> for Identity {
     type Output = T;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         input
     }

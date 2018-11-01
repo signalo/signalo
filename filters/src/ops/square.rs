@@ -18,7 +18,6 @@ where
 {
     type Output = <T as Mul<T>>::Output;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         input.clone() * input
     }
