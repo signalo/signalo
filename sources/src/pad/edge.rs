@@ -65,7 +65,7 @@ where
     #[inline]
     pub fn new(inner: S, count: usize) -> Self {
         let state = PadState::Before;
-        Pad {
+        Self {
             inner,
             count,
             state,

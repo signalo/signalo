@@ -123,7 +123,7 @@ where
                 {
                     let size = N::to_usize();
                     let (mut iter, index) = builder.iter_position();
-                    while let Some(destination) = iter.next() {
+                    for destination in iter {
                         let node = ListNode {
                             value: None,
                             previous: (*index + size - 1) % size,
@@ -267,6 +267,12 @@ where
         self.state.buffer.len()
     }
 
+    /// Returns `true` if the filter's buffer is empty, `false` otherwise.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.state.buffer.is_empty()
+    }
+
     /// Returns the filter buffer's current median value, panicking if empty.
     #[inline]
     pub fn median(&self) -> Option<T> {
@@ -297,7 +303,7 @@ where
     #[inline]
     fn should_insert(&self, value: &T, current: usize, index: usize) -> bool {
         if let Some(ref v) = self.state.buffer[current].value {
-            (index + 1 == self.len()) || !(v < value)
+            (index + 1 == self.len()) || (v >= value)
         } else {
             true
         }

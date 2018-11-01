@@ -40,7 +40,7 @@ impl<S> Skip<S> {
     /// Creates a new `Skip` source for a given `value`.
     #[inline]
     pub fn new(inner: S, count: usize) -> Self {
-        Skip { inner, count }
+        Self { inner, count }
     }
 }
 

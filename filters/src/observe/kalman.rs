@@ -33,12 +33,13 @@ where
 {
     #[inline]
     fn default() -> Self {
-        let r = T::one();
-        let q = T::one();
-        let a = T::one();
-        let b = T::zero();
-        let c = T::one();
-        Config { r, q, a, b, c }
+        Self {
+            r: T::one(),
+            q: T::one(),
+            a: T::one(),
+            b: T::zero(),
+            c: T::one(),
+        }
     }
 }
 
@@ -75,9 +76,9 @@ where
             let c_squared = c.clone() * c.clone();
             match value {
                 None => {
-                    let value = input / c.clone();
-                    let cov = q.clone() / c_squared;
-                    (value, cov)
+                    let new_value = input / c.clone();
+                    let new_cov = q.clone() / c_squared;
+                    (new_value, new_cov)
                 }
                 Some(ref value) => {
                     // Compute prediction:
@@ -89,10 +90,10 @@ where
                         pred_cov.clone() * c.clone() / ((pred_cov.clone() * c_squared) + q.clone());
 
                     // Correction:
-                    let value =
+                    let new_value =
                         pred_state.clone() + gain.clone() * (input - (c.clone() * pred_state));
-                    let cov = pred_cov.clone() - (gain * c.clone() * pred_cov);
-                    (value, cov)
+                    let new_cov = pred_cov.clone() - (gain * c.clone() * pred_cov);
+                    (new_value, new_cov)
                 }
             }
         };
@@ -108,7 +109,7 @@ where
 {
     #[inline]
     fn default() -> Self {
-        Kalman::with_config(Config::default())
+        Self::with_config(Config::default())
     }
 }
 

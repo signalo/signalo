@@ -52,7 +52,7 @@ impl<F, B> Chain<F, B> {
     #[inline]
     pub fn new(front: F, back: B) -> Self {
         let state = ChainState::Front;
-        Chain { front, back, state }
+        Self { front, back, state }
     }
 }
 
@@ -66,12 +66,11 @@ where
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
         match self.state {
-            ChainState::Front => match self.front.source() {
-                value @ Some(..) => value,
-                None => {
-                    self.state = ChainState::Back;
-                    self.back.source()
-                }
+            ChainState::Front => if let Some(value) = self.front.source() {
+                Some(value)
+            } else {
+                self.state = ChainState::Back;
+                self.back.source()
             },
             ChainState::Back => self.back.source(),
         }

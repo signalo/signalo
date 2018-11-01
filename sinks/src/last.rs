@@ -12,14 +12,6 @@ pub struct Last<T> {
     state: Option<T>,
 }
 
-impl<T> Last<T> {
-    /// Creates a new `Last` sink.
-    #[inline]
-    pub fn new() -> Self {
-        Last { state: None }
-    }
-}
-
 impl<T> Sink<T> for Last<T> {
     #[inline]
     fn sink(&mut self, input: T) {
@@ -46,7 +38,7 @@ mod tests {
         let input = vec![
             0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7,
         ];
-        let mut sink = Last::new();
+        let mut sink = Last::default();
         for input in input {
             sink.sink(input);
         }

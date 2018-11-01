@@ -137,18 +137,15 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let old_mean = self.state.mean.clone().unwrap_or(input.clone());
+        let old_mean = self.state.mean.clone().unwrap_or_else(|| input.clone());
         let old_weight = self.state.weight.clone();
-        let (mean, weight) = match self.state.taps.push_back(input.clone()) {
-            Some(old_input) => {
-                let mean = old_mean - old_input + input.clone();
-                (mean, old_weight)
-            }
-            None => {
-                let mean = old_mean + input;
-                let weight = old_weight + T::one();
-                (mean, weight)
-            }
+        let (mean, weight) = if let Some(old_input) = self.state.taps.push_back(input.clone()) {
+            let mean = old_mean - old_input + input.clone();
+            (mean, old_weight)
+        } else {
+            let mean = old_mean + input;
+            let weight = old_weight + T::one();
+            (mean, weight)
         };
         self.state.mean = Some(mean.clone());
         self.state.weight = weight.clone();

@@ -30,7 +30,7 @@ impl<T> Constant<T> {
     /// Creates a new `Constant` source for a given `value`.
     #[inline]
     pub fn new(value: T) -> Self {
-        Constant { value }
+        Self { value }
     }
 }
 
