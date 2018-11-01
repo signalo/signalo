@@ -4,12 +4,19 @@
 
 //! A collection of filters used in 'signalo' umbrella crate.
 
+// Activate `no_std` if no "std" feature present:
+#![cfg_attr(not(feature = "std"), no_std)]
+// Activate "missing_mpl" lint if appropriate feature present:
 #![cfg_attr(feature = "missing_mpl", feature(plugin))]
 #![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
 #![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
+// Enable unstable `TryFrom`/`TryInto` if appropriate feature present:
 #![cfg_attr(feature = "nightly", feature(try_from))]
+// Enable unstable `tool_lints` if appropriate feature present:
+#![cfg_attr(feature = "cargo-clippy", feature(tool_lints))]
+#![cfg_attr(feature = "cargo-clippy", warn(clippy::pedantic))]
+// Enable warning for missing docs:
 #![warn(missing_docs)]
-#![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
 extern crate core as std;

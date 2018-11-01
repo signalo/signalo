@@ -22,7 +22,7 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let sum = self.sum.clone().unwrap_or(T::zero()) + input;
+        let sum = self.sum.clone().unwrap_or_else(T::zero) + input;
 
         self.sum = Some(sum.clone());
 

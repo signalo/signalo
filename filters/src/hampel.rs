@@ -59,9 +59,9 @@ where
     /// it is replaced with the median:
     fn filter_internal(&mut self, input: T, factor: T) -> T {
         // Read window's current median and min/max boundaries:
-        let min = self.state.median.min().unwrap_or(input.clone());
-        let median = self.state.median.median().unwrap_or(input.clone());
-        let max = self.state.median.max().unwrap_or(input.clone());
+        let min = self.state.median.min().unwrap_or_else(|| input.clone());
+        let median = self.state.median.median().unwrap_or_else(|| input.clone());
+        let max = self.state.median.max().unwrap_or_else(|| input.clone());
 
         // Feed the input to the internal median filter:
         self.state.median.filter(input.clone());

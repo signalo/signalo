@@ -35,8 +35,8 @@ impl Default for Slope {
 }
 
 impl Classification<Slope, U3> for Slope {
-    fn classes() -> GenericArray<Slope, U3> {
-        arr![Slope; Slope::Rising, Slope::None, Slope::Falling]
+    fn classes() -> GenericArray<Self, U3> {
+        arr![Self; Slope::Rising, Slope::None, Slope::Falling]
     }
 }
 

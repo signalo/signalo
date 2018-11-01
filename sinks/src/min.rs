@@ -20,16 +20,15 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let min = self
-            .min
-            .as_ref()
-            .map(|min| {
-                if &input < &min {
-                    input.clone()
-                } else {
-                    min.clone()
-                }
-            }).unwrap_or(input);
+        let min = if let Some(ref min) = self.min {
+            if &input < min {
+                input.clone()
+            } else {
+                min.clone()
+            }
+        } else {
+            input
+        };
         self.min = Some(min.clone());
         min
     }

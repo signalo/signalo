@@ -181,13 +181,11 @@ where
         let state_iter = self.state.taps.iter();
         let coeff_iter = self.config.coefficients.as_slice().iter().rev();
 
-        let output = state_iter
+        state_iter
             .zip(coeff_iter)
             .fold(T::zero(), |sum, (state, coeff)| {
                 sum + (state.clone() * coeff.clone())
-            });
-
-        output
+            })
     }
 }
 

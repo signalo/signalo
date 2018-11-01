@@ -20,16 +20,15 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let max = self
-            .max
-            .as_ref()
-            .map(|max| {
-                if &input > &max {
-                    input.clone()
-                } else {
-                    max.clone()
-                }
-            }).unwrap_or(input);
+        let max = if let Some(ref max) = self.max {
+            if &input > max {
+                input.clone()
+            } else {
+                max.clone()
+            }
+        } else {
+            input
+        };
         self.max = Some(max.clone());
         max
     }

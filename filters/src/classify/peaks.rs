@@ -38,8 +38,8 @@ impl Default for Peak {
 }
 
 impl Classification<Peak, U3> for Peak {
-    fn classes() -> GenericArray<Peak, U3> {
-        arr![Peak; Peak::Max, Peak::None, Peak::Min]
+    fn classes() -> GenericArray<Self, U3> {
+        arr![Self; Peak::Max, Peak::None, Peak::Min]
     }
 }
 
@@ -72,26 +72,17 @@ where
 {
     fn filter_internal(&mut self, slope: Slope) -> (Slope, usize) {
         let index = match self.state.slope {
-            None => 1,
+            None | Some(Slope::None) => 1,
             Some(Slope::Rising) => {
                 match &slope {
-                    Slope::Rising => 1,  // None
-                    Slope::None => 1,    // None
-                    Slope::Falling => 0, // Max
-                }
-            }
-            Some(Slope::None) => {
-                match &slope {
-                    Slope::Rising => 1,  // None
-                    Slope::None => 1,    // None
-                    Slope::Falling => 1, // None
+                    Slope::Rising | Slope::None => 1, // None
+                    Slope::Falling => 0,              // Max
                 }
             }
             Some(Slope::Falling) => {
                 match &slope {
-                    Slope::Rising => 2,  // Min
-                    Slope::None => 1,    // None
-                    Slope::Falling => 1, // None
+                    Slope::Rising => 2,                // Min
+                    Slope::None | Slope::Falling => 1, // None
                 }
             }
         };

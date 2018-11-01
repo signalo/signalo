@@ -39,7 +39,7 @@ impl<S> Take<S> {
     /// Creates a new `Take` source for a given `value`.
     #[inline]
     pub fn new(inner: S, count: usize) -> Self {
-        Take { inner, count }
+        Self { inner, count }
     }
 }
 
@@ -51,12 +51,11 @@ where
 
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
-        if self.count != 0 {
-            self.count -= 1;
-            self.inner.source()
-        } else {
-            None
+        if self.count == 0 {
+            return None;
         }
+        self.count -= 1;
+        self.inner.source()
     }
 }
 

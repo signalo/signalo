@@ -139,7 +139,7 @@ where
                 .state_mut()
                 .mean
                 .clone()
-                .unwrap_or(input.clone())
+                .unwrap_or_else(|| input.clone())
         };
         let mean = self.state.mean.filter(input.clone());
         let deviation_old = (input.clone() - mean_old).abs();

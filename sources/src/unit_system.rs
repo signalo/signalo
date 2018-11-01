@@ -31,9 +31,10 @@ pub struct UnitSystem<S, T> {
 
 impl<S, T> From<S> for UnitSystem<S, T> {
     fn from(inner: S) -> Self {
-        let state = State { inner };
-        let _phantom = PhantomData;
-        Self { state, _phantom }
+        Self {
+            state: State { inner },
+            _phantom: PhantomData,
+        }
     }
 }
 
@@ -56,7 +57,7 @@ macro_rules! impl_dimensioned {
             type Output = $t<V, U>;
 
             fn source(&mut self) -> Option<Self::Output> {
-                self.state.inner.source().map(|value| $t::new(value))
+                self.state.inner.source().map($t::new)
             }
         }
     };

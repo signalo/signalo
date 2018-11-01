@@ -112,9 +112,10 @@ where
     type Output = U;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        self.state.on = match self.state.on {
-            false => input > self.config.thresholds[1],
-            true => input >= self.config.thresholds[0],
+        self.state.on = if self.state.on {
+            input >= self.config.thresholds[0]
+        } else {
+            input > self.config.thresholds[1]
         };
         let index = self.state.on as usize;
         self.config.outputs[index].clone()

@@ -25,8 +25,10 @@ pub struct UnitSystem<S, T> {
 
 impl<S, T> From<S> for UnitSystem<S, T> {
     fn from(inner: S) -> Self {
-        let _phantom = PhantomData;
-        Self { inner, _phantom }
+        Self {
+            inner,
+            _phantom: PhantomData,
+        }
     }
 }
 
