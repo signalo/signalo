@@ -31,7 +31,6 @@ impl<T> Default for Config<T>
 where
     T: Zero + One,
 {
-    #[inline]
     fn default() -> Self {
         Self {
             r: T::one(),
@@ -107,7 +106,6 @@ impl<T> Default for Kalman<T>
 where
     T: Zero + One,
 {
-    #[inline]
     fn default() -> Self {
         Self::with_config(Config::default())
     }

@@ -262,33 +262,28 @@ where
     N: ArrayLength<ListNode<T>>,
 {
     /// Returns the window size of the filter.
-    #[inline]
     pub fn len(&self) -> usize {
         self.state.buffer.len()
     }
 
     /// Returns `true` if the filter's buffer is empty, `false` otherwise.
-    #[inline]
     pub fn is_empty(&self) -> bool {
         self.state.buffer.is_empty()
     }
 
     /// Returns the filter buffer's current median value, panicking if empty.
-    #[inline]
     pub fn median(&self) -> Option<T> {
         let index = self.state.median;
         self.state.buffer[index].value.clone()
     }
 
     /// Returns the filter buffer's current min value, panicking if empty.
-    #[inline]
     pub fn min(&self) -> Option<T> {
         let index = self.state.head;
         self.state.buffer[index].value.clone()
     }
 
     /// Returns the filter buffer's current max value, panicking if empty.
-    #[inline]
     pub fn max(&self) -> Option<T> {
         let index = (self.state.cursor + self.len() - 1) % (self.len());
         self.state.buffer[index].value.clone()

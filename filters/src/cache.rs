@@ -157,7 +157,6 @@ mod tests {
     impl Filter<f32> for AddFourPointTwo {
         type Output = f32;
 
-        #[inline]
         fn filter(&mut self, input: f32) -> Self::Output {
             input + 4.2
         }

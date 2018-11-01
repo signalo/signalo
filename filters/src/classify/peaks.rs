@@ -164,7 +164,6 @@ where
 {
     type Output = U;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         let slope = self.state.slopes.filter(input);
         let (state, index) = self.filter_internal(slope);
@@ -179,7 +178,6 @@ where
 {
     type Output = U;
 
-    #[inline]
     fn filter(&mut self, slope: Slope) -> Self::Output {
         let (state, index) = self.filter_internal(slope);
         unsafe {

@@ -129,7 +129,6 @@ where
 {
     type Output = U;
 
-    #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         let index = match self.state.input {
             None => 1, // None
