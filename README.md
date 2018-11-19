@@ -6,49 +6,53 @@
 
 A DSP toolbox with focus on embedded environments.
 
-### [signalo](signalo)
+## About
 
-[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+Signalo basically consists of four basic [traits](traits) and implementations thereof:
+
+- [`Source<T>`](sources): `() -> T`
+- [`Filter<T>`](filters): `T -> U`
+- [`Sink<T>`](sinks): `T -> ()`
+- `Finalize`: `() -> U`
+
+Roughly signalo's traits are equivalent in semantics to the following stdlib APIs:
+
+- `Source<…>` ≈ `core::iter::Iterator<…>`
+- `Filter<…>` ≈ `core::iter::Map<…>`
+- `Sink<…>` & `Finalize` ≈ `Iterator::fold(…)`
+- `Filter<…>` & `Finalize` ≈ `core::iter::Scan<…>`
+
+Types implementing `Finalize` usually also implement either `Filter<T>` or `Sink<T>`.
+
+Signalo provides the **basic building-blocks** for **low-level real-time filtering pipelines**,  
+which can be **assembled via composition** either manually or through the use of [pipes](pipes).
+
+## Workspace
+
+-  [signalo](signalo): [![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
 [![Downloads](https://img.shields.io/crates/d/signalo.svg?style=flat-square)](https://crates.io/crates/signalo/)
 [![Version](https://img.shields.io/crates/v/signalo.svg?style=flat-square)](https://crates.io/crates/signalo/)
 [![License](https://img.shields.io/crates/l/signalo.svg?style=flat-square)](https://crates.io/crates/signalo/)
-
-### [signalo_traits](traits)
-
-[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+- [signalo_traits](traits): [![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
 [![Downloads](https://img.shields.io/crates/d/signalo_traits.svg?style=flat-square)](https://crates.io/crates/signalo_traits/)
 [![Version](https://img.shields.io/crates/v/signalo_traits.svg?style=flat-square)](https://crates.io/crates/signalo_traits/)
 [![License](https://img.shields.io/crates/l/signalo_traits.svg?style=flat-square)](https://crates.io/crates/signalo_traits/)
-
-### [signalo_filters](filters)
-
-[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+- [signalo_filters](filters): [![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
 [![Downloads](https://img.shields.io/crates/d/signalo_filters.svg?style=flat-square)](https://crates.io/crates/signalo_filters/)
 [![Version](https://img.shields.io/crates/v/signalo_filters.svg?style=flat-square)](https://crates.io/crates/signalo_filters/)
 [![License](https://img.shields.io/crates/l/signalo_filters.svg?style=flat-square)](https://crates.io/crates/signalo_filters/)
-
-### [signalo_sinks](sinks)
-
-[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+- [signalo_sinks](sinks): [![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
 [![Downloads](https://img.shields.io/crates/d/signalo_sinks.svg?style=flat-square)](https://crates.io/crates/signalo_sinks/)
 [![Version](https://img.shields.io/crates/v/signalo_sinks.svg?style=flat-square)](https://crates.io/crates/signalo_sinks/)
 [![License](https://img.shields.io/crates/l/signalo_sinks.svg?style=flat-square)](https://crates.io/crates/signalo_sinks/)
-
-### [signalo_sources](sources)
-
-[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+- [signalo_sources](sources): [![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
 [![Downloads](https://img.shields.io/crates/d/signalo_sources.svg?style=flat-square)](https://crates.io/crates/signalo_sources/)
 [![Version](https://img.shields.io/crates/v/signalo_sources.svg?style=flat-square)](https://crates.io/crates/signalo_sources/)
 [![License](https://img.shields.io/crates/l/signalo_sources.svg?style=flat-square)](https://crates.io/crates/signalo_sources/)
-
-### [signalo_pipes](pipes)
-
-[![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
+- [signalo_pipes](pipes): [![Build Status](http://img.shields.io/travis/signalo/signalo.svg?style=flat-square)](https://travis-ci.org/signalo/signalo)
 [![Downloads](https://img.shields.io/crates/d/signalo_pipes.svg?style=flat-square)](https://crates.io/crates/signalo_pipes/)
 [![Version](https://img.shields.io/crates/v/signalo_pipes.svg?style=flat-square)](https://crates.io/crates/signalo_pipes/)
 [![License](https://img.shields.io/crates/l/signalo_pipes.svg?style=flat-square)](https://crates.io/crates/signalo_pipes/)
-
-### Workspace Dependencies
 
 ![](dependencies.png)
 
