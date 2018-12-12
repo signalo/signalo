@@ -4,6 +4,8 @@
 
 //! Collection sinks.
 
+#![cfg(feature = "std")]
+
 use signalo_traits::{Filter, Finalize, Sink};
 
 /// A sink that computes the integrate of all received values of a signal.
