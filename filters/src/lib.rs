@@ -25,6 +25,7 @@ pub extern crate num_traits;
 
 pub extern crate arraydeque;
 
+#[cfg(feature = "dimensioned")]
 pub extern crate dimensioned;
 
 #[macro_use]
