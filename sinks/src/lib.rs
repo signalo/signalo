@@ -23,6 +23,7 @@ extern crate core as std;
 
 pub extern crate num_traits;
 
+#[cfg(feature = "dimensioned")]
 pub extern crate dimensioned;
 
 #[cfg(test)]
