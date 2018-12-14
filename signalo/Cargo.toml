@@ -48,7 +48,7 @@ version = "~0.5"
 path = "../pipes"
 default-features = false
 
-[build-dependencies.missing_mpl]
+[dependencies.missing_mpl]
 version = "~0.1"
 optional = true
 
