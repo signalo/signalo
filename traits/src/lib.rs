@@ -66,9 +66,11 @@ pub trait State: Sized {
 /// Trait for systems with mutably accessible state.
 pub trait StateMut: State {
     /// Returns a mutable reference to the internal state of the filter.
-    /// # Important:
     ///
-    /// Relying on the internal structure of an object breaks encapsulation.
+    /// # Safety
+    ///
+    /// Relying on the internal structure of an object breaks encapsulation,
+    /// putting your code at risk of breaking your invariants.
     unsafe fn state_mut(&mut self) -> &mut Self::State;
 }
 
@@ -81,6 +83,10 @@ pub trait Guts: Sized {
 /// Trait for **gut-constructable** systems.
 pub trait FromGuts: Guts {
     /// Constructs `self` from its raw guts.
+    ///
+    /// # Safety
+    ///
+    /// It is your responsibility to ensure that you're not breaking your code's invariants.
     unsafe fn from_guts(guts: Self::Guts) -> Self;
 }
 
