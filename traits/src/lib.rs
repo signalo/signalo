@@ -100,12 +100,16 @@ pub trait Reset: Sized {
     fn reset(self) -> Self;
 
     /// Resets the internal state.
+    #[cfg(all(feature = "std", not(feature = "panic_abort")))]
     fn reset_mut(&mut self) {
-        use std::{mem, ptr};
+        replace_with::replace_with_or_abort(self, |owned_self| owned_self.reset())
+    }
 
+    /// Resets the internal state.
+    #[cfg(feature = "panic_abort")]
+    fn reset_mut(&mut self) {
         unsafe {
-            let owned_self = ptr::replace(self, mem::uninitialized());
-            ptr::write(self, owned_self.reset());
+            replace_with::replace_with_or_abort_unchecked(self, |owned_self| owned_self.reset())
         }
     }
 }
