@@ -10,10 +10,6 @@
 #![cfg_attr(feature = "missing_mpl", feature(plugin))]
 #![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
 #![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
-// Enable unstable `TryFrom`/`TryInto` if appropriate feature present:
-#![cfg_attr(feature = "nightly", feature(try_from))]
-// Enable unstable `tool_lints` if appropriate feature present:
-#![cfg_attr(feature = "cargo-clippy", feature(tool_lints))]
 #![cfg_attr(feature = "cargo-clippy", warn(clippy::pedantic))]
 // Enable warning for missing docs:
 #![warn(missing_docs)]
