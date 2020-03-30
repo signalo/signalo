@@ -40,7 +40,7 @@ where
         };
 
         let count = old_count + T::one();
-        let mean = old_mean.clone() + ((input.clone() - old_mean) / count.clone());
+        let mean = old_mean.clone() + ((input - old_mean) / count.clone());
 
         let state = State {
             count,

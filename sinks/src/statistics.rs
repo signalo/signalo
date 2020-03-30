@@ -47,7 +47,7 @@ where
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         let BoundsOutput { min, max } = self.state.bounds.filter(input.clone());
-        let MeanVarianceOutput { mean, variance } = self.state.mean_variance.filter(input.clone());
+        let MeanVarianceOutput { mean, variance } = self.state.mean_variance.filter(input);
 
         Output {
             min,

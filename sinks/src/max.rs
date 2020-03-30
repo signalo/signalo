@@ -22,7 +22,7 @@ where
     fn filter(&mut self, input: T) -> Self::Output {
         let max = if let Some(ref max) = self.max {
             if &input > max {
-                input.clone()
+                input
             } else {
                 max.clone()
             }
