@@ -22,7 +22,7 @@ where
     fn filter(&mut self, input: T) -> Self::Output {
         let min = if let Some(ref min) = self.min {
             if &input < min {
-                input.clone()
+                input
             } else {
                 min.clone()
             }
