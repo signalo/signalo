@@ -122,7 +122,7 @@ where
                 let mut builder = ArrayBuilder::new();
                 {
                     let size = N::to_usize();
-                    let (mut iter, index) = builder.iter_position();
+                    let (iter, index) = builder.iter_position();
                     for destination in iter {
                         let node = ListNode {
                             value: None,
