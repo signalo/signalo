@@ -29,5 +29,10 @@ optional = true
 
 [features]
 default = ["std"]
-std = []
+std = ["replace_with/std"]
 nightly = ["missing_mpl"]
+
+[dependencies.replace_with]
+version = "~0.1.5"
+default-features = false
+features = []
