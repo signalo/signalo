@@ -111,7 +111,7 @@ impl<T, U> Guts for Cache<T, U> {
 }
 
 impl<T, U> FromGuts for Cache<T, U> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }

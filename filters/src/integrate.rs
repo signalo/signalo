@@ -52,7 +52,7 @@ impl<T> Guts for Integrate<T> {
 }
 
 impl<T> FromGuts for Integrate<T> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }

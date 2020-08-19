@@ -103,7 +103,7 @@ impl<T> Guts for UnitSystem<T> {
 }
 
 impl<T> FromGuts for UnitSystem<T> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }

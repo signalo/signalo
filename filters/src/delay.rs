@@ -94,7 +94,7 @@ impl<T, N> FromGuts for Delay<T, N>
 where
     N: ArrayLength<T>,
 {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }

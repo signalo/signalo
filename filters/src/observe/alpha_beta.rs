@@ -96,7 +96,7 @@ impl<T> Guts for AlphaBeta<T> {
 }
 
 impl<T> FromGuts for AlphaBeta<T> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }

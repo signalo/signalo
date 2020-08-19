@@ -49,7 +49,7 @@ impl<T> Guts for Differentiate<T> {
 }
 
 impl<T> FromGuts for Differentiate<T> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }

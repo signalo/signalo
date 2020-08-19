@@ -161,7 +161,7 @@ impl<T> Guts for Kalman<T> {
 }
 
 impl<T> FromGuts for Kalman<T> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }

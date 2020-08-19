@@ -106,7 +106,7 @@ impl<T> Guts for Median<T> {
 }
 
 impl<T> FromGuts for Median<T> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }
