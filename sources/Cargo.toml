@@ -41,7 +41,7 @@ default-features = false
 nearly_eq = "~0.2"
 
 [features]
-default = ["std"]
+default = []
 std = [
     "signalo_traits/std",
     "num-traits/std",

@@ -4,14 +4,15 @@
 
 //! The 'signalo' umbrella crate.
 
-// Activate `no_std` if no "std" feature present:
-#![cfg_attr(not(feature = "std"), no_std)]
-
-// Enable warning for missing docs:
 #![warn(missing_docs)]
 
-#[cfg(not(feature = "std"))]
+#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
+
+#[cfg(all(not(test), not(feature = "std")))]
 extern crate core as std;
+
+#[cfg(all(test, feature = "std"))]
+extern crate std;
 
 pub extern crate signalo_filters;
 pub extern crate signalo_pipes;
