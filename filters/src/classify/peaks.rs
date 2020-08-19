@@ -4,6 +4,8 @@
 
 //! Peak detection filters.
 
+#![allow(clippy::wildcard_imports)]
+
 use std::cmp::PartialOrd;
 
 use generic_array::typenum::*;
@@ -36,13 +38,13 @@ pub enum Peak {
 
 impl Default for Peak {
     fn default() -> Self {
-        Peak::None
+        Self::None
     }
 }
 
 impl Classification<Peak, U3> for Peak {
     fn classes() -> GenericArray<Self, U3> {
-        arr![Self; Peak::Max, Peak::None, Peak::Min]
+        arr![Self; Self::Max, Self::None, Self::Min]
     }
 }
 

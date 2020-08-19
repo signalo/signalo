@@ -33,13 +33,13 @@ pub enum Slope {
 
 impl Default for Slope {
     fn default() -> Self {
-        Slope::None
+        Self::None
     }
 }
 
 impl Classification<Slope, U3> for Slope {
     fn classes() -> GenericArray<Self, U3> {
-        arr![Self; Slope::Rising, Slope::None, Slope::Falling]
+        arr![Self; Self::Rising, Self::None, Self::Falling]
     }
 }
 
@@ -138,11 +138,15 @@ where
     fn filter(&mut self, input: T) -> Self::Output {
         let index = match self.state.input {
             None => 1, // None
-            Some(ref state) => match state.partial_cmp(&input).unwrap() {
-                Ordering::Less => 0,    // Rising
-                Ordering::Equal => 1,   // None
-                Ordering::Greater => 2, // Falling
-            },
+            Some(ref state) => {
+                #[allow(clippy::match_same_arms)]
+                match state.partial_cmp(&input) {
+                    Some(Ordering::Less) => 0,    // Rising
+                    Some(Ordering::Equal) => 1,   // None
+                    Some(Ordering::Greater) => 2, // Falling
+                    None => 1,                    // Non-fatal fallback.
+                }
+            }
         };
         self.state.input = Some(input);
         self.config.outputs[index].clone()

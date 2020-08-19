@@ -4,10 +4,14 @@
 
 //! Daubechies filters.
 
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::excessive_precision))]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::approx_constant))]
+#![allow(
+    clippy::wildcard_imports,
+    clippy::excessive_precision,
+    clippy::approx_constant,
+)]
 
 use generic_array::typenum::*;
+
 use num_traits::Zero;
 
 use signalo_traits::WithConfig;

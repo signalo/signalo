@@ -83,7 +83,7 @@ where
     type Output = <T as Sub<T>>::Output;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let state = self.state.value.clone() + input.clone();
+        let state = self.state.value.clone() + input;
         self.state.value = state.clone();
         state
     }

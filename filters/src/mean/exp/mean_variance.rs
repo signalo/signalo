@@ -146,7 +146,7 @@ where
         };
         let mean = self.state.mean.filter(input.clone());
         let deviation_old = (input.clone() - mean_old).abs();
-        let deviation_new = (input.clone() - mean.clone()).abs();
+        let deviation_new = (input - mean.clone()).abs();
         let squared = deviation_old * deviation_new;
         let variance = self.state.variance.filter(squared);
         Output { mean, variance }

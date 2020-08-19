@@ -4,6 +4,8 @@
 
 //! Savitzky-Golay filters.
 
+#![allow(clippy::wildcard_imports)]
+
 use generic_array::typenum::*;
 
 use signalo_traits::WithConfig;
@@ -20,14 +22,14 @@ macro_rules! savitzky_golay_impl_float {
     ($width:ident => [$($coeffs:expr),*]) => {
         impl SavitzkyGolay for Convolve<f32, $width> {
             fn savitzky_golay() -> Self {
-                Convolve::with_config(Config {
+                Self::with_config(Config {
                     coefficients: arr![f32; $($coeffs),*]
                 })
             }
         }
         impl SavitzkyGolay for Convolve<f64, $width> {
             fn savitzky_golay() -> Self {
-                Convolve::with_config(Config {
+                Self::with_config(Config {
                     coefficients: arr![f64; $($coeffs),*]
                 })
             }

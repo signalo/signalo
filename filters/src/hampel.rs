@@ -74,13 +74,13 @@ where
         let med_abs_dev = if min_dev < max_dev { max_dev } else { min_dev };
 
         // Estimate the standard deviation:
-        let std_dev = med_abs_dev.clone() * factor;
+        let std_dev = med_abs_dev * factor;
 
         // Calculate the input's deviation from the median:
         let dev = (input.clone() - median.clone()).abs();
 
         // Calculate window's threshold:
-        let threshold = std_dev.clone() * self.config.threshold.clone();
+        let threshold = std_dev * self.config.threshold.clone();
 
         // If input falls outside the threshold we return the median instead:
         if dev > threshold {
@@ -213,6 +213,7 @@ impl_hampel_filter!(f64 => 1.4826);
 mod tests {
     use super::*;
 
+    #[allow(clippy::wildcard_imports)]
     use generic_array::typenum::*;
 
     fn get_input() -> Vec<f32> {
