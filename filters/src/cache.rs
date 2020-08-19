@@ -10,6 +10,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive_reset_mut")]
+use signalo_traits::ResetMut;
+
 /// The cache filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T, U> {
@@ -128,11 +131,20 @@ where
     T: Reset,
 {
     fn reset(mut self) -> Self {
-        self.state.inner.reset_mut();
-        self.state.cached = None;
+        let State { inner, .. } = self.state;
+        self.state = State {
+            inner: inner.reset(),
+            cached: None
+        };
         self
     }
 }
+
+#[cfg(feature = "derive_reset_mut")]
+impl<T, U> ResetMut for Cache<T, U>
+where
+    Self: Reset,
+{}
 
 impl<T, U, V> Filter<V> for Cache<T, U>
 where

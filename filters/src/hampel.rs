@@ -185,6 +185,12 @@ where
     }
 }
 
+#[cfg(feature = "derive_reset_mut")]
+impl<T, N> ResetMut for Hampel<T, N>
+where
+    Self: Reset,
+{}
+
 macro_rules! impl_hampel_filter {
     ($t:ty => $f:expr) => {
         impl<N> Filter<$t> for Hampel<$t, N>

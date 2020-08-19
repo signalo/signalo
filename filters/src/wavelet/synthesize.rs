@@ -144,6 +144,12 @@ where
     }
 }
 
+#[cfg(feature = "derive_reset_mut")]
+impl<T, N> ResetMut for Synthesize<T, N>
+where
+    Self: Reset,
+{}
+
 impl<T, N> Filter<Decomposition<T>> for Synthesize<T, N>
 where
     T: Clone + Num,

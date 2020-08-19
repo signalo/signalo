@@ -137,6 +137,12 @@ where
     }
 }
 
+#[cfg(feature = "derive_reset_mut")]
+impl<T, N> ResetMut for MeanVariance<T, N>
+where
+    Self: Reset,
+{}
+
 impl<T, N> Filter<T> for MeanVariance<T, N>
 where
     T: Clone + Num + Signed + PartialOrd,

@@ -15,6 +15,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive_reset_mut")]
+use signalo_traits::ResetMut;
+
 /// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T, U> {
@@ -103,6 +106,12 @@ impl<T, U> Reset for Schmitt<T, U> {
         Self::with_config(self.config)
     }
 }
+
+#[cfg(feature = "derive_reset_mut")]
+impl<T, U> ResetMut for Schmitt<T, U>
+where
+    Self: Reset,
+{}
 
 impl<T, U> Filter<T> for Schmitt<T, U>
 where
