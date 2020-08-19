@@ -183,10 +183,7 @@ where
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T> ResetMut for Kalman<T>
-where
-    Self: Reset,
-{}
+impl<T> ResetMut for Kalman<T> where Self: Reset {}
 
 impl<T> Filter<T> for Kalman<T>
 where

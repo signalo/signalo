@@ -5,7 +5,6 @@
 //! The 'signalo' umbrella crate.
 
 #![warn(missing_docs)]
-
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
 #[cfg(all(not(test), not(feature = "std")))]

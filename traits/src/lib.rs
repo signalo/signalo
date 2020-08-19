@@ -5,12 +5,11 @@
 //! A collection of traits used in 'signalo' crates.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
 #![warn(missing_docs)]
 
 extern crate guts;
 
-pub use guts::{Guts, FromGuts, IntoGuts};
+pub use guts::{FromGuts, Guts, IntoGuts};
 
 pub mod filter;
 pub mod finalize;
@@ -124,11 +123,13 @@ pub trait ResetMut: Reset {
     ///
     /// It is crucial to only ever use this function having defined `panic = "abort"`, or else bad
     /// things may happen. It's *up to you* to uphold this invariant!
-    #[cfg(all(feature = "derive_reset_mut", not(feature = "std"), feature = "panic_abort"))]
+    #[cfg(all(
+        feature = "derive_reset_mut",
+        not(feature = "std"),
+        feature = "panic_abort"
+    ))]
     fn reset_mut(&mut self) {
-        unsafe {
-            self.reset_mut_or_abort_unchecked()
-        }
+        unsafe { self.reset_mut_or_abort_unchecked() }
     }
 
     /// Resets the internal state.

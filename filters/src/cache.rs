@@ -134,17 +134,14 @@ where
         let State { inner, .. } = self.state;
         self.state = State {
             inner: inner.reset(),
-            cached: None
+            cached: None,
         };
         self
     }
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, U> ResetMut for Cache<T, U>
-where
-    Self: Reset,
-{}
+impl<T, U> ResetMut for Cache<T, U> where Self: Reset {}
 
 impl<T, U, V> Filter<V> for Cache<T, U>
 where

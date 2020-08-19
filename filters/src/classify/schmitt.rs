@@ -108,10 +108,7 @@ impl<T, U> Reset for Schmitt<T, U> {
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, U> ResetMut for Schmitt<T, U>
-where
-    Self: Reset,
-{}
+impl<T, U> ResetMut for Schmitt<T, U> where Self: Reset {}
 
 impl<T, U> Filter<T> for Schmitt<T, U>
 where

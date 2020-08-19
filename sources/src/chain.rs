@@ -66,12 +66,14 @@ where
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
         match self.state {
-            ChainState::Front => if let Some(value) = self.front.source() {
-                Some(value)
-            } else {
-                self.state = ChainState::Back;
-                self.back.source()
-            },
+            ChainState::Front => {
+                if let Some(value) = self.front.source() {
+                    Some(value)
+                } else {
+                    self.state = ChainState::Back;
+                    self.back.source()
+                }
+            }
             ChainState::Back => self.back.source(),
         }
     }

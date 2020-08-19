@@ -106,7 +106,8 @@ mod tests {
         let input: Vec<_> = vec![
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0,
-        ].into_iter()
+        ]
+        .into_iter()
         .map(|unitless| Meter::new(unitless))
         .collect();
         let mut sink = UnitSystem::from(Sum { sum: 0.0 });
