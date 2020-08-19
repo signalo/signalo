@@ -15,6 +15,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive_reset_mut")]
+use signalo_traits::ResetMut;
+
 /// The [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter's configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T, U> {
@@ -106,6 +109,18 @@ impl<T, U> Reset for Debounce<T, U> {
     }
 }
 
+#[cfg(feature = "derive_reset_mut")]
+impl<T, U> ResetMut for Debounce<T, U>
+where
+    Self: Reset,
+{}
+
+#[cfg(feature = "derive_reset_mut")]
+impl<T, U> ResetMut for Debounce<T, U>
+where
+    Self: Reset,
+{}
+
 impl<T, U> Filter<T> for Debounce<T, U>
 where
     T: Clone + PartialEq<T>,
@@ -115,9 +130,9 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         if input == self.config.predicate {
-            self.state.count = (self.state.count + 1).min(self.config.threshold);
+            self.state.count = self.state.count.saturating_add(1);
         } else {
-            self.reset_mut();
+            self.state.count = 0;
         }
         let index = (self.state.count >= self.config.threshold) as usize;
         self.config.outputs[index].clone()

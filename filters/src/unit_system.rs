@@ -120,10 +120,16 @@ where
     T: Reset,
 {
     fn reset(mut self) -> Self {
-        self.state.inner.reset_mut();
+        self.state.inner = self.state.inner.reset();
         self
     }
 }
+
+#[cfg(feature = "derive_reset_mut")]
+impl<T> ResetMut for UnitSystem<T>
+where
+    Self: Reset,
+{}
 
 macro_rules! impl_dimensioned {
     ($t:ident) => {

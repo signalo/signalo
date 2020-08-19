@@ -73,6 +73,12 @@ where
     }
 }
 
+#[cfg(feature = "derive_reset_mut")]
+impl<T> ResetMut for Integrate<T>
+where
+    Self: Reset,
+{}
+
 impl<T> Filter<T> for Integrate<T>
 where
     T: Clone + Sub<T, Output = T> + Zero,

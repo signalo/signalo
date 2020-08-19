@@ -200,6 +200,12 @@ where
     }
 }
 
+#[cfg(feature = "derive_reset_mut")]
+impl<T, N> ResetMut for Median<T, N>
+where
+    Self: Reset,
+{}
+
 impl<T, N> Filter<T> for Median<T, N>
 where
     T: Clone + PartialOrd,

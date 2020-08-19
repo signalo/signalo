@@ -15,6 +15,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive_reset_mut")]
+use signalo_traits::ResetMut;
+
 use classify::{
     slopes::{Config as SlopesConfig, Slope, Slopes, State as SlopesState},
     Classification,
@@ -156,6 +159,13 @@ impl<T, U> Reset for Peaks<T, U> {
         Self::with_config(self.config)
     }
 }
+
+#[cfg(feature = "derive_reset_mut")]
+impl<T, U> ResetMut for Peaks<T, U>
+where
+    Self: Reset,
+{}
+
 
 impl<T, U> Filter<T> for Peaks<T, U>
 where

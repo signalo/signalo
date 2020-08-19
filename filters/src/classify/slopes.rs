@@ -17,6 +17,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive_reset_mut")]
+use signalo_traits::ResetMut;
+
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Slope {
@@ -121,6 +124,12 @@ impl<T, U> Reset for Slopes<T, U> {
         Self::with_config(self.config)
     }
 }
+
+#[cfg(feature = "derive_reset_mut")]
+impl<T, U> ResetMut for Slopes<T, U>
+where
+    Self: Reset,
+{}
 
 impl<T, U> Filter<T> for Slopes<T, U>
 where
