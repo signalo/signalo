@@ -21,9 +21,6 @@ pub use finalize::Finalize;
 pub use sink::Sink;
 pub use source::Source;
 
-/// The crate's prelude.
-pub mod prelude {}
-
 /// Trait for **configurable** systems.
 pub trait Config {
     /// The filter's configuration.

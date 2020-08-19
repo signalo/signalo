@@ -20,9 +20,6 @@ pub use signalo_traits as traits;
 pub mod pipe;
 pub mod unit_pipe;
 
-/// The crate's prelude.
-pub mod prelude {}
-
 /// Convenience macros for assembling filter pipes.
 #[macro_use]
 pub mod macros {

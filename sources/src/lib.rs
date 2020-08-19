@@ -26,9 +26,6 @@ pub extern crate signalo_traits;
 
 pub use signalo_traits as traits;
 
-/// The crate's prelude.
-pub mod prelude {}
-
 pub mod cache;
 pub mod chain;
 pub mod constant;

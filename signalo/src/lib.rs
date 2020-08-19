@@ -20,10 +20,3 @@ pub extern crate signalo_traits;
 pub use signalo_filters as filters;
 pub use signalo_pipes as pipes;
 pub use signalo_traits as traits;
-
-/// The crate's prelude.
-pub mod prelude {
-    pub use signalo_filters::prelude as filters;
-    pub use signalo_pipes::prelude as pipes;
-    pub use signalo_traits::prelude as traits;
-}
