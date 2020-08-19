@@ -142,8 +142,9 @@ where
     fn filter(&mut self, input: T) -> Self::Output {
         let old_mean = self.state.mean.clone().unwrap_or_else(|| input.clone());
         let old_weight = self.state.weight.clone();
+
         let (mean, weight) = if let Some(old_input) = self.state.taps.push_back(input.clone()) {
-            let mean = old_mean - old_input + input.clone();
+            let mean = old_mean - old_input + input;
             (mean, old_weight)
         } else {
             let mean = old_mean + input;
@@ -160,6 +161,7 @@ where
 mod tests {
     use super::*;
 
+    #[allow(clippy::wildcard_imports)]
     use generic_array::typenum::*;
 
     fn get_input() -> Vec<f32> {

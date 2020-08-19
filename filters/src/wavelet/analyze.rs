@@ -136,8 +136,7 @@ where
 impl<T, N> Reset for Analyze<T, N>
 where
     N: ArrayLength<T>,
-    Self: ConfigClone<Config = Config<T, N>>,
-    Self: WithConfig<Output = Self>,
+    Self: ConfigClone<Config = Config<T, N>> + WithConfig<Output = Self>,
 {
     fn reset(self) -> Self {
         Self::with_config(self.config())
@@ -156,7 +155,7 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         let low = self.state.low_pass.filter(input.clone());
-        let high = self.state.high_pass.filter(input.clone());
+        let high = self.state.high_pass.filter(input);
         Decomposition { low, high }
     }
 }

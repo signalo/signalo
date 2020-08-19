@@ -135,7 +135,7 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         // We calculate the mean and use it as an estimate of the median:
-        let mean = self.state.mean_pre.filter(input.clone());
+        let mean = self.state.mean_pre.filter(input);
         // We then calculate the approximate of the median:
         let median = match &self.state.median {
             None => mean,

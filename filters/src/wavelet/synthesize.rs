@@ -136,8 +136,7 @@ where
 impl<T, N> Reset for Synthesize<T, N>
 where
     N: ArrayLength<T>,
-    Self: ConfigClone<Config = Config<T, N>>,
-    Self: WithConfig<Output = Self>,
+    Self: ConfigClone<Config = Config<T, N>> + WithConfig<Output = Self>,
 {
     fn reset(self) -> Self {
         Self::with_config(self.config())

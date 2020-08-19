@@ -6,5 +6,8 @@
 
 pub mod exp;
 
+#[allow(clippy::module_inception)]
 pub mod mean;
+
+#[allow(clippy::module_name_repetitions)]
 pub mod mean_variance;

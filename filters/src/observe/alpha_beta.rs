@@ -128,7 +128,7 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         let (velocity, state) = match (self.state.velocity.clone(), self.state.value.clone()) {
-            (velocity, None) => (velocity, input.clone()),
+            (velocity, None) => (velocity, input),
             (mut velocity, Some(mut state)) => {
                 // Compute prediction:
                 state = state + velocity.clone();

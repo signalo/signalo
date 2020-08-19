@@ -5,6 +5,26 @@
 //! A collection of filters used in 'signalo' umbrella crate.
 
 #![warn(missing_docs)]
+#![warn(
+    // Coarse:
+    clippy::all,
+    // clippy::restriction,
+    clippy::pedantic,
+    // clippy::nursery,
+    clippy::cargo,
+    clippy::perf,
+    clippy::style,
+    clippy::correctness,
+    // Fine:
+    clippy::use_self,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::else_if_without_else,
+    clippy::unneeded_field_pattern,
+    clippy::unwrap_used,
+    clippy::wrong_self_convention,
+    clippy::wrong_pub_self_convention,
+)]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
 #[cfg(all(not(test), not(feature = "std")))]

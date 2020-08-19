@@ -407,6 +407,7 @@ where
 
     #[inline]
     unsafe fn median_unchecked(&mut self) -> T {
+        #[allow(clippy::unwrap_used)]
         self.median().unwrap()
     }
 }
@@ -415,6 +416,7 @@ where
 mod tests {
     use super::*;
 
+    #[allow(clippy::wildcard_imports)]
     use generic_array::typenum::*;
 
     macro_rules! test_filter {

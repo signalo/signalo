@@ -138,6 +138,7 @@ where
 mod tests {
     use super::*;
 
+    #[allow(clippy::wildcard_imports)]
     use generic_array::typenum::*;
 
     fn get_input() -> Vec<f32> {
