@@ -29,7 +29,7 @@ path = "../traits"
 default-features = false
 
 [features]
-default = ["std"]
+default = []
 std = [
     "signalo_traits/std",
 ]
