@@ -6,11 +6,7 @@
 
 // Activate `no_std` if no "std" feature present:
 #![cfg_attr(not(feature = "std"), no_std)]
-// Activate "missing_mpl" lint if appropriate feature present:
-#![cfg_attr(feature = "missing_mpl", feature(plugin))]
-#![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
-#![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
-#![cfg_attr(feature = "cargo-clippy", warn(clippy::pedantic))]
+
 // Enable warning for missing docs:
 #![warn(missing_docs)]
 

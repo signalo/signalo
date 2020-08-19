@@ -4,9 +4,6 @@
 
 //! A collection of traits used in 'signalo' crates.
 
-#![cfg_attr(feature = "missing_mpl", feature(plugin))]
-#![cfg_attr(feature = "missing_mpl", plugin(missing_mpl))]
-#![cfg_attr(feature = "missing_mpl", deny(missing_mpl))]
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 

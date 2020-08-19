@@ -26,10 +26,6 @@ version = "0.4.0"
 [dependencies]
 guts = "~0.1.1"
 
-[dependencies.missing_mpl]
-version = "~0.1"
-optional = true
-
 [dependencies.replace_with]
 version = "~0.1.5"
 default-features = false
@@ -41,9 +37,6 @@ default = [
 ]
 std = [
     "replace_with/std",
-]
-nightly = [
-    "missing_mpl",
 ]
 panic_abort = [
     "replace_with/panic_abort",
