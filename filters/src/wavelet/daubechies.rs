@@ -242,9 +242,6 @@ daubechies_impl_float!(f32, f64: U20 => [
 mod tests {
     use super::*;
 
-    use std::collections::VecDeque;
-    use std::iter::FromIterator;
-
     use signalo_traits::Filter;
 
     use wavelet::Decomposition;
@@ -353,33 +350,18 @@ mod tests {
         let prefix_item = vec[0].clone();
         let suffix_item = vec[len - 1].clone();
 
-        let mut deque = VecDeque::from_iter(vec);
+        let prefix_iter = ::std::iter::repeat(prefix_item).take(prefix);
+        let suffix_iter = ::std::iter::repeat(suffix_item).take(suffix);
 
-        for _ in 0..prefix {
-            deque.push_front(prefix_item.clone());
-        }
-
-        for _ in 0..suffix {
-            deque.push_back(suffix_item.clone());
-        }
-
-        Vec::from_iter(deque)
+        prefix_iter.chain(vec).chain(suffix_iter).collect()
     }
 
     fn without_padding<T: Clone>(vec: Vec<T>, prefix: usize, suffix: usize) -> Vec<T> {
         debug_assert!(vec.len() >= prefix + suffix);
 
-        let mut deque = VecDeque::from_iter(vec);
+        let take_len = vec.len() - prefix - suffix;
 
-        for _ in 0..prefix {
-            deque.pop_front();
-        }
-
-        for _ in 0..suffix {
-            deque.pop_back();
-        }
-
-        Vec::from_iter(deque)
+        vec.into_iter().skip(prefix).take(take_len).collect()
     }
 
     #[test]
