@@ -43,10 +43,6 @@ default-features = false
 version = "~0.11"
 default-features = false
 
-[dependencies.missing_mpl]
-optional = true
-version = "~0.1"
-
 [dependencies.signalo_traits]
 version = "~0.4"
 path = "../traits"
@@ -63,4 +59,3 @@ std = [
     "num-traits/std",
     "dimensioned/std",
 ]
-nightly = ["missing_mpl"]

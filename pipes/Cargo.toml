@@ -28,13 +28,8 @@ version = "~0.4"
 path = "../traits"
 default-features = false
 
-[dependencies.missing_mpl]
-version = "~0.1"
-optional = true
-
 [features]
 default = ["std"]
 std = [
     "signalo_traits/std",
 ]
-nightly = ["missing_mpl"]
