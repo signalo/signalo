@@ -82,7 +82,7 @@ impl<T> Guts for Mean<T> {
 }
 
 impl<T> FromGuts for Mean<T> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }

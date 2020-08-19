@@ -61,7 +61,7 @@ impl<T, U> Guts for Threshold<T, U> {
 }
 
 impl<T, U> FromGuts for Threshold<T, U> {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let config = guts;
         Self { config }
     }

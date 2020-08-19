@@ -138,7 +138,7 @@ impl<T, N> FromGuts for Convolve<T, N>
 where
     N: ArrayLength<T>,
 {
-    unsafe fn from_guts(guts: Self::Guts) -> Self {
+    fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }

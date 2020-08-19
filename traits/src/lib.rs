@@ -13,6 +13,10 @@
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
+extern crate guts;
+
+pub use guts::{Guts, FromGuts, IntoGuts};
+
 pub mod filter;
 pub mod finalize;
 pub mod sink;
@@ -72,28 +76,6 @@ pub trait StateMut: State {
     /// Relying on the internal structure of an object breaks encapsulation,
     /// putting your code at risk of breaking your invariants.
     unsafe fn state_mut(&mut self) -> &mut Self::State;
-}
-
-/// Trait for **gut-exposing** systems.
-pub trait Guts: Sized {
-    /// The system's guts.
-    type Guts;
-}
-
-/// Trait for **gut-constructable** systems.
-pub trait FromGuts: Guts {
-    /// Constructs `self` from its raw guts.
-    ///
-    /// # Safety
-    ///
-    /// It is your responsibility to ensure that you're not breaking your code's invariants.
-    unsafe fn from_guts(guts: Self::Guts) -> Self;
-}
-
-/// Trait for **gut-destructable** systems.
-pub trait IntoGuts: Guts {
-    /// Destructs `self` into its raw guts.
-    fn into_guts(self) -> Self::Guts;
 }
 
 /// Trait for **resettable** systems.
