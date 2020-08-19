@@ -118,10 +118,7 @@ where
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T> ResetMut for AlphaBeta<T>
-where
-    Self: Reset,
-{}
+impl<T> ResetMut for AlphaBeta<T> where Self: Reset {}
 
 impl<T> Filter<T> for AlphaBeta<T>
 where

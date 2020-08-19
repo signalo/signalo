@@ -145,10 +145,7 @@ where
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, N> ResetMut for Analyze<T, N>
-where
-    Self: Reset,
-{}
+impl<T, N> ResetMut for Analyze<T, N> where Self: Reset {}
 
 impl<T, N> Filter<T> for Analyze<T, N>
 where

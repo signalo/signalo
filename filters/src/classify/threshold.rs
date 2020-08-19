@@ -83,10 +83,7 @@ impl<T, U> Reset for Threshold<T, U> {
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, U> ResetMut for Threshold<T, U>
-where
-    Self: Reset,
-{}
+impl<T, U> ResetMut for Threshold<T, U> where Self: Reset {}
 
 impl<T, U> Filter<T> for Threshold<T, U>
 where

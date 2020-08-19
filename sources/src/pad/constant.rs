@@ -82,18 +82,22 @@ where
     #[inline]
     fn source(&mut self) -> Option<Self::Output> {
         match self.state {
-            PadState::Front => if let Some(output) = self.front.source() {
-                Some(output)
-            } else {
-                self.state = PadState::Inner;
-                self.source()
-            },
-            PadState::Inner => if let Some(output) = self.inner.source() {
-                Some(output)
-            } else {
-                self.state = PadState::Back;
-                self.source()
-            },
+            PadState::Front => {
+                if let Some(output) = self.front.source() {
+                    Some(output)
+                } else {
+                    self.state = PadState::Inner;
+                    self.source()
+                }
+            }
+            PadState::Inner => {
+                if let Some(output) = self.inner.source() {
+                    Some(output)
+                } else {
+                    self.state = PadState::Back;
+                    self.source()
+                }
+            }
             PadState::Back => self.back.source(),
         }
     }

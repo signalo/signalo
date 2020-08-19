@@ -68,10 +68,7 @@ impl<T> Reset for Differentiate<T> {
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T> ResetMut for Differentiate<T>
-where
-    Self: Reset,
-{}
+impl<T> ResetMut for Differentiate<T> where Self: Reset {}
 
 impl<T> Filter<T> for Differentiate<T>
 where

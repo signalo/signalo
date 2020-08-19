@@ -126,10 +126,7 @@ impl<T, U> Reset for Slopes<T, U> {
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, U> ResetMut for Slopes<T, U>
-where
-    Self: Reset,
-{}
+impl<T, U> ResetMut for Slopes<T, U> where Self: Reset {}
 
 impl<T, U> Filter<T> for Slopes<T, U>
 where

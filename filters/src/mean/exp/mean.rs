@@ -101,10 +101,7 @@ impl<T> Reset for Mean<T> {
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T> ResetMut for Mean<T>
-where
-    Self: Reset,
-{}
+impl<T> ResetMut for Mean<T> where Self: Reset {}
 
 impl<T> Filter<T> for Mean<T>
 where
