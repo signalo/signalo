@@ -20,7 +20,7 @@ license = "MPL-2.0"
 name = "signalo_filters"
 readme = "README.md"
 repository = "https://github.com/signalo/signalo"
-homepage = "https://github.com/signalo/signalo/tree/master/filters"
+homepage = "https://github.com/signalo/signalo/tree/main/filters"
 version = "0.5.1"
 
 [dependencies.dimensioned]
