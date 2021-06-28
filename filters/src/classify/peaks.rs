@@ -8,9 +8,6 @@
 
 use std::cmp::PartialOrd;
 
-use generic_array::typenum::*;
-use generic_array::GenericArray;
-
 use signalo_traits::Filter;
 use signalo_traits::{
     Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
@@ -42,9 +39,9 @@ impl Default for Peak {
     }
 }
 
-impl Classification<Peak, U3> for Peak {
-    fn classes() -> GenericArray<Self, U3> {
-        arr![Self; Self::Max, Self::None, Self::Min]
+impl Classification<Peak, 3> for Peak {
+    fn classes() -> [Self; 3] {
+        [Self::Max, Self::None, Self::Min]
     }
 }
 
@@ -52,7 +49,7 @@ impl Classification<Peak, U3> for Peak {
 #[derive(Clone, Debug)]
 pub struct Config<U> {
     /// [rising, flat, falling] outputs.
-    pub outputs: GenericArray<U, U3>,
+    pub outputs: [U; 3],
 }
 
 /// A peak detection filter's state.

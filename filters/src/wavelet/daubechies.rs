@@ -7,10 +7,8 @@
 #![allow(
     clippy::wildcard_imports,
     clippy::excessive_precision,
-    clippy::approx_constant,
+    clippy::approx_constant
 )]
-
-use generic_array::typenum::*;
 
 use num_traits::Zero;
 
@@ -29,14 +27,14 @@ pub trait Daubechies: Sized {
 }
 
 macro_rules! daubechies_impl_float {
-    ($head:ty, $($tail:ty),* $(,)*: $n:ty => [$($low_pass:expr),* $(,)*]) => {
+    ($head:ty, $($tail:ty),* $(,)*: $n:expr => [$($low_pass:expr),* $(,)*]) => {
         daubechies_impl_float!($head: $n => [$($low_pass),*]);
         daubechies_impl_float!($($tail),*: $n => [$($low_pass),*]);
     };
-    ($t:ty: $n:ty => [$($low_pass:expr),* $(,)*]) => {
+    ($t:ty: $n:expr => [$($low_pass:expr),* $(,)*]) => {
         impl Daubechies for Analyze<$t, $n> {
             fn daubechies() -> Self {
-                let mut low_pass = arr![$t; $($low_pass),*];
+                let mut low_pass = [$($low_pass),*];
                 // Normalize:
                 let sum: $t = low_pass.iter().sum();
                 if !sum.is_zero() {
@@ -68,7 +66,7 @@ macro_rules! daubechies_impl_float {
 
         impl Daubechies for Synthesize<$t, $n> {
             fn daubechies() -> Self {
-                let mut low_pass = arr![$t; $($low_pass),*];
+                let mut low_pass = [$($low_pass),*];
                 // Normalize:
                 let sum: $t = low_pass.iter().sum();
                 if !sum.is_zero() {
@@ -110,18 +108,18 @@ macro_rules! daubechies_impl_float {
 
 // Source: http://wavelets.pybytes.com/wavelet/db1/
 
-daubechies_impl_float!(f32, f64: U2 => [
+daubechies_impl_float!(f32, f64: 2 => [
     0.707_106_781_2,
     0.707_106_781_2,
 ]);
 
-daubechies_impl_float!(f32, f64: U4 => [
+daubechies_impl_float!(f32, f64: 4 => [
     0.482_962_913_1,
     0.836_516_303_7,
     0.224_143_868_0,
     -0.129_409_522_6,
 ]);
-daubechies_impl_float!(f32, f64: U6 => [
+daubechies_impl_float!(f32, f64: 6 => [
     0.332_670_553_0,
     0.806_891_509_3,
     0.459_877_502_1,
@@ -129,7 +127,7 @@ daubechies_impl_float!(f32, f64: U6 => [
     -0.085_441_273_9,
     0.035_226_291_9,
 ]);
-daubechies_impl_float!(f32, f64: U8 => [
+daubechies_impl_float!(f32, f64: 8 => [
     0.230_377_813_3,
     0.714_846_570_6,
     0.630_880_767_9,
@@ -139,7 +137,7 @@ daubechies_impl_float!(f32, f64: U8 => [
     0.032_883_011_7,
     -0.010_597_401_8,
 ]);
-daubechies_impl_float!(f32, f64: U10 => [
+daubechies_impl_float!(f32, f64: 10 => [
     0.160_102_398_0,
     0.603_829_269_8,
     0.724_308_528_4,
@@ -151,7 +149,7 @@ daubechies_impl_float!(f32, f64: U10 => [
     -0.012_580_752_0,
     0.003_335_725_3,
 ]);
-daubechies_impl_float!(f32, f64: U12 => [
+daubechies_impl_float!(f32, f64: 12 => [
     0.111_540_743_4,
     0.494_623_890_4,
     0.751_133_908_0,
@@ -165,7 +163,7 @@ daubechies_impl_float!(f32, f64: U12 => [
     0.004_777_257_5,
     -0.001_077_301_1,
 ]);
-daubechies_impl_float!(f32, f64: U14 => [
+daubechies_impl_float!(f32, f64: 14 => [
     0.077_852_054_1,
     0.396_539_319_5,
     0.729_132_090_8,
@@ -181,7 +179,7 @@ daubechies_impl_float!(f32, f64: U14 => [
     -0.001_801_640_7,
     0.000_353_713_8,
 ]);
-daubechies_impl_float!(f32, f64: U16 => [
+daubechies_impl_float!(f32, f64: 16 => [
     0.054_415_842_2,
     0.312_871_590_9,
     0.675_630_736_3,
@@ -199,7 +197,7 @@ daubechies_impl_float!(f32, f64: U16 => [
     0.000_675_449_4,
     -0.000_117_476_8,
 ]);
-daubechies_impl_float!(f32, f64: U18 => [
+daubechies_impl_float!(f32, f64: 18 => [
     0.038_077_947_4,
     0.243_834_674_6,
     0.604_823_123_7,
@@ -219,7 +217,7 @@ daubechies_impl_float!(f32, f64: U18 => [
     -0.000_251_963_2,
     0.000_039_347_3,
 ]);
-daubechies_impl_float!(f32, f64: U20 => [
+daubechies_impl_float!(f32, f64: 20 => [
     0.026_670_057_9,
     0.188_176_800_1,
     0.527_201_188_9,
@@ -374,7 +372,7 @@ mod tests {
 
         let input = with_padding(get_input(), PADDING, PADDING);
 
-        let analyze: Analyze<f32, U2> = Analyze::daubechies();
+        let analyze: Analyze<f32, 2> = Analyze::daubechies();
         let padded_analysis: Vec<_> = input
             .into_iter()
             .scan(analyze, |filter, input| Some(filter.filter(input)))
@@ -392,7 +390,7 @@ mod tests {
 
         let input = with_padding(get_analysis_2(), PADDING, PADDING);
 
-        let synthesize: Synthesize<f32, U2> = Synthesize::daubechies();
+        let synthesize: Synthesize<f32, 2> = Synthesize::daubechies();
         let padded_synthesis: Vec<_> = input
             .into_iter()
             .scan(synthesize, |filter, input| Some(filter.filter(input)))
@@ -408,7 +406,7 @@ mod tests {
 
         let input = with_padding(get_input(), PADDING, PADDING);
 
-        let analyze: Analyze<f32, U4> = Analyze::daubechies();
+        let analyze: Analyze<f32, 4> = Analyze::daubechies();
 
         let padded_analysis: Vec<_> = input
             .into_iter()
@@ -427,7 +425,7 @@ mod tests {
 
         let input = with_padding(get_analysis_4(), PADDING, PADDING);
 
-        let synthesize: Synthesize<f32, U4> = Synthesize::daubechies();
+        let synthesize: Synthesize<f32, 4> = Synthesize::daubechies();
 
         let padded_synthesis: Vec<_> = input
             .into_iter()

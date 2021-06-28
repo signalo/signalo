@@ -4,8 +4,6 @@
 
 //! Wavelet analysis (i.e. decomposition) filters.
 
-use generic_array::ArrayLength;
-
 use num_traits::Num;
 
 use signalo_traits::Filter;
@@ -19,10 +17,7 @@ use wavelet::Decomposition;
 
 /// The wavelet filter's configuration.
 #[derive(Clone, Debug)]
-pub struct Config<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct Config<T, const N: usize> {
     /// The low-pass convolution' configuration.
     pub low_pass: ConvolveConfig<T, N>,
     /// The high-pass convolution' configuration.
@@ -31,10 +26,7 @@ where
 
 /// A wavelet filter's internal state.
 #[derive(Clone, Debug)]
-pub struct State<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct State<T, const N: usize> {
     /// Low-pass convolution.
     pub low_pass: Convolve<T, N>,
     /// Low-pass convolution.
@@ -43,31 +35,19 @@ where
 
 /// A wavelet filter.
 #[derive(Clone, Debug)]
-pub struct Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct Analyze<T, const N: usize> {
     state: State<T, N>,
 }
 
-impl<T, N> ConfigTrait for Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> ConfigTrait for Analyze<T, N> {
     type Config = Config<T, N>;
 }
 
-impl<T, N> StateTrait for Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateTrait for Analyze<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, N> WithConfig for Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> WithConfig for Analyze<T, N> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
@@ -83,9 +63,8 @@ where
     }
 }
 
-impl<T, N> ConfigClone for Analyze<T, N>
+impl<T, const N: usize> ConfigClone for Analyze<T, N>
 where
-    N: ArrayLength<T>,
     Convolve<T, N>: ConfigClone<Config = ConvolveConfig<T, N>>,
 {
     fn config(&self) -> Self::Config {
@@ -98,44 +77,31 @@ where
     }
 }
 
-impl<T, N> StateMut for Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateMut for Analyze<T, N> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> Guts for Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Guts for Analyze<T, N> {
     type Guts = State<T, N>;
 }
 
-impl<T, N> FromGuts for Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> FromGuts for Analyze<T, N> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, N> IntoGuts for Analyze<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> IntoGuts for Analyze<T, N> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, N> Reset for Analyze<T, N>
+impl<T, const N: usize> Reset for Analyze<T, N>
 where
-    N: ArrayLength<T>,
     Self: ConfigClone<Config = Config<T, N>> + WithConfig<Output = Self>,
 {
     fn reset(self) -> Self {
@@ -144,12 +110,11 @@ where
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, N> ResetMut for Analyze<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for Analyze<T, N> where Self: Reset {}
 
-impl<T, N> Filter<T> for Analyze<T, N>
+impl<T, const N: usize> Filter<T> for Analyze<T, N>
 where
     T: Clone + Num,
-    N: ArrayLength<T>,
 {
     type Output = Decomposition<T>;
 
@@ -197,10 +162,10 @@ mod tests {
         // Effectively calculates the haar transform:
         let filter = Analyze::with_config(Config {
             low_pass: ConvolveConfig {
-                coefficients: arr![f32; 0.5, 0.5],
+                coefficients: [0.5, 0.5],
             },
             high_pass: ConvolveConfig {
-                coefficients: arr![f32; 0.5, -0.5],
+                coefficients: [0.5, -0.5],
             },
         });
         let input = get_input();
@@ -217,10 +182,10 @@ mod tests {
         // Effectively calculates the haar transform:
         let filter = Analyze::with_config(Config {
             low_pass: ConvolveConfig {
-                coefficients: arr![f32; 0.5, 0.5],
+                coefficients: [0.5, 0.5],
             },
             high_pass: ConvolveConfig {
-                coefficients: arr![f32; 0.5, -0.5],
+                coefficients: [0.5, -0.5],
             },
         });
         let input = get_input();

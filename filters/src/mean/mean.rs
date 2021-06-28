@@ -6,32 +6,27 @@
 
 use std::fmt;
 
-use arraydeque::{ArrayDeque, Wrapping};
-use generic_array::{ArrayLength, GenericArray};
-
 use num_traits::{Num, Zero};
 
 use signalo_traits::Filter;
 use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
+use crate::circular_buffer::CircularBuffer;
+
 /// The mean filter's state.
 #[derive(Clone)]
-pub struct State<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct State<T, const N: usize> {
     /// The current mean value.
     pub mean: Option<T>,
     /// The current taps buffer.
-    pub taps: ArrayDeque<GenericArray<T, N>, Wrapping>,
+    pub taps: CircularBuffer<T, N>,
     /// The current weight.
     pub weight: T,
 }
 
-impl<T, N> fmt::Debug for State<T, N>
+impl<T, const N: usize> fmt::Debug for State<T, N>
 where
     T: fmt::Debug,
-    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -44,22 +39,18 @@ where
 
 /// A mean filter producing the moving median over a given signal.
 #[derive(Clone)]
-pub struct Mean<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct Mean<T, const N: usize> {
     state: State<T, N>,
 }
 
-impl<T, N> Default for Mean<T, N>
+impl<T, const N: usize> Default for Mean<T, N>
 where
     T: Zero,
-    N: ArrayLength<T>,
 {
     fn default() -> Self {
         let state = {
             let mean = None;
-            let taps = ArrayDeque::default();
+            let taps = CircularBuffer::default();
             let weight = T::zero();
             State { mean, taps, weight }
         };
@@ -67,62 +58,45 @@ where
     }
 }
 
-impl<T, N> fmt::Debug for Mean<T, N>
+impl<T, const N: usize> fmt::Debug for Mean<T, N>
 where
     T: fmt::Debug,
-    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Mean").field("state", &self.state).finish()
     }
 }
 
-impl<T, N> StateTrait for Mean<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateTrait for Mean<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, N> StateMut for Mean<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateMut for Mean<T, N> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> Guts for Mean<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Guts for Mean<T, N> {
     type Guts = State<T, N>;
 }
 
-impl<T, N> FromGuts for Mean<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> FromGuts for Mean<T, N> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, N> IntoGuts for Mean<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> IntoGuts for Mean<T, N> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, N> Reset for Mean<T, N>
+impl<T, const N: usize> Reset for Mean<T, N>
 where
     T: Zero,
-    N: ArrayLength<T>,
 {
     fn reset(self) -> Self {
         Self::default()
@@ -132,10 +106,9 @@ where
 #[cfg(feature = "derive_reset_mut")]
 impl<T, N> ResetMut for Mean<T, N> where Self: Reset {}
 
-impl<T, N> Filter<T> for Mean<T, N>
+impl<T, const N: usize> Filter<T> for Mean<T, N>
 where
     T: Clone + Num,
-    N: ArrayLength<T>,
 {
     type Output = T;
 
@@ -161,9 +134,6 @@ where
 mod tests {
     use super::*;
 
-    #[allow(clippy::wildcard_imports)]
-    use generic_array::typenum::*;
-
     fn get_input() -> Vec<f32> {
         vec![
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
@@ -185,7 +155,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Mean<f32, U3> = Mean::default();
+        let filter: Mean<f32, 3> = Mean::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

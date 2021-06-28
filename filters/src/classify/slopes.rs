@@ -6,11 +6,6 @@
 
 use std::cmp::{Ordering, PartialOrd};
 
-use generic_array::typenum::*;
-use generic_array::GenericArray;
-
-use classify::Classification;
-
 use signalo_traits::Filter;
 use signalo_traits::{
     Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
@@ -19,6 +14,8 @@ use signalo_traits::{
 
 #[cfg(feature = "derive_reset_mut")]
 use signalo_traits::ResetMut;
+
+use classify::Classification;
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -37,9 +34,9 @@ impl Default for Slope {
     }
 }
 
-impl Classification<Slope, U3> for Slope {
-    fn classes() -> GenericArray<Self, U3> {
-        arr![Self; Self::Rising, Self::None, Self::Falling]
+impl Classification<Slope, 3> for Slope {
+    fn classes() -> [Self; 3] {
+        [Self::Rising, Self::None, Self::Falling]
     }
 }
 
@@ -47,7 +44,7 @@ impl Classification<Slope, U3> for Slope {
 #[derive(Clone, Debug)]
 pub struct Config<U> {
     /// [rising, flat, falling] outputs.
-    pub outputs: GenericArray<U, U3>,
+    pub outputs: [U; 3],
 }
 
 /// The slope detection filter's state.

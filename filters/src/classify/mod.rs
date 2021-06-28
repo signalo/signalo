@@ -7,9 +7,6 @@
 #![allow(clippy::use_self)]
 #![allow(clippy::wildcard_imports)]
 
-use generic_array::typenum::*;
-use generic_array::{ArrayLength, GenericArray};
-
 pub mod debounce;
 pub mod schmitt;
 pub mod threshold;
@@ -18,12 +15,9 @@ pub mod peaks;
 pub mod slopes;
 
 /// A trait describing a classification value.
-pub trait Classification<T, N>: Sized
-where
-    N: ArrayLength<T>,
-{
+pub trait Classification<T, const N: usize>: Sized {
     /// The available classes.
-    fn classes() -> GenericArray<T, N>;
+    fn classes() -> [T; N];
 }
 
 macro_rules! classification_impl {
@@ -32,9 +26,9 @@ macro_rules! classification_impl {
         classification_impl!($($tail),+ => [$a, $b]);
     };
     ($t:ty => [$a:expr, $b:expr]) => {
-        impl Classification<Self, U2> for $t {
-            fn classes() -> GenericArray<Self, U2> {
-                arr![Self; $a, $b]
+        impl Classification<Self, 2> for $t {
+            fn classes() -> [Self; 2] {
+                [$a, $b]
             }
         }
     };
@@ -43,9 +37,9 @@ macro_rules! classification_impl {
         classification_impl!($($tail),+ => [$a, $b, $c]);
     };
     ($t:ty => [$a:expr, $b:expr, $c:expr]) => {
-        impl Classification<Self, U3> for $t {
-            fn classes() -> GenericArray<Self, U3> {
-                arr![Self; $a, $b, $c]
+        impl Classification<Self, 3> for $t {
+            fn classes() -> [Self; 3] {
+                [$a, $b, $c]
             }
         }
     };
