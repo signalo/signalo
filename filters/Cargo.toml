@@ -50,6 +50,7 @@ default-features = false
 
 [dev-dependencies]
 nearly_eq = "~0.2"
+testdrop = "~0.1.2"
 
 [features]
 default = []
