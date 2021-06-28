@@ -1,12 +1,6 @@
 [package]
 authors = ["Vincent Esche <regexident@gmail.com>"]
-categories = [
-    "no-std",
-    "embedded",
-    "multimedia",
-    "science",
-    "algorithms",
-]
+categories = ["no-std", "embedded", "multimedia", "science", "algorithms"]
 description = "A collection of traits used in 'signalo' umbrella crate."
 documentation = "https://docs.rs/signalo_traits"
 keywords = [
@@ -33,10 +27,6 @@ features = []
 
 [features]
 default = []
-std = [
-    "replace_with/std",
-]
-panic_abort = [
-    "replace_with/panic_abort",
-]
+std = ["replace_with/std"]
+panic_abort = ["replace_with/panic_abort"]
 derive_reset_mut = []
