@@ -116,6 +116,7 @@ where
         let old_mean = self.state.mean.clone().unwrap_or_else(|| input.clone());
         let old_weight = self.state.weight.clone();
 
+        #[allow(clippy::option_if_let_else)]
         let (mean, weight) = if let Some(old_input) = self.state.taps.push_back(input.clone()) {
             let mean = old_mean - old_input + input;
             (mean, old_weight)
