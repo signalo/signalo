@@ -118,18 +118,21 @@ impl<T, const N: usize> Default for Median<T, N> {
                 // uninitialized value to be dropped. Also if there is a panic during
                 // this loop, we have a memory leak, but there is no memory safety
                 // issue.
-                for index in 0..N {
+                for (index, item) in array.iter_mut().enumerate().take(N) {
                     let node = ListNode {
                         value: None,
                         previous: (index + N - 1) % N,
                         next: (index + 1) % N,
                     };
-                    array[index] = MaybeUninit::new(node);
+                    *item = MaybeUninit::new(node);
                 }
 
                 // Everything is initialized. Cast the array to the initialized type.
                 // FIXME: use `array_assume_init` instead, once stable:
-                unsafe { (&array as *const _ as *const [ListNode<T>; N]).read() }
+                unsafe {
+                    #[allow(clippy::ptr_as_ptr)]
+                    (&array as *const _ as *const [ListNode<T>; N]).read()
+                }
             };
 
             let cursor = 0;
@@ -277,6 +280,7 @@ where
 {
     #[inline]
     fn should_insert(&self, value: &T, current: usize, index: usize) -> bool {
+        #[allow(clippy::option_if_let_else)]
         if let Some(ref v) = self.state.buffer[current].value {
             (index + 1 == self.len()) || (v >= value)
         } else {
@@ -358,6 +362,7 @@ where
 
     #[inline]
     unsafe fn update_head(&mut self, value: &T) {
+        #[allow(clippy::option_if_let_else)]
         let should_update_head = if let Some(ref head) = self.state.buffer[self.state.head].value {
             value <= head
         } else {
