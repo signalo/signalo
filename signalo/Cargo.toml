@@ -18,7 +18,7 @@ homepage = "https://github.com/signalo/signalo/tree/main/signalo"
 version = "0.5.0"
 
 [dependencies.signalo_traits]
-version = "0.4"
+version = "0.5"
 path = "../traits"
 default-features = false
 
