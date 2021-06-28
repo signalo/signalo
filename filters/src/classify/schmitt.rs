@@ -6,9 +6,6 @@
 
 use std::cmp::PartialOrd;
 
-use generic_array::typenum::U2;
-use generic_array::GenericArray;
-
 use signalo_traits::Filter;
 use signalo_traits::{
     Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
@@ -22,9 +19,9 @@ use signalo_traits::ResetMut;
 #[derive(Clone, Debug)]
 pub struct Config<T, U> {
     /// [low, high] input thresholds.
-    pub thresholds: GenericArray<T, U2>,
+    pub thresholds: [T; 2],
     /// [off, on] outputs.
-    pub outputs: GenericArray<U, U2>,
+    pub outputs: [U; 2],
 }
 
 /// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s state.
@@ -136,7 +133,7 @@ mod tests {
     #[test]
     fn test() {
         let filter = Schmitt::with_config(Config {
-            thresholds: arr![u8; 5, 10],
+            thresholds: [5, 10],
             outputs: u8::classes(),
         });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture

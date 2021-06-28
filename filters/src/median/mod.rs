@@ -5,9 +5,7 @@
 //! Moving median filters.
 
 use std::fmt;
-use std::ptr;
-
-use generic_array::{ArrayBuilder, ArrayLength, GenericArray};
+use std::mem::MaybeUninit;
 
 use signalo_traits::Filter;
 use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
@@ -16,12 +14,9 @@ pub mod exp;
 
 /// The median filter's state.
 #[derive(Clone)]
-pub struct State<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+pub struct State<T, const N: usize> {
     // Buffer of list nodes:
-    buffer: GenericArray<ListNode<T>, N>,
+    buffer: [ListNode<T>; N],
     // Cursor into circular buffer of data:
     cursor: usize,
     // Cursor to beginning of circular list:
@@ -30,10 +25,9 @@ where
     median: usize,
 }
 
-impl<T, N> fmt::Debug for State<T, N>
+impl<T, const N: usize> fmt::Debug for State<T, N>
 where
     T: fmt::Debug,
-    N: ArrayLength<ListNode<T>>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -105,39 +99,43 @@ where
 ///
 /// (_Based on Phil Ekstrom, Embedded Systems Programming, November 2000._)
 #[derive(Clone, Debug)]
-pub struct Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+pub struct Median<T, const N: usize> {
     state: State<T, N>,
 }
 
-impl<T, N> Default for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> Default for Median<T, N> {
     fn default() -> Self {
         let state = {
-            let buffer = unsafe {
-                let mut builder = ArrayBuilder::new();
-                {
-                    let size = N::to_usize();
-                    let (iter, index) = builder.iter_position();
-                    for destination in iter {
-                        let node = ListNode {
-                            value: None,
-                            previous: (*index + size - 1) % size,
-                            next: (*index + 1) % size,
-                        };
-                        ptr::write(destination, node);
-                        *index += 1;
-                    }
+            let buffer = {
+                // Create an uninitialized array of `MaybeUninit`. The `assume_init` is
+                // safe because the type we are claiming to have initialized here is a
+                // bunch of `MaybeUninit`s, which do not require initialization.
+                let mut array: [MaybeUninit<ListNode<T>>; N] =
+                    unsafe { MaybeUninit::uninit().assume_init() };
+
+                // Dropping a `MaybeUninit` does nothing. Thus using raw pointer
+                // assignment instead of `ptr::write` does not cause the old
+                // uninitialized value to be dropped. Also if there is a panic during
+                // this loop, we have a memory leak, but there is no memory safety
+                // issue.
+                for index in 0..N {
+                    let node = ListNode {
+                        value: None,
+                        previous: (index + N - 1) % N,
+                        next: (index + 1) % N,
+                    };
+                    array[index] = MaybeUninit::new(node);
                 }
-                builder.into_inner()
+
+                // Everything is initialized. Cast the array to the initialized type.
+                // FIXME: use `array_assume_init` instead, once stable:
+                unsafe { (&array as *const _ as *const [ListNode<T>; N]).read() }
             };
+
             let cursor = 0;
             let head = 0;
             let median = 0;
+
             State {
                 buffer,
                 cursor,
@@ -149,64 +147,45 @@ where
     }
 }
 
-impl<T, N> StateTrait for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> StateTrait for Median<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, N> StateMut for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> StateMut for Median<T, N> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> Guts for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> Guts for Median<T, N> {
     type Guts = State<T, N>;
 }
 
-impl<T, N> FromGuts for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> FromGuts for Median<T, N> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, N> IntoGuts for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> IntoGuts for Median<T, N> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, N> Reset for Median<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> Reset for Median<T, N> {
     fn reset(self) -> Self {
         Self::default()
     }
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, N> ResetMut for Median<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for Median<T, N> where Self: Reset {}
 
-impl<T, N> Filter<T> for Median<T, N>
+impl<T, const N: usize> Filter<T> for Median<T, N>
 where
     T: Clone + PartialOrd,
-    N: ArrayLength<ListNode<T>>,
 {
     type Output = T;
 
@@ -259,10 +238,9 @@ where
     }
 }
 
-impl<T, N> Median<T, N>
+impl<T, const N: usize> Median<T, N>
 where
     T: Clone,
-    N: ArrayLength<ListNode<T>>,
 {
     /// Returns the window size of the filter.
     pub fn len(&self) -> usize {
@@ -293,10 +271,9 @@ where
     }
 }
 
-impl<T, N> Median<T, N>
+impl<T, const N: usize> Median<T, N>
 where
     T: Clone + PartialOrd,
-    N: ArrayLength<ListNode<T>>,
 {
     #[inline]
     fn should_insert(&self, value: &T, current: usize, index: usize) -> bool {
@@ -416,11 +393,8 @@ where
 mod tests {
     use super::*;
 
-    #[allow(clippy::wildcard_imports)]
-    use generic_array::typenum::*;
-
     macro_rules! test_filter {
-        ($size:ident, $input:expr, $output:expr) => {
+        ($size:expr, $input:expr, $output:expr) => {
             let filter: Median<_, $size> = Median::default();
             let output: Vec<_> = $input
                 .iter()
@@ -435,118 +409,118 @@ mod tests {
         let input = vec![10, 20, 30, 100, 30, 20, 10];
         let output = vec![10, 10, 20, 20, 30, 30, 20];
 
-        test_filter!(U4, input, output);
+        test_filter!(4, input, output);
     }
 
     #[test]
     fn single_peak_5() {
         let input = vec![10, 20, 30, 100, 30, 20, 10];
         let output = vec![10, 10, 20, 20, 30, 30, 30];
-        test_filter!(U5, input, output);
+        test_filter!(5, input, output);
     }
 
     #[test]
     fn single_valley_4() {
         let input = vec![90, 80, 70, 10, 70, 80, 90];
         let output = vec![90, 80, 80, 70, 70, 70, 70];
-        test_filter!(U4, input, output);
+        test_filter!(4, input, output);
     }
 
     #[test]
     fn single_valley_5() {
         let input = vec![90, 80, 70, 10, 70, 80, 90];
         let output = vec![90, 80, 80, 70, 70, 70, 70];
-        test_filter!(U5, input, output);
+        test_filter!(5, input, output);
     }
 
     #[test]
     fn single_outlier_4() {
         let input = vec![10, 10, 10, 100, 10, 10, 10];
         let output = vec![10, 10, 10, 10, 10, 10, 10];
-        test_filter!(U4, input, output);
+        test_filter!(4, input, output);
     }
 
     #[test]
     fn single_outlier_5() {
         let input = vec![10, 10, 10, 100, 10, 10, 10];
         let output = vec![10, 10, 10, 10, 10, 10, 10];
-        test_filter!(U5, input, output);
+        test_filter!(5, input, output);
     }
 
     #[test]
     fn triple_outlier_4() {
         let input = vec![10, 10, 100, 100, 100, 10, 10];
         let output = vec![10, 10, 10, 10, 100, 100, 10];
-        test_filter!(U4, input, output);
+        test_filter!(4, input, output);
     }
 
     #[test]
     fn triple_outlier_5() {
         let input = vec![10, 10, 100, 100, 100, 10, 10];
         let output = vec![10, 10, 10, 10, 100, 100, 100];
-        test_filter!(U5, input, output);
+        test_filter!(5, input, output);
     }
 
     #[test]
     fn quintuple_outlier_4() {
         let input = vec![10, 100, 100, 100, 100, 100, 10];
         let output = vec![10, 10, 100, 100, 100, 100, 100];
-        test_filter!(U4, input, output);
+        test_filter!(4, input, output);
     }
 
     #[test]
     fn quintuple_outlier_5() {
         let input = vec![10, 100, 100, 100, 100, 100, 10];
         let output = vec![10, 10, 100, 100, 100, 100, 100];
-        test_filter!(U5, input, output);
+        test_filter!(5, input, output);
     }
 
     #[test]
     fn alternating_4() {
         let input = vec![10, 20, 10, 20, 10, 20, 10];
         let output = vec![10, 10, 10, 10, 10, 10, 10];
-        test_filter!(U4, input, output);
+        test_filter!(4, input, output);
     }
 
     #[test]
     fn alternating_5() {
         let input = vec![10, 20, 10, 20, 10, 20, 10];
         let output = vec![10, 10, 10, 10, 10, 20, 10];
-        test_filter!(U5, input, output);
+        test_filter!(5, input, output);
     }
 
     #[test]
     fn ascending_4() {
         let input = vec![10, 20, 30, 40, 50, 60, 70];
         let output = vec![10, 10, 20, 20, 30, 40, 50];
-        test_filter!(U4, input, output);
+        test_filter!(4, input, output);
     }
 
     #[test]
     fn ascending_5() {
         let input = vec![10, 20, 30, 40, 50, 60, 70];
         let output = vec![10, 10, 20, 20, 30, 40, 50];
-        test_filter!(U5, input, output);
+        test_filter!(5, input, output);
     }
 
     #[test]
     fn descending_4() {
         let input = vec![70, 60, 50, 40, 30, 20, 10];
         let output = vec![70, 60, 60, 50, 40, 30, 20];
-        test_filter!(U4, input, output);
+        test_filter!(4, input, output);
     }
 
     #[test]
     fn descending_5() {
         let input = vec![70, 60, 50, 40, 30, 20, 10];
         let output = vec![70, 60, 60, 50, 50, 40, 30];
-        test_filter!(U5, input, output);
+        test_filter!(5, input, output);
     }
 
     #[test]
     fn min_max_median() {
         let input = vec![70, 50, 30, 10, 20, 40, 60];
-        let mut filter: Median<_, U5> = Median::default();
+        let mut filter: Median<_, 5> = Median::default();
         for input in input {
             filter.filter(input);
         }
@@ -575,7 +549,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Median<_, U5> = Median::default();
+        let filter: Median<_, 5> = Median::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

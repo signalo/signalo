@@ -6,29 +6,23 @@
 
 use std::fmt;
 
-use arraydeque::{ArrayDeque, Wrapping};
-
-use generic_array::{ArrayLength, GenericArray};
-
 use num_traits::Num;
 
 use signalo_traits::Filter;
 use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
+use crate::circular_buffer::CircularBuffer;
+
 /// The delay filter's state.
 #[derive(Clone)]
-pub struct State<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct State<T, const N: usize> {
     /// The current taps buffer.
-    pub taps: ArrayDeque<GenericArray<T, N>, Wrapping>,
+    pub taps: CircularBuffer<T, N>,
 }
 
-impl<T, N> fmt::Debug for State<T, N>
+impl<T, const N: usize> fmt::Debug for State<T, N>
 where
     T: fmt::Debug,
-    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State").field("taps", &self.taps).finish()
@@ -37,91 +31,65 @@ where
 
 /// A delay filter producing the moving median over a given signal.
 #[derive(Clone)]
-pub struct Delay<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct Delay<T, const N: usize> {
     state: State<T, N>,
 }
 
-impl<T, N> Default for Delay<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Default for Delay<T, N> {
     fn default() -> Self {
         let state = {
-            let taps = ArrayDeque::default();
+            let taps = CircularBuffer::default();
             State { taps }
         };
         Self { state }
     }
 }
 
-impl<T, N> fmt::Debug for Delay<T, N>
+impl<T, const N: usize> fmt::Debug for Delay<T, N>
 where
     T: fmt::Debug,
-    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Delay").field("state", &self.state).finish()
     }
 }
 
-impl<T, N> StateTrait for Delay<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateTrait for Delay<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, N> StateMut for Delay<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateMut for Delay<T, N> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> Guts for Delay<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Guts for Delay<T, N> {
     type Guts = State<T, N>;
 }
 
-impl<T, N> FromGuts for Delay<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> FromGuts for Delay<T, N> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, N> IntoGuts for Delay<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> IntoGuts for Delay<T, N> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, N> Reset for Delay<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Reset for Delay<T, N> {
     fn reset(self) -> Self {
         Self::default()
     }
 }
 
-impl<T, N> Filter<T> for Delay<T, N>
+impl<T, const N: usize> Filter<T> for Delay<T, N>
 where
     T: Clone + Num,
-    N: ArrayLength<T>,
 {
     type Output = T;
 
@@ -139,7 +107,6 @@ mod tests {
     use super::*;
 
     #[allow(clippy::wildcard_imports)]
-    use generic_array::typenum::*;
 
     fn get_input() -> Vec<f32> {
         vec![
@@ -161,7 +128,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Delay<f32, U2> = Delay::default();
+        let filter: Delay<f32, 2> = Delay::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

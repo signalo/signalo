@@ -33,15 +33,13 @@ extern crate core as std;
 #[cfg(all(test, feature = "std"))]
 extern crate std;
 
-pub extern crate num_traits;
+#[cfg(test)]
+extern crate testdrop;
 
-pub extern crate arraydeque;
+pub extern crate num_traits;
 
 #[cfg(feature = "dimensioned")]
 pub extern crate dimensioned;
-
-#[macro_use]
-pub extern crate generic_array;
 
 #[cfg(test)]
 #[macro_use]
@@ -65,3 +63,5 @@ pub mod observe;
 pub mod ops;
 pub mod unit_system;
 pub mod wavelet;
+
+mod circular_buffer;

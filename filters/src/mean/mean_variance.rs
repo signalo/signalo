@@ -6,8 +6,6 @@
 
 use std::fmt;
 
-use generic_array::ArrayLength;
-
 use num_traits::{Num, Signed};
 
 use signalo_traits::Filter;
@@ -26,20 +24,16 @@ pub struct Output<T> {
 
 /// The mean/variance filter's state.
 #[derive(Clone)]
-pub struct State<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct State<T, const N: usize> {
     /// The current mean value.
     pub mean: Mean<T, N>,
     /// The current variance value.
     pub variance: Mean<T, N>,
 }
 
-impl<T, N> fmt::Debug for State<T, N>
+impl<T, const N: usize> fmt::Debug for State<T, N>
 where
     T: fmt::Debug,
-    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -51,16 +45,12 @@ where
 
 /// A mean/variance filter producing the moving average and variance over a given signal.
 #[derive(Clone)]
-pub struct MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct MeanVariance<T, const N: usize> {
     state: State<T, N>,
 }
 
-impl<T, N> Default for MeanVariance<T, N>
+impl<T, const N: usize> Default for MeanVariance<T, N>
 where
-    N: ArrayLength<T>,
     Mean<T, N>: Default,
 {
     fn default() -> Self {
@@ -73,10 +63,9 @@ where
     }
 }
 
-impl<T, N> fmt::Debug for MeanVariance<T, N>
+impl<T, const N: usize> fmt::Debug for MeanVariance<T, N>
 where
     T: fmt::Debug,
-    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("MeanVariance")
@@ -85,51 +74,35 @@ where
     }
 }
 
-impl<T, N> StateTrait for MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateTrait for MeanVariance<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, N> StateMut for MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateMut for MeanVariance<T, N> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> Guts for MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Guts for MeanVariance<T, N> {
     type Guts = State<T, N>;
 }
 
-impl<T, N> FromGuts for MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> FromGuts for MeanVariance<T, N> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, N> IntoGuts for MeanVariance<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> IntoGuts for MeanVariance<T, N> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, N> Reset for MeanVariance<T, N>
+impl<T, const N: usize> Reset for MeanVariance<T, N>
 where
-    N: ArrayLength<T>,
     Mean<T, N>: Default,
 {
     fn reset(self) -> Self {
@@ -138,12 +111,11 @@ where
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, N> ResetMut for MeanVariance<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for MeanVariance<T, N> where Self: Reset {}
 
-impl<T, N> Filter<T> for MeanVariance<T, N>
+impl<T, const N: usize> Filter<T> for MeanVariance<T, N>
 where
     T: Clone + Num + Signed + PartialOrd,
-    N: ArrayLength<T>,
 {
     type Output = Output<T>;
 
@@ -168,9 +140,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[allow(clippy::wildcard_imports)]
-    use generic_array::typenum::*;
 
     fn get_input() -> Vec<f32> {
         vec![
@@ -204,7 +173,7 @@ mod tests {
 
     #[test]
     fn mean() {
-        let filter: MeanVariance<f32, U3> = MeanVariance::default();
+        let filter: MeanVariance<f32, 3> = MeanVariance::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
@@ -216,7 +185,7 @@ mod tests {
 
     #[test]
     fn variance() {
-        let filter: MeanVariance<f32, U3> = MeanVariance::default();
+        let filter: MeanVariance<f32, 3> = MeanVariance::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

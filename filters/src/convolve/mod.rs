@@ -4,9 +4,6 @@
 
 //! Convolution filters.
 
-use arraydeque::{ArrayDeque, Wrapping};
-use generic_array::{ArrayLength, GenericArray};
-
 use num_traits::Num;
 
 use signalo_traits::Filter;
@@ -16,53 +13,43 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+use crate::circular_buffer::CircularBuffer;
+
 pub mod savitzky_golay;
 
 /// The convolution filter's configuration.
 #[derive(Clone, Debug)]
-pub struct Config<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct Config<T, const N: usize> {
     /// The convolution coefficients.
-    pub coefficients: GenericArray<T, N>,
+    pub coefficients: [T; N],
 }
 
 /// The convolution filter's state.
 #[derive(Clone, Debug)]
-pub struct State<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct State<T, const N: usize> {
     /// The filter's taps (i.e. buffered input).
-    pub taps: ArrayDeque<GenericArray<T, N>, Wrapping>,
+    pub taps: CircularBuffer<T, N>,
 }
 
 /// A convolution filter.
 #[derive(Clone, Debug)]
-pub struct Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct Convolve<T, const N: usize> {
     config: Config<T, N>,
     state: State<T, N>,
 }
 
-impl<T, N> Convolve<T, N>
+impl<T, const N: usize> Convolve<T, N>
 where
     T: Clone + PartialOrd + Num,
-    N: ArrayLength<T>,
 {
     /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
     pub fn normalized(mut config: Config<T, N>) -> Self {
-        // let mut coefficients: GenericArray<T, N>
-        let sum = config
-            .coefficients
-            .as_slice()
-            .iter()
-            .fold(T::zero(), |sum, coeff| sum + coeff.clone());
+        let mut sum = T::zero();
+        for coeff in &config.coefficients {
+            sum = sum + coeff.clone();
+        }
         if !sum.is_zero() {
-            for coeff in config.coefficients.as_mut_slice() {
+            for coeff in &mut config.coefficients {
                 *coeff = coeff.clone() / sum.clone();
             }
         }
@@ -70,47 +57,34 @@ where
     }
 }
 
-impl<T, N> ConfigTrait for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> ConfigTrait for Convolve<T, N> {
     type Config = Config<T, N>;
 }
 
-impl<T, N> StateTrait for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateTrait for Convolve<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, N> WithConfig for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> WithConfig for Convolve<T, N> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
         let state = {
-            let taps = ArrayDeque::new();
+            let taps = CircularBuffer::default();
             State { taps }
         };
         Self { config, state }
     }
 }
 
-impl<T, N> ConfigRef for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> ConfigRef for Convolve<T, N> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, N> ConfigClone for Convolve<T, N>
+impl<T, const N: usize> ConfigClone for Convolve<T, N>
 where
-    N: ArrayLength<T>,
     Config<T, N>: Clone,
 {
     fn config(&self) -> Self::Config {
@@ -118,45 +92,30 @@ where
     }
 }
 
-impl<T, N> StateMut for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> StateMut for Convolve<T, N> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> Guts for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Guts for Convolve<T, N> {
     type Guts = (Config<T, N>, State<T, N>);
 }
 
-impl<T, N> FromGuts for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> FromGuts for Convolve<T, N> {
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }
 }
 
-impl<T, N> IntoGuts for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> IntoGuts for Convolve<T, N> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }
 
-impl<T, N> Reset for Convolve<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Reset for Convolve<T, N> {
     fn reset(self) -> Self {
         Self::with_config(self.config)
     }
@@ -165,10 +124,9 @@ where
 #[cfg(feature = "derive_reset_mut")]
 impl<T, N> ResetMut for Convolve<T, N> where Self: Reset {}
 
-impl<T, N> Filter<T> for Convolve<T, N>
+impl<T, const N: usize> Filter<T> for Convolve<T, N>
 where
     T: Clone + Num,
-    N: ArrayLength<T>,
 {
     type Output = T;
 
@@ -180,7 +138,7 @@ where
         }
 
         let state_iter = self.state.taps.iter();
-        let coeff_iter = self.config.coefficients.as_slice().iter().rev();
+        let coeff_iter = self.config.coefficients.iter().rev();
 
         state_iter
             .zip(coeff_iter)
@@ -217,7 +175,7 @@ mod tests {
     fn test() {
         // Effectively calculates the derivative:
         let filter = Convolve::with_config(Config {
-            coefficients: arr![f32; 1.000, -1.000],
+            coefficients: [1.000, -1.000],
         });
         let input = get_input();
         let output: Vec<_> = input

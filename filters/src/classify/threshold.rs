@@ -6,9 +6,6 @@
 
 use std::cmp::PartialOrd;
 
-use generic_array::typenum::U2;
-use generic_array::GenericArray;
-
 use signalo_traits::Filter;
 use signalo_traits::{
     Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset, WithConfig,
@@ -23,7 +20,7 @@ pub struct Config<T, U> {
     /// input threshold.
     pub threshold: T,
     /// [off, on] outputs.
-    pub outputs: GenericArray<U, U2>,
+    pub outputs: [U; 2],
 }
 
 /// A threshold filter.

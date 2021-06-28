@@ -4,7 +4,6 @@
 
 //! Moving median filters.
 
-use generic_array::ArrayLength;
 use num_traits::{Num, Signed};
 
 use signalo_traits::Filter;
@@ -13,7 +12,7 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
-use median::{ListNode, Median};
+use median::Median;
 
 /// The hampel filter's configuration.
 #[derive(Clone, Debug)]
@@ -24,10 +23,7 @@ pub struct Config<T> {
 
 /// The hampel filter's state.
 #[derive(Clone, Debug)]
-pub struct State<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+pub struct State<T, const N: usize> {
     /// Median filter.
     pub median: Median<T, N>,
 }
@@ -36,18 +32,14 @@ where
 ///
 /// J. Astola, P. Kuosmanen, "Fundamentals of Nonlinear Digital Filtering", CRC Press, 1997.
 #[derive(Clone, Debug)]
-pub struct Hampel<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+pub struct Hampel<T, const N: usize> {
     config: Config<T>,
     state: State<T, N>,
 }
 
-impl<T, N> Hampel<T, N>
+impl<T, const N: usize> Hampel<T, N>
 where
     T: Clone + PartialOrd + Num + Signed,
-    N: ArrayLength<ListNode<T>>,
 {
     /// The Hampel Filter
     ///
@@ -91,23 +83,16 @@ where
     }
 }
 
-impl<T, N> ConfigTrait for Hampel<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> ConfigTrait for Hampel<T, N> {
     type Config = Config<T>;
 }
 
-impl<T, N> StateTrait for Hampel<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> StateTrait for Hampel<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, N> WithConfig for Hampel<T, N>
+impl<T, const N: usize> WithConfig for Hampel<T, N>
 where
-    N: ArrayLength<ListNode<T>>,
     Median<T, N>: Default,
 {
     type Output = Self;
@@ -121,18 +106,14 @@ where
     }
 }
 
-impl<T, N> ConfigRef for Hampel<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> ConfigRef for Hampel<T, N> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, N> ConfigClone for Hampel<T, N>
+impl<T, const N: usize> ConfigClone for Hampel<T, N>
 where
-    N: ArrayLength<ListNode<T>>,
     Config<T>: Clone,
 {
     fn config(&self) -> Self::Config {
@@ -140,44 +121,31 @@ where
     }
 }
 
-impl<T, N> StateMut for Hampel<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> StateMut for Hampel<T, N> {
     unsafe fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, N> Guts for Hampel<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> Guts for Hampel<T, N> {
     type Guts = (Config<T>, State<T, N>);
 }
 
-impl<T, N> FromGuts for Hampel<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> FromGuts for Hampel<T, N> {
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }
 }
 
-impl<T, N> IntoGuts for Hampel<T, N>
-where
-    N: ArrayLength<ListNode<T>>,
-{
+impl<T, const N: usize> IntoGuts for Hampel<T, N> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }
 
-impl<T, N> Reset for Hampel<T, N>
+impl<T, const N: usize> Reset for Hampel<T, N>
 where
-    N: ArrayLength<ListNode<T>>,
     Median<T, N>: Default,
 {
     fn reset(self) -> Self {
@@ -186,15 +154,11 @@ where
 }
 
 #[cfg(feature = "derive_reset_mut")]
-impl<T, N> ResetMut for Hampel<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for Hampel<T, N> where Self: Reset {}
 
 macro_rules! impl_hampel_filter {
     ($t:ty => $f:expr) => {
-        impl<N> Filter<$t> for Hampel<$t, N>
-        where
-            // T: Clone + PartialOrd + Num + Signed,
-            N: ArrayLength<ListNode<$t>>,
-        {
+        impl<const N: usize> Filter<$t> for Hampel<$t, N> {
             type Output = $t;
 
             fn filter(&mut self, input: $t) -> Self::Output {
@@ -212,9 +176,6 @@ impl_hampel_filter!(f64 => 1.4826);
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[allow(clippy::wildcard_imports)]
-    use generic_array::typenum::*;
 
     fn get_input() -> Vec<f32> {
         vec![
@@ -236,7 +197,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Hampel<_, U7> = Hampel::with_config(Config { threshold: 2.0 });
+        let filter: Hampel<_, 7> = Hampel::with_config(Config { threshold: 2.0 });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input

@@ -6,9 +6,6 @@
 
 use std::cmp::PartialEq;
 
-use generic_array::typenum::U2;
-use generic_array::GenericArray;
-
 use signalo_traits::Filter;
 use signalo_traits::{
     Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
@@ -26,7 +23,7 @@ pub struct Config<T, U> {
     /// Value to debounce.
     pub predicate: T,
     /// [off, on] output.
-    pub outputs: GenericArray<U, U2>,
+    pub outputs: [U; 2],
 }
 
 /// The [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter's state.
