@@ -1,12 +1,6 @@
 [package]
 authors = ["Vincent Esche <regexident@gmail.com>"]
-categories = [
-    "no-std",
-    "embedded",
-    "multimedia",
-    "science",
-    "algorithms",
-]
+categories = ["no-std", "embedded", "multimedia", "science", "algorithms"]
 description = "A collection of pipes used in 'signalo' umbrella crate."
 documentation = "https://docs.rs/signalo_pipes"
 keywords = [
@@ -30,6 +24,4 @@ default-features = false
 
 [features]
 default = []
-std = [
-    "signalo_traits/std",
-]
+std = ["signalo_traits/std"]
