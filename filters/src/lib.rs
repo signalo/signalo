@@ -23,7 +23,6 @@
     clippy::unneeded_field_pattern,
     clippy::unwrap_used,
     clippy::wrong_self_convention,
-    clippy::wrong_pub_self_convention,
 )]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
