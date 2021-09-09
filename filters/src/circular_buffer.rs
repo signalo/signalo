@@ -19,26 +19,15 @@ where
         // FIXME: use `uninit_array` instead, once stable:
         let mut array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 
-        for (index, item) in array
+        for (index, destination) in array
             .iter_mut()
             .enumerate()
             .take(self.write)
             .skip(self.read)
         {
-            let source = {
-                let maybe_uninit = &self.array[index];
-                // FIXME: replace with `assume_init_ref()`, once stable:
-                unsafe { &*maybe_uninit.as_ptr() }
-            };
-            let destination = {
-                let maybe_uninit = item;
-                // FIXME: replace with `assume_init_ref()`, once stable:
-                maybe_uninit.as_mut_ptr()
-            };
-
-            unsafe {
-                destination.write(source.clone());
-            }
+            let source = &self.array[index];
+            let item = unsafe { source.assume_init_ref() };
+            destination.write(item.clone());
         }
 
         Self {
@@ -165,9 +154,10 @@ impl<'a, T, const N: usize> Iterator for Iter<'a, T, N> {
 
         self.start += 1;
 
-        // FIXME: replace with `assume_init_ref()`, once stable:
-        let maybe_uninit = &self.buffer.array[index % capacity];
-        let value = unsafe { &*maybe_uninit.as_ptr() };
+        let value = {
+            let maybe_uninit = &self.buffer.array[index % capacity];
+            unsafe { maybe_uninit.assume_init_ref() }
+        };
 
         Some(value)
     }
