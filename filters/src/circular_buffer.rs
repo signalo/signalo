@@ -62,6 +62,16 @@ impl<T, const N: usize> FromIterator<T> for CircularBuffer<T, N> {
     }
 }
 
+impl<T, const N: usize> IntoIterator for CircularBuffer<T, N> {
+    type Item = <Self::IntoIter as Iterator>::Item;
+
+    type IntoIter = IntoIter<T, N>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter { buffer: self }
+    }
+}
+
 impl<T, const N: usize> Drop for CircularBuffer<T, N> {
     fn drop(&mut self) {
         let capacity = Self::capacity();
@@ -165,6 +175,18 @@ impl<'a, T, const N: usize> Iterator for Iter<'a, T, N> {
         };
 
         Some(value)
+    }
+}
+
+pub struct IntoIter<T, const N: usize> {
+    buffer: CircularBuffer<T, N>,
+}
+
+impl<T, const N: usize> Iterator for IntoIter<T, N> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.buffer.pop_front()
     }
 }
 
@@ -288,6 +310,14 @@ mod tests {
 
         let elements: Vec<&f32> = buffer.iter().collect();
         assert_eq!(elements, vec![&3.0, &4.0, &5.0]);
+    }
+
+    #[test]
+    fn into_iter() {
+        let buffer: CircularBuffer<f32, 3> = vec![1.0, 2.0, 3.0].into_iter().collect();
+
+        let items: Vec<f32> = buffer.into_iter().collect();
+        assert_eq!(items, vec![1.0, 2.0, 3.0]);
     }
 
     #[test]
