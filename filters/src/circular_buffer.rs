@@ -62,6 +62,19 @@ impl<T, const N: usize> FromIterator<T> for CircularBuffer<T, N> {
     }
 }
 
+impl<T, const N: usize> Drop for CircularBuffer<T, N> {
+    fn drop(&mut self) {
+        let capacity = Self::capacity();
+        for index in self.read..self.write {
+            let maybe_uninit = &mut self.array[index % capacity];
+            unsafe {
+                // FIXME: use `maybe_uninit.assume_init_drop()` once stabilized.
+                ptr::drop_in_place(maybe_uninit.as_mut_ptr());
+            }
+        }
+    }
+}
+
 impl<T, const N: usize> CircularBuffer<T, N> {
     pub fn push_back(&mut self, value: T) -> Option<T> {
         let result = if self.is_full() {
@@ -123,18 +136,6 @@ impl<T, const N: usize> CircularBuffer<T, N> {
             start: self.read,
             end: self.write,
             buffer: self,
-        }
-    }
-}
-
-impl<T, const N: usize> Drop for CircularBuffer<T, N> {
-    fn drop(&mut self) {
-        let capacity = Self::capacity();
-        for index in self.read..self.write {
-            let elem = &mut self.array[index % capacity];
-            unsafe {
-                ptr::drop_in_place(elem.as_mut_ptr());
-            }
         }
     }
 }
