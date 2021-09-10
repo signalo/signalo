@@ -19,13 +19,12 @@ where
         // FIXME: use `uninit_array` instead, once stable:
         let mut array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 
-        for (index, destination) in array
-            .iter_mut()
-            .enumerate()
-            .take(self.write)
-            .skip(self.read)
-        {
+        let capacity = Self::capacity();
+
+        for index in self.read..self.write {
+            let index = index % capacity;
             let source = &self.array[index];
+            let destination = &mut array[index];
             let item = unsafe { source.assume_init_ref() };
             destination.write(item.clone());
         }
@@ -283,6 +282,20 @@ mod tests {
 
         let elements: Vec<&f32> = buffer.iter().collect();
         assert_eq!(elements, vec![&3.0, &4.0, &5.0]);
+    }
+
+    #[test]
+    fn clone() {
+        let buffer: CircularBuffer<f32, 3> = vec![1.0, 2.0].into_iter().collect();
+
+        let clone = buffer.clone();
+
+        assert_eq!(buffer.read, clone.read);
+        assert_eq!(buffer.write, clone.write);
+
+        for (original, clone) in buffer.iter().zip(clone.iter()) {
+            assert_eq!(original, clone);
+        }
     }
 
     #[test]
