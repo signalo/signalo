@@ -71,11 +71,13 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         };
 
         let capacity = Self::capacity();
-        let index = self.write;
+        let index = self.write % capacity;
 
         self.write += 1;
 
-        self.array[index % capacity] = MaybeUninit::new(value);
+        self.array[index] = MaybeUninit::new(value);
+
+        assert!(self.read <= self.write);
 
         result
     }
@@ -87,12 +89,15 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         }
 
         let capacity = Self::capacity();
-        let index = self.read;
+        let index = self.read % capacity;
 
         self.read += 1;
 
-        let maybe_uninit = mem::replace(&mut self.array[index % capacity], MaybeUninit::uninit());
+        let slot = &mut self.array[index];
+        let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
         let value = unsafe { maybe_uninit.assume_init() };
+
+        assert!(self.read <= self.write);
 
         Some(value)
     }
