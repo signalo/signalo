@@ -306,10 +306,10 @@ mod tests {
 
     #[test]
     fn iter() {
-        let buffer: CircularBuffer<f32, 3> = vec![1.0, 2.0, 3.0, 4.0, 5.0].into_iter().collect();
+        let buffer: CircularBuffer<f32, 3> = vec![1.0, 2.0, 3.0].into_iter().collect();
 
-        let elements: Vec<&f32> = buffer.iter().collect();
-        assert_eq!(elements, vec![&3.0, &4.0, &5.0]);
+        let items: Vec<&f32> = buffer.iter().collect();
+        assert_eq!(items, vec![&1.0, &2.0, &3.0]);
     }
 
     #[test]
