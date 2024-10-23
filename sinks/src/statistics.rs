@@ -8,8 +8,10 @@ use num_traits::Num;
 
 use signalo_traits::{Filter, Finalize, Sink};
 
-use bounds::{Bounds, Output as BoundsOutput};
-use mean_variance::{MeanVariance, Output as MeanVarianceOutput};
+use crate::{
+    bounds::{Bounds, Output as BoundsOutput},
+    mean_variance::{MeanVariance, Output as MeanVarianceOutput},
+};
 
 /// Output of `Statistics` filter.
 #[derive(Clone, Debug)]

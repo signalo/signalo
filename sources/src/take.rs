@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn test() {
-        use increment::Increment;
+        use crate::increment::Increment;
 
         let increment = Increment::new(0, 2);
         let mut source = Take::new(increment, 5);

@@ -14,10 +14,12 @@ use num_traits::Zero;
 
 use signalo_traits::WithConfig;
 
-use convolve::Config as ConvolveConfig;
-use wavelet::{
-    analyze::{Analyze, Config as AnalyzeConfig},
-    synthesize::{Config as SynthesizeConfig, Synthesize},
+use crate::{
+    convolve::Config as ConvolveConfig,
+    wavelet::{
+        analyze::{Analyze, Config as AnalyzeConfig},
+        synthesize::{Config as SynthesizeConfig, Synthesize},
+    },
 };
 
 /// Trait for Daubechies wavelet filters.
@@ -246,7 +248,7 @@ mod tests {
 
     use signalo_traits::Filter;
 
-    use wavelet::Decomposition;
+    use crate::wavelet::Decomposition;
 
     fn get_input() -> Vec<f32> {
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture

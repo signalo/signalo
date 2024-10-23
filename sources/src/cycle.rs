@@ -68,7 +68,7 @@ where
 mod tests {
     use super::*;
 
-    use from_iter::FromIter;
+    use crate::from_iter::FromIter;
 
     #[test]
     fn non_empty() {

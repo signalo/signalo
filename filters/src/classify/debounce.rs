@@ -133,7 +133,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use classify::Classification;
+    use crate::classify::Classification;
 
     #[test]
     fn test() {

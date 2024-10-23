@@ -15,7 +15,7 @@ use signalo_traits::{
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
-use classify::Classification;
+use crate::classify::Classification;
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -153,7 +153,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use classify::Classification;
+    use crate::classify::Classification;
 
     #[test]
     fn test() {

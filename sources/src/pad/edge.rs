@@ -6,7 +6,7 @@
 
 use signalo_traits::Source;
 
-use repeat::Repeat;
+use crate::repeat::Repeat;
 
 #[derive(Clone, Debug)]
 enum PadState<T> {
@@ -129,7 +129,7 @@ where
 mod tests {
     use super::*;
 
-    use from_iter::FromIter;
+    use crate::from_iter::FromIter;
 
     #[test]
     fn empty() {

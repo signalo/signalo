@@ -6,7 +6,7 @@
 
 use signalo_traits::{Filter, Finalize, Sink};
 
-use {max::Max, min::Min};
+use crate::{max::Max, min::Min};
 
 /// Output of `Bounds` filter.
 #[derive(Clone, Debug)]

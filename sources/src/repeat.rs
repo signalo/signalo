@@ -6,8 +6,7 @@
 
 use signalo_traits::Source;
 
-use constant::Constant;
-use take::Take;
+use crate::{constant::Constant, take::Take};
 
 /// A source that returns a specified number of constant values.
 ///
