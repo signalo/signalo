@@ -5,6 +5,7 @@ resolver = "2"
 [workspace.package]
 license = "MPL-2.0"
 repository = "https://github.com/signalo/signalo"
+rust-version = "1.68.2"
 edition = "2021"
 
 [workspace.dependencies]
