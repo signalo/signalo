@@ -70,29 +70,22 @@ jobs:
   msrv:
     name: Verify minimal supported rust version
     runs-on: ubuntu-latest
+    # Disabled until the following issue gets resolved (current: v0.16.2):
+    # https://github.com/foresterre/cargo-msrv/issues/1023
+    #
+    # Temove this line to re-enable the job:
+    if: false
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
       - name: Install cargo-msrv
-        run: cargo install cargo-msrv --all-features
+        run: cargo install cargo-msrv@0.16.0-beta.21 --all-features
       - name: cargo-msrv version
         run: cargo msrv --version
-      # See https://github.com/foresterre/cargo-msrv/issues/745 on why
-      # we're running the command manually for each workspace member:
-      - name: run cargo-msrv verify for signalo-traits
-        run: cargo msrv verify --manifest-path "./traits/Cargo.toml"
-      - name: run cargo-msrv verify for signalo-filters
-        run: cargo msrv verify --manifest-path "./filters/Cargo.toml"
-      - name: run cargo-msrv verify for signalo-sinks
-        run: cargo msrv verify --manifest-path "./sinks/Cargo.toml"
-      - name: run cargo-msrv verify for signalo-sources
-        run: cargo msrv verify --manifest-path "./sources/Cargo.toml"
-      - name: run cargo-msrv verify for signalo-pipes
-        run: cargo msrv verify --manifest-path "./pipes/Cargo.toml"
-      - name: run cargo-msrv verify for signalo
-        run: cargo msrv verify --manifest-path "./signalo/Cargo.toml"
+      - name: run cargo-msrv verify
+        run: cargo msrv verify
 
   check_no_std:
     name: Check no_std
