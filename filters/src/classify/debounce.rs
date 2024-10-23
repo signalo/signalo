@@ -12,7 +12,7 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
 /// The [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter's configuration.
@@ -106,10 +106,10 @@ impl<T, U> Reset for Debounce<T, U> {
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, U> ResetMut for Debounce<T, U> where Self: Reset {}
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, U> ResetMut for Debounce<T, U> where Self: Reset {}
 
 impl<T, U> Filter<T> for Debounce<T, U>

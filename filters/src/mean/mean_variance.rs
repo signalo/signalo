@@ -110,7 +110,7 @@ where
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, const N: usize> ResetMut for MeanVariance<T, N> where Self: Reset {}
 
 impl<T, const N: usize> Filter<T> for MeanVariance<T, N>

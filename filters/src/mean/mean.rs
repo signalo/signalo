@@ -103,7 +103,7 @@ where
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, N> ResetMut for Mean<T, N> where Self: Reset {}
 
 impl<T, const N: usize> Filter<T> for Mean<T, N>
