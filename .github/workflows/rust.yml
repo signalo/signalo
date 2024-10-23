@@ -42,16 +42,16 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all -- --check
 
-  # clippy:
-  #   name: Clippy
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@v1
-  #       with:
-  #         toolchain: stable
-  #         components: clippy
-  #     - run: cargo clippy -- -D warnings
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+      - run: cargo clippy -- -D warnings
 
   minimal_versions:
     name: Compile and test with minimal versions
@@ -67,16 +67,16 @@ jobs:
         run: cargo minimal-versions check --workspace --all-features --tests --ignore-private -v
         continue-on-error: true
 
-  # msrv:
-  #   name: Verify minimal supported rust version
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@v1
-  #       with:
-  #         toolchain: nightly
-  #     - uses: taiki-e/install-action@cargo-hack
-  #     - run: cargo hack check --rust-version --workspace --ignore-private
+  msrv:
+    name: Verify minimal supported rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - uses: taiki-e/install-action@cargo-hack
+      - run: cargo hack check --rust-version --workspace --ignore-private
 
   check_no_std:
     name: Check no_std
