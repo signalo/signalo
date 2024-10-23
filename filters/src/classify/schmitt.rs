@@ -120,7 +120,7 @@ where
         } else {
             input > self.config.thresholds[1]
         };
-        let index = self.state.on as usize;
+        let index: usize = self.state.on.into();
         self.config.outputs[index].clone()
     }
 }

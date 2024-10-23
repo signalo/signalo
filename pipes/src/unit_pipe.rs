@@ -8,7 +8,7 @@ use std::ops::BitOr;
 
 use signalo_traits::{Filter, Finalize, Sink, Source};
 
-use pipe::Pipe;
+use crate::pipe::Pipe;
 
 /// A `UnitPipe` is a simple container wrapping a `Filter`/`Source`/`Sink`/`Finalize` impl.
 #[derive(Default, Clone, Debug)]

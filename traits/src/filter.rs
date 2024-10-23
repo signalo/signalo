@@ -48,12 +48,14 @@ pub trait PhaseShift: Sized {
 /// A system is called linear if it follows these two principles:
 ///
 /// 1. **Superposition**:
+///
 ///   Let `x1(t)`, `x2(t)` be the inputs applied to a system and `y1(t)`, `y2(t)` be the outputs.
 ///   For `x1(t)` the output of the system is `y1(t)` and for `x2(t)` output of the system `y2(t)`
 ///   then for `x1(t) + x2(t)` if the output of the system is `y1(t) + y2(t)` then system is said
 ///   to be obeying superposition principle.
 ///
 /// 2. **Homogeneity**:
+///
 ///   Consider for an input `x(t)` for which output of the system is `y(t)`. Then if for the input
 ///   `ax(t)` (where a is some constant value) output is `ay(t)` then system is said to be obeying
 ///   homogeneity principle. Consequence of the homogeneity (or scaling) property is that a zero

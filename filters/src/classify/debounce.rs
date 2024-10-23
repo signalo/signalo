@@ -125,7 +125,7 @@ where
         } else {
             self.state.count = 0;
         }
-        let index = (self.state.count >= self.config.threshold) as usize;
+        let index: usize = (self.state.count >= self.config.threshold).into();
         self.config.outputs[index].clone()
     }
 }

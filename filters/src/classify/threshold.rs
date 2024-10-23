@@ -90,7 +90,7 @@ where
     type Output = U;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let index = (input >= self.config.threshold) as usize;
+        let index: usize = (input >= self.config.threshold).into();
         self.config.outputs[index].clone()
     }
 }
