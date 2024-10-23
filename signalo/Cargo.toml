@@ -8,30 +8,12 @@ license.workspace = true
 repository.workspace = true
 version = "0.6.0"
 
-[dependencies.signalo_traits]
-version = "0.5"
-path = "../traits"
-default-features = false
-
-[dependencies.signalo_filters]
-version = "0.6"
-path = "../filters"
-default-features = false
-
-[dependencies.signalo_sinks]
-version = "0.5"
-path = "../sinks"
-default-features = false
-
-[dependencies.signalo_sources]
-version = "0.5"
-path = "../sources"
-default-features = false
-
-[dependencies.signalo_pipes]
-version = "0.5"
-path = "../pipes"
-default-features = false
+[dependencies]
+signalo_filters = { version = "0.6", path = "../filters", default-features = false }
+signalo_pipes = { version = "0.5", path = "../pipes", default-features = false }
+signalo_sinks = { version = "0.5", path = "../sinks", default-features = false }
+signalo_sources = { version = "0.5", path = "../sources", default-features = false }
+signalo_traits = { version = "0.5", path = "../traits", default-features = false }
 
 [features]
 default = []
