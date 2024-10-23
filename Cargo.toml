@@ -1,9 +1,11 @@
 [workspace]
 members = ["traits", "filters", "sinks", "sources", "pipes", "signalo"]
+resolver = "2"
 
 [workspace.package]
 license = "MPL-2.0"
 repository = "https://github.com/signalo/signalo"
+edition = "2021"
 
 [workspace.dependencies]
 num-traits = { version = "0.2", default-features = false }
