@@ -1,3 +1,6 @@
 [workspace]
-
 members = ["traits", "filters", "sinks", "sources", "pipes", "signalo"]
+
+[workspace.package]
+license = "MPL-2.0"
+repository = "https://github.com/signalo/signalo"
