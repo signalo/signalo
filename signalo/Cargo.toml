@@ -7,7 +7,7 @@ readme = "README.md"
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-edition = "2021"
+edition.workspace = true
 version = "0.6.0"
 
 [dependencies]
