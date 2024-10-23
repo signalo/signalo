@@ -6,6 +6,7 @@ keywords = ["dsp", "digital-signal", "signal-processing", "filters", "pipeline"]
 readme = "README.md"
 license.workspace = true
 repository.workspace = true
+rust-version.workspace = true
 edition = "2021"
 version = "0.5.0"
 
