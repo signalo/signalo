@@ -1,20 +1,11 @@
 [package]
-authors = ["Vincent Esche <regexident@gmail.com>"]
-categories = ["no-std", "embedded", "multimedia", "science", "algorithms"]
-description = "A collection of pipes used in 'signalo' umbrella crate."
-documentation = "https://docs.rs/signalo_pipes"
-keywords = [
-    "dsp",
-    "digital-signal",
-    "signal-processing",
-    "filters",
-    "pipeline",
-]
-license = "MPL-2.0"
 name = "signalo_pipes"
+description = "A collection of pipes used in 'signalo' umbrella crate."
+categories = ["no-std", "embedded", "multimedia", "science", "algorithms"]
+keywords = ["dsp", "digital-signal", "signal-processing", "filters", "pipeline"]
 readme = "README.md"
-repository = "https://github.com/signalo/signalo"
-homepage = "https://github.com/signalo/signalo/tree/main/pipes"
+license.workspace = true
+repository.workspace = true
 version = "0.5.1"
 
 [dependencies.signalo_traits]
