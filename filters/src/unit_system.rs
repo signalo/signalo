@@ -125,7 +125,7 @@ where
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T> ResetMut for UnitSystem<T> where Self: Reset {}
 
 macro_rules! impl_dimensioned {

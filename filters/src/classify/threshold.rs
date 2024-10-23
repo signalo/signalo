@@ -11,7 +11,7 @@ use signalo_traits::{
     Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset, WithConfig,
 };
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
 /// The threshold filter's configuration.
@@ -79,7 +79,7 @@ impl<T, U> Reset for Threshold<T, U> {
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, U> ResetMut for Threshold<T, U> where Self: Reset {}
 
 impl<T, U> Filter<T> for Threshold<T, U>

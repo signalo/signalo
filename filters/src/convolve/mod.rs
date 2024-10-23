@@ -121,7 +121,7 @@ impl<T, const N: usize> Reset for Convolve<T, N> {
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, N> ResetMut for Convolve<T, N> where Self: Reset {}
 
 impl<T, const N: usize> Filter<T> for Convolve<T, N>

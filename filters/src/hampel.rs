@@ -153,7 +153,7 @@ where
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, const N: usize> ResetMut for Hampel<T, N> where Self: Reset {}
 
 macro_rules! impl_hampel_filter {

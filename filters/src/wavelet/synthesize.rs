@@ -109,7 +109,7 @@ where
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, const N: usize> ResetMut for Synthesize<T, N> where Self: Reset {}
 
 impl<T, const N: usize> Filter<Decomposition<T>> for Synthesize<T, N>

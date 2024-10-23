@@ -10,7 +10,7 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
 /// The cache filter's state.
@@ -140,7 +140,7 @@ where
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, U> ResetMut for Cache<T, U> where Self: Reset {}
 
 impl<T, U, V> Filter<V> for Cache<T, U>

@@ -21,3 +21,4 @@ testdrop = "0.1.2"
 default = []
 std = ["signalo_traits/std", "num-traits/std", "dimensioned/std"]
 panic_abort = ["signalo_traits/panic_abort"]
+derive = []

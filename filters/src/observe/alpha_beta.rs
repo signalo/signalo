@@ -117,7 +117,7 @@ where
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T> ResetMut for AlphaBeta<T> where Self: Reset {}
 
 impl<T> Filter<T> for AlphaBeta<T>

@@ -12,7 +12,7 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
 use classify::Classification;
@@ -122,7 +122,7 @@ impl<T, U> Reset for Slopes<T, U> {
     }
 }
 
-#[cfg(feature = "derive_reset_mut")]
+#[cfg(feature = "derive")]
 impl<T, U> ResetMut for Slopes<T, U> where Self: Reset {}
 
 impl<T, U> Filter<T> for Slopes<T, U>
