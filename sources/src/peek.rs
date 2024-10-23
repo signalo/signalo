@@ -12,7 +12,7 @@ pub struct State<T, U> {
     /// Inner source.
     pub inner: T,
     /// Peekable value.
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::option_option))]
+    #[allow(clippy::option_option)]
     pub peeked: Option<Option<U>>,
 }
 

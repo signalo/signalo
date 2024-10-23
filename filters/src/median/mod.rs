@@ -131,7 +131,7 @@ impl<T, const N: usize> Default for Median<T, N> {
                 // FIXME: use `array_assume_init` instead, once stable:
                 unsafe {
                     #[allow(clippy::ptr_as_ptr)]
-                    (&array as *const _ as *const [ListNode<T>; N]).read()
+                    (array.as_ptr() as *const [ListNode<T>; N]).read()
                 }
             };
 
@@ -303,9 +303,9 @@ where
         };
         self.state.buffer[predecessor].next = successor;
         self.state.buffer[self.state.cursor] = ListNode {
-            previous: usize::max_value(),
+            previous: usize::MAX,
             value: None,
-            next: usize::max_value(),
+            next: usize::MAX,
         };
         self.state.buffer[successor].previous = predecessor;
     }
