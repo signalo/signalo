@@ -4,78 +4,87 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
-  schedule:
-    - cron: "0 3 * * 0-6"
-
+    branches: [main, "**"]
+    paths-ignore:
+      - "CHANGELOG.md"
+            
 jobs:
-  check:
-    name: Check
+  info:
+    name: Rust Info
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
+      - name: Rustup Show
+        shell: bash
+        run: rustup show
+      - name: Rustup Version
+        shell: bash
+        run: rustup --version
 
-  check_no_std:
-    name: Check no_std
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: thumbv7em-none-eabihf
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --target thumbv7em-none-eabihf
-  
   test:
     name: Test Suite
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+          components: rust-src
+      - run: cargo test --release
 
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
           components: rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+      - run: cargo fmt --all -- --check
 
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
           components: clippy
-      - uses: actions-rs/cargo@v1
+      - run: cargo clippy -- -D warnings
+
+  minimal_versions:
+    name: Compile and test with minimal versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          command: clippy
-          args: -- -D warnings
+          toolchain: nightly
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: taiki-e/install-action@cargo-minimal-versions
+      - name: minimal-versions check
+        run: cargo minimal-versions check --workspace --all-features --tests --ignore-private -v
+        continue-on-error: true
+
+  msrv:
+    name: Verify minimal supported rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - uses: taiki-e/install-action@cargo-hack
+      - run: cargo hack check --rust-version --workspace --ignore-private
+
+  check_no_std:
+    name: Check no_std
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          targets: thumbv7em-none-eabihf
+      - run: cargo check --target thumbv7em-none-eabihf
