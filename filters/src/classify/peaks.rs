@@ -17,7 +17,7 @@ use signalo_traits::{
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
-use classify::{
+use crate::classify::{
     slopes::{Config as SlopesConfig, Slope, Slopes, State as SlopesState},
     Classification,
 };
@@ -197,7 +197,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use classify::Classification;
+    use crate::classify::Classification;
 
     #[test]
     fn values() {

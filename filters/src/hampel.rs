@@ -6,13 +6,12 @@
 
 use num_traits::{Num, Signed};
 
-use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
     State as StateTrait, StateMut, WithConfig,
 };
 
-use median::Median;
+use crate::median::Median;
 
 /// The hampel filter's configuration.
 #[derive(Clone, Debug)]

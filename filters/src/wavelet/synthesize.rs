@@ -6,14 +6,15 @@
 
 use num_traits::Num;
 
-use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, FromGuts, Guts, IntoGuts, Reset, State as StateTrait,
-    StateMut, WithConfig,
+    Config as ConfigTrait, ConfigClone, Filter, FromGuts, Guts, IntoGuts, Reset,
+    State as StateTrait, StateMut, WithConfig,
 };
 
-use convolve::{Config as ConvolveConfig, Convolve};
-use wavelet::Decomposition;
+use crate::{
+    convolve::{Config as ConvolveConfig, Convolve},
+    wavelet::Decomposition,
+};
 
 /// The wavelet filter's configuration.
 #[derive(Clone, Debug)]
