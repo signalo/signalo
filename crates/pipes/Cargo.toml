@@ -10,10 +10,9 @@ rust-version.workspace = true
 edition.workspace = true
 version = "0.5.1"
 
-[dependencies.signalo_traits]
-version = "0.5"
-path = "../traits"
-default-features = false
+[dependencies]
+# workspace members:
+signalo_traits = { workspace = true }
 
 [features]
 default = []

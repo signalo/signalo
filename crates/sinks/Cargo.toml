@@ -13,7 +13,9 @@ version = "0.5.2"
 [dependencies]
 dimensioned = { version = "0.7", optional = true, default-features = false }
 num-traits = { workspace = true }
-signalo_traits = { version = "0.5", path = "../traits", default-features = false }
+
+# workspace members:
+signalo_traits = { workspace = true }
 
 [dev-dependencies]
 nearly_eq = { workspace = true }
