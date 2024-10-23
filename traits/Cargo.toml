@@ -10,11 +10,7 @@ version = "0.5.0"
 
 [dependencies]
 guts = "0.1.1"
-
-[dependencies.replace_with]
-version = "0.1.5"
-default-features = false
-features = []
+replace_with = { version = "0.1.5", default-features = false, features = [] }
 
 [features]
 default = []

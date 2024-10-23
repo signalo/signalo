@@ -4,3 +4,9 @@ members = ["traits", "filters", "sinks", "sources", "pipes", "signalo"]
 [workspace.package]
 license = "MPL-2.0"
 repository = "https://github.com/signalo/signalo"
+
+[workspace.dependencies]
+num-traits = { version = "0.2", default-features = false }
+
+# dev-dependencies:
+nearly_eq = "0.2.0"

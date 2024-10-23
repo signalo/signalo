@@ -8,22 +8,13 @@ license.workspace = true
 repository.workspace = true
 version = "0.6.0"
 
-[dependencies.dimensioned]
-version = "0.7"
-optional = true
-default-features = false
-
-[dependencies.num-traits]
-version = "0.2"
-default-features = false
-
-[dependencies.signalo_traits]
-version = "0.5"
-path = "../traits"
-default-features = false
+[dependencies]
+dimensioned = { version = "0.7", optional = true, default-features = false }
+num-traits = { workspace = true }
+signalo_traits = { version = "0.5", path = "../traits", default-features = false }
 
 [dev-dependencies]
-nearly_eq = "0.2"
+nearly_eq = { workspace = true }
 testdrop = "0.1.2"
 
 [features]
