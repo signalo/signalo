@@ -75,8 +75,24 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
-      - uses: taiki-e/install-action@cargo-hack
-      - run: cargo hack check --rust-version --workspace --ignore-private
+      - name: Install cargo-msrv
+        run: cargo install cargo-msrv --all-features
+      - name: cargo-msrv version
+        run: cargo msrv --version
+      # See https://github.com/foresterre/cargo-msrv/issues/745 on why
+      # we're running the command manually for each workspace member:
+      - name: run cargo-msrv verify for signalo-traits
+        run: cargo msrv verify --manifest-path "./traits/Cargo.toml"
+      - name: run cargo-msrv verify for signalo-filters
+        run: cargo msrv verify --manifest-path "./filters/Cargo.toml"
+      - name: run cargo-msrv verify for signalo-sinks
+        run: cargo msrv verify --manifest-path "./sinks/Cargo.toml"
+      - name: run cargo-msrv verify for signalo-sources
+        run: cargo msrv verify --manifest-path "./sources/Cargo.toml"
+      - name: run cargo-msrv verify for signalo-pipes
+        run: cargo msrv verify --manifest-path "./pipes/Cargo.toml"
+      - name: run cargo-msrv verify for signalo
+        run: cargo msrv verify --manifest-path "./signalo/Cargo.toml"
 
   check_no_std:
     name: Check no_std
