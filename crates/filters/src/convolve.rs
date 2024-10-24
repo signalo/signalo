@@ -150,6 +150,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use nearly_eq::assert_nearly_eq;
+
     use super::*;
 
     fn get_input() -> Vec<f32> {
