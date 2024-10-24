@@ -91,6 +91,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use nearly_eq::assert_nearly_eq;
+
     use super::*;
 
     #[test]

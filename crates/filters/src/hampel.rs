@@ -174,6 +174,8 @@ impl_hampel_filter!(f64 => 1.4826);
 
 #[cfg(test)]
 mod tests {
+    use nearly_eq::assert_nearly_eq;
+
     use super::*;
 
     fn get_input() -> Vec<f32> {

@@ -246,6 +246,7 @@ daubechies_impl_float!(f32, f64: 20 => [
 mod tests {
     use super::*;
 
+    use nearly_eq::assert_nearly_eq;
     use signalo_traits::Filter;
 
     use crate::wavelet::Decomposition;

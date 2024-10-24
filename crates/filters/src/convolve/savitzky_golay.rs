@@ -84,6 +84,7 @@ savitzky_golay_impl_float!(13 => [
 mod tests {
     use super::*;
 
+    use nearly_eq::assert_nearly_eq;
     use signalo_traits::Filter;
 
     fn get_input() -> Vec<f32> {

@@ -396,6 +396,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use nearly_eq::assert_nearly_eq;
+
     use super::*;
 
     macro_rules! test_filter {
