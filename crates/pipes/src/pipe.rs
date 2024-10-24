@@ -4,7 +4,7 @@
 
 //! Filter pipes.
 
-use std::ops::BitOr;
+use core::ops::BitOr;
 
 use signalo_traits::{Filter, Finalize, Sink, Source};
 

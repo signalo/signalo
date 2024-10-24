@@ -26,12 +26,6 @@
 )]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
-#[cfg(all(not(test), not(feature = "std")))]
-extern crate core as std;
-
-#[cfg(all(test, feature = "std"))]
-extern crate std;
-
 pub use signalo_traits as traits;
 
 pub mod cache;

@@ -4,7 +4,7 @@
 
 //! Arithmetic multiplication filters.
 
-use std::ops::Mul as StdMul;
+use core::ops::Mul as StdMul;
 
 use signalo_traits::Filter;
 

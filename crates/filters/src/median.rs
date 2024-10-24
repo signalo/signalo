@@ -4,8 +4,8 @@
 
 //! Moving median filters.
 
-use std::fmt;
-use std::mem::MaybeUninit;
+use core::fmt;
+use core::mem::MaybeUninit;
 
 use signalo_traits::Filter;
 use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};

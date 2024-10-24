@@ -4,7 +4,7 @@
 
 //! Arithmetic remainder filters.
 
-use std::ops::Rem as StdRem;
+use core::ops::Rem as StdRem;
 
 use signalo_traits::Filter;
 

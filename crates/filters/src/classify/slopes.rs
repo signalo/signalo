@@ -4,7 +4,7 @@
 
 //! Slope detection filters.
 
-use std::cmp::{Ordering, PartialOrd};
+use core::cmp::{Ordering, PartialOrd};
 
 use signalo_traits::Filter;
 use signalo_traits::{

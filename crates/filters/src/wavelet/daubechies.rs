@@ -354,8 +354,8 @@ mod tests {
         let prefix_item = vec[0].clone();
         let suffix_item = vec[len - 1].clone();
 
-        let prefix_iter = ::std::iter::repeat(prefix_item).take(prefix);
-        let suffix_iter = ::std::iter::repeat(suffix_item).take(suffix);
+        let prefix_iter = ::core::iter::repeat(prefix_item).take(prefix);
+        let suffix_iter = ::core::iter::repeat(suffix_item).take(suffix);
 
         prefix_iter.chain(vec).chain(suffix_iter).collect()
     }

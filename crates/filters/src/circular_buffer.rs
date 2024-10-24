@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use std::{
+use core::{
     iter::FromIterator,
     mem::{self, MaybeUninit},
     ptr,
@@ -376,7 +376,7 @@ mod tests {
         assert_eq!(7, drop_stats.created);
         assert_eq!(2, drop_stats.dropped);
 
-        std::mem::drop(buffer);
+        core::mem::drop(buffer);
 
         // Buffer held 5 guards, out of capacity of 5:
         // Thus 2 + 5 = 7 guard should have been dropped by now:
