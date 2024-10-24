@@ -13,10 +13,6 @@ extern crate core as std;
 #[cfg(all(test, feature = "std"))]
 extern crate std;
 
-pub extern crate signalo_filters;
-pub extern crate signalo_pipes;
-pub extern crate signalo_traits;
-
 pub use signalo_filters as filters;
 pub use signalo_pipes as pipes;
 pub use signalo_traits as traits;

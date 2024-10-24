@@ -11,8 +11,6 @@ use signalo_traits::Source;
 /// ### Example:
 ///
 /// ```
-/// # extern crate signalo_sources;
-/// #
 /// # fn main() {
 /// use signalo_sources::traits::Source;
 /// use signalo_sources::traits::Sink;

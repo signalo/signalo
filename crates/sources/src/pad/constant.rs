@@ -23,8 +23,6 @@ enum PadState {
 /// ### Example:
 ///
 /// ```
-/// # extern crate signalo_sources;
-/// #
 /// # fn main() {
 /// use signalo_sources::increment::Increment;
 /// let increment = Increment::new(0, 1);

@@ -12,8 +12,6 @@ use signalo_traits::Source;
 /// ### Example:
 ///
 /// ```
-/// # extern crate signalo_sources;
-/// #
 /// # fn main() {
 /// use signalo_sources::increment::Increment;
 ///

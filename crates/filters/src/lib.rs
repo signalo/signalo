@@ -32,17 +32,6 @@ extern crate core as std;
 #[cfg(all(test, feature = "std"))]
 extern crate std;
 
-pub extern crate num_traits;
-
-#[cfg(feature = "dimensioned")]
-pub extern crate dimensioned;
-
-#[cfg(test)]
-#[macro_use]
-extern crate nearly_eq;
-
-pub extern crate signalo_traits;
-
 pub use signalo_traits as traits;
 
 pub mod cache;

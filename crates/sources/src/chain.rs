@@ -20,8 +20,6 @@ enum ChainState {
 /// ### Example:
 ///
 /// ```
-/// # extern crate signalo_sources;
-/// #
 /// # fn main() {
 /// use signalo_sources::from_iter::FromIter;
 /// let front = FromIter::from(vec![0, 1, 2]);
