@@ -11,8 +11,6 @@ use signalo_traits::Source;
 /// ### Example:
 ///
 /// ```
-/// # extern crate signalo_sources;
-/// #
 /// # fn main() {
 /// use signalo_sources::from_iter::FromIter;
 /// let iter = FromIter::from(vec![0, 1, 2, 3]);

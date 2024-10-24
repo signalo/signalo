@@ -13,8 +13,6 @@ use crate::{constant::Constant, take::Take};
 /// ### Example:
 ///
 /// ```
-/// # extern crate signalo_sources;
-/// #
 /// # fn main() {
 /// use signalo_sources::repeat::Repeat;
 /// let repeat = Repeat::new(42, 3);

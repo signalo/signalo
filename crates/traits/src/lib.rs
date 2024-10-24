@@ -7,8 +7,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
 
-extern crate guts;
-
 pub use guts::{FromGuts, Guts, IntoGuts};
 
 pub mod filter;
