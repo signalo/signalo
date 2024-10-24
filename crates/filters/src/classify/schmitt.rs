@@ -4,7 +4,7 @@
 
 //! Schmitt trigger filters.
 
-use std::cmp::PartialOrd;
+use core::cmp::PartialOrd;
 
 use signalo_traits::Filter;
 use signalo_traits::{

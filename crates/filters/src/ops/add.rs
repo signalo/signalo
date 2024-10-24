@@ -4,7 +4,7 @@
 
 //! Arithmetic addition filters.
 
-use std::ops::Add as StdAdd;
+use core::ops::Add as StdAdd;
 
 use signalo_traits::Filter;
 

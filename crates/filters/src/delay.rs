@@ -4,7 +4,7 @@
 
 //! Delay filters.
 
-use std::fmt;
+use core::fmt;
 
 use num_traits::Num;
 

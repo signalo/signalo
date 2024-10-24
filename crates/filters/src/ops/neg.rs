@@ -4,7 +4,7 @@
 
 //! Arithmetic negation filters.
 
-use std::ops::Neg as StdNeg;
+use core::ops::Neg as StdNeg;
 
 use signalo_traits::Filter;
 

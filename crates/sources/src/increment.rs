@@ -4,7 +4,7 @@
 
 //! Monotonically incrementing sources.
 
-use std::ops::AddAssign;
+use core::ops::AddAssign;
 
 use signalo_traits::Source;
 

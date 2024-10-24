@@ -4,7 +4,7 @@
 
 //! Arithmetic subtraction filters.
 
-use std::ops::Sub as StdSub;
+use core::ops::Sub as StdSub;
 
 use signalo_traits::Filter;
 

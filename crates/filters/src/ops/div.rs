@@ -4,7 +4,7 @@
 
 //! Arithmetic division filters.
 
-use std::ops::Div as StdDiv;
+use core::ops::Div as StdDiv;
 
 use signalo_traits::Filter;
 

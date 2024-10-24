@@ -4,7 +4,7 @@
 
 //! Differentiation filters.
 
-use std::ops::Sub;
+use core::ops::Sub;
 
 use num_traits::Zero;
 

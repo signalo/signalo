@@ -4,7 +4,7 @@
 
 //! Debounce filters.
 
-use std::cmp::PartialEq;
+use core::cmp::PartialEq;
 
 use signalo_traits::Filter;
 use signalo_traits::{

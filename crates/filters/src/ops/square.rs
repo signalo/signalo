@@ -4,7 +4,7 @@
 
 //! Arithmetic square filters.
 
-use std::ops::Mul;
+use core::ops::Mul;
 
 use signalo_traits::Filter;
 

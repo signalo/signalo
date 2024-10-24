@@ -6,7 +6,7 @@
 
 #![cfg(feature = "dimensioned")]
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use dimensioned::{
     traits::Dimensioned,
