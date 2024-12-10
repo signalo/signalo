@@ -416,7 +416,7 @@ mod tests {
 
     #[test]
     fn single_peak_4() {
-        let input = vec![10, 20, 30, 100, 30, 20, 10];
+        let input = [10, 20, 30, 100, 30, 20, 10];
         let output = vec![10, 10, 20, 20, 30, 30, 20];
 
         test_filter!(4, input, output);
@@ -424,105 +424,105 @@ mod tests {
 
     #[test]
     fn single_peak_5() {
-        let input = vec![10, 20, 30, 100, 30, 20, 10];
+        let input = [10, 20, 30, 100, 30, 20, 10];
         let output = vec![10, 10, 20, 20, 30, 30, 30];
         test_filter!(5, input, output);
     }
 
     #[test]
     fn single_valley_4() {
-        let input = vec![90, 80, 70, 10, 70, 80, 90];
+        let input = [90, 80, 70, 10, 70, 80, 90];
         let output = vec![90, 80, 80, 70, 70, 70, 70];
         test_filter!(4, input, output);
     }
 
     #[test]
     fn single_valley_5() {
-        let input = vec![90, 80, 70, 10, 70, 80, 90];
+        let input = [90, 80, 70, 10, 70, 80, 90];
         let output = vec![90, 80, 80, 70, 70, 70, 70];
         test_filter!(5, input, output);
     }
 
     #[test]
     fn single_outlier_4() {
-        let input = vec![10, 10, 10, 100, 10, 10, 10];
+        let input = [10, 10, 10, 100, 10, 10, 10];
         let output = vec![10, 10, 10, 10, 10, 10, 10];
         test_filter!(4, input, output);
     }
 
     #[test]
     fn single_outlier_5() {
-        let input = vec![10, 10, 10, 100, 10, 10, 10];
+        let input = [10, 10, 10, 100, 10, 10, 10];
         let output = vec![10, 10, 10, 10, 10, 10, 10];
         test_filter!(5, input, output);
     }
 
     #[test]
     fn triple_outlier_4() {
-        let input = vec![10, 10, 100, 100, 100, 10, 10];
+        let input = [10, 10, 100, 100, 100, 10, 10];
         let output = vec![10, 10, 10, 10, 100, 100, 10];
         test_filter!(4, input, output);
     }
 
     #[test]
     fn triple_outlier_5() {
-        let input = vec![10, 10, 100, 100, 100, 10, 10];
+        let input = [10, 10, 100, 100, 100, 10, 10];
         let output = vec![10, 10, 10, 10, 100, 100, 100];
         test_filter!(5, input, output);
     }
 
     #[test]
     fn quintuple_outlier_4() {
-        let input = vec![10, 100, 100, 100, 100, 100, 10];
+        let input = [10, 100, 100, 100, 100, 100, 10];
         let output = vec![10, 10, 100, 100, 100, 100, 100];
         test_filter!(4, input, output);
     }
 
     #[test]
     fn quintuple_outlier_5() {
-        let input = vec![10, 100, 100, 100, 100, 100, 10];
+        let input = [10, 100, 100, 100, 100, 100, 10];
         let output = vec![10, 10, 100, 100, 100, 100, 100];
         test_filter!(5, input, output);
     }
 
     #[test]
     fn alternating_4() {
-        let input = vec![10, 20, 10, 20, 10, 20, 10];
+        let input = [10, 20, 10, 20, 10, 20, 10];
         let output = vec![10, 10, 10, 10, 10, 10, 10];
         test_filter!(4, input, output);
     }
 
     #[test]
     fn alternating_5() {
-        let input = vec![10, 20, 10, 20, 10, 20, 10];
+        let input = [10, 20, 10, 20, 10, 20, 10];
         let output = vec![10, 10, 10, 10, 10, 20, 10];
         test_filter!(5, input, output);
     }
 
     #[test]
     fn ascending_4() {
-        let input = vec![10, 20, 30, 40, 50, 60, 70];
+        let input = [10, 20, 30, 40, 50, 60, 70];
         let output = vec![10, 10, 20, 20, 30, 40, 50];
         test_filter!(4, input, output);
     }
 
     #[test]
     fn ascending_5() {
-        let input = vec![10, 20, 30, 40, 50, 60, 70];
+        let input = [10, 20, 30, 40, 50, 60, 70];
         let output = vec![10, 10, 20, 20, 30, 40, 50];
         test_filter!(5, input, output);
     }
 
     #[test]
     fn descending_4() {
-        let input = vec![70, 60, 50, 40, 30, 20, 10];
+        let input = [70, 60, 50, 40, 30, 20, 10];
         let output = vec![70, 60, 60, 50, 40, 30, 20];
         test_filter!(4, input, output);
     }
 
     #[test]
     fn descending_5() {
-        let input = vec![70, 60, 50, 40, 30, 20, 10];
+        let input = [70, 60, 50, 40, 30, 20, 10];
         let output = vec![70, 60, 60, 50, 50, 40, 30];
         test_filter!(5, input, output);
     }

@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Rem::default();
+        let filter = Rem;
         let input = get_input();
         let output: Vec<_> = input
             .iter()

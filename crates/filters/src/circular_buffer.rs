@@ -453,32 +453,32 @@ mod tests {
     fn is_empty() {
         let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
 
-        assert_eq!(buffer.is_empty(), true);
+        assert!(buffer.is_empty());
 
         buffer.push_back(42.0);
-        assert_eq!(buffer.is_empty(), false);
+        assert!(!buffer.is_empty());
 
         buffer.pop_front();
-        assert_eq!(buffer.is_empty(), true);
+        assert!(buffer.is_empty());
     }
 
     #[test]
     fn is_full() {
         let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
 
-        assert_eq!(buffer.is_full(), false);
+        assert!(!buffer.is_full());
 
         buffer.push_back(1.0);
-        assert_eq!(buffer.is_full(), false);
+        assert!(!buffer.is_full());
 
         buffer.push_back(2.0);
-        assert_eq!(buffer.is_full(), false);
+        assert!(!buffer.is_full());
 
         buffer.push_back(3.0);
-        assert_eq!(buffer.is_full(), true);
+        assert!(buffer.is_full());
 
         buffer.pop_front();
-        assert_eq!(buffer.is_full(), false);
+        assert!(!buffer.is_full());
     }
 
     #[test]

@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Div::default();
+        let filter = Div;
         let input = get_input();
         let output: Vec<_> = input
             .iter()

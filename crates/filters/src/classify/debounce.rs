@@ -138,7 +138,7 @@ mod tests {
             predicate: 1,
             outputs: u8::classes(),
         });
-        let input = vec![0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1];
+        let input = [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1];
         let output: Vec<_> = input
             .iter()
             .scan(filter, |filter, &input| Some(filter.filter(input)))

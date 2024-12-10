@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Mul::default();
+        let filter = Mul;
         let input = get_input();
         let output: Vec<_> = input
             .iter()
