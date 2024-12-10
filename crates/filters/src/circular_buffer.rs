@@ -285,6 +285,8 @@ impl<T, const N: usize> DoubleEndedIterator for IntoIter<T, N> {
     }
 }
 
+impl<T, const N: usize> ExactSizeIterator for IntoIter<T, N> {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
