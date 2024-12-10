@@ -132,6 +132,42 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         Some(value)
     }
 
+    pub fn back(&self) -> Option<&T> {
+        if self.is_empty() {
+            return None;
+        }
+
+        let capacity = Self::capacity();
+
+        if capacity == 0 {
+            return None;
+        }
+
+        let index = (self.end - 1) % capacity;
+        let maybe_uninit = &self.array[index];
+        let value = unsafe { maybe_uninit.assume_init_ref() };
+
+        Some(value)
+    }
+
+    pub fn front(&self) -> Option<&T> {
+        if self.is_empty() {
+            return None;
+        }
+
+        let capacity = Self::capacity();
+
+        if capacity == 0 {
+            return None;
+        }
+
+        let index = self.start % capacity;
+        let maybe_uninit = &self.array[index];
+        let value = unsafe { maybe_uninit.assume_init_ref() };
+
+        Some(value)
+    }
+
     pub fn is_empty(&self) -> bool {
         self.start == self.end
     }
@@ -243,30 +279,74 @@ mod tests {
 
         buffer.push_back(1.0);
         assert_eq!(buffer.len(), 1);
+        assert_eq!(buffer.back(), Some(&1.0));
 
         buffer.push_back(2.0);
         assert_eq!(buffer.len(), 2);
+        assert_eq!(buffer.back(), Some(&2.0));
 
         buffer.push_back(3.0);
         assert_eq!(buffer.len(), 3);
+        assert_eq!(buffer.back(), Some(&3.0));
 
         buffer.push_back(4.0);
         assert_eq!(buffer.len(), 3);
+        assert_eq!(buffer.back(), Some(&4.0));
 
         buffer.push_back(5.0);
         assert_eq!(buffer.len(), 3);
+        assert_eq!(buffer.back(), Some(&5.0));
     }
 
     #[test]
     fn pop_front() {
         let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
 
+        assert_eq!(buffer.front(), None);
         assert_eq!(buffer.pop_front(), None);
 
         buffer.push_back(42.0);
+        assert_eq!(buffer.front(), Some(&42.0));
         assert_eq!(buffer.pop_front(), Some(42.0));
 
+        assert_eq!(buffer.front(), None);
         assert_eq!(buffer.pop_front(), None);
+    }
+
+    #[test]
+    fn front() {
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
+        assert_eq!(buffer.front(), None);
+
+        buffer.push_back(1.0);
+        assert_eq!(buffer.front(), Some(&1.0));
+
+        buffer.push_back(2.0);
+        assert_eq!(buffer.front(), Some(&1.0));
+
+        buffer.pop_front();
+        assert_eq!(buffer.back(), Some(&2.0));
+
+        buffer.pop_front();
+        assert_eq!(buffer.back(), None);
+    }
+
+    #[test]
+    fn back() {
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
+        assert_eq!(buffer.back(), None);
+
+        buffer.push_back(1.0);
+        assert_eq!(buffer.back(), Some(&1.0));
+
+        buffer.push_back(2.0);
+        assert_eq!(buffer.back(), Some(&2.0));
+
+        buffer.pop_front();
+        assert_eq!(buffer.back(), Some(&2.0));
+
+        buffer.pop_front();
+        assert_eq!(buffer.back(), None);
     }
 
     #[test]
