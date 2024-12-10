@@ -7,8 +7,7 @@
 use core::fmt;
 use core::mem::MaybeUninit;
 
-use signalo_traits::Filter;
-use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
+use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
 pub mod exp;
 
