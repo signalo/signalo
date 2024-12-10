@@ -127,6 +127,22 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         Some(value)
     }
 
+    pub fn pop_back(&mut self) -> Option<T> {
+        if self.is_empty() {
+            return None;
+        }
+
+        let index = (self.end - 1) % Self::capacity();
+        let slot = &mut self.array[index];
+        let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
+        let value = unsafe { maybe_uninit.assume_init() };
+
+        self.end -= 1;
+        assert!(self.start <= self.end);
+
+        Some(value)
+    }
+
     pub fn back(&self) -> Option<&T> {
         if self.is_empty() {
             return None;
@@ -318,6 +334,26 @@ mod tests {
 
         assert_eq!(buffer.front(), None);
         assert_eq!(buffer.pop_front(), None);
+    }
+
+    #[test]
+    fn pop_back() {
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
+
+        assert_eq!(buffer.back(), None);
+        assert_eq!(buffer.pop_back(), None);
+
+        buffer.push_back(1.0);
+        buffer.push_back(2.0);
+
+        assert_eq!(buffer.back(), Some(&2.0));
+        assert_eq!(buffer.pop_back(), Some(2.0));
+
+        assert_eq!(buffer.back(), Some(&1.0));
+        assert_eq!(buffer.pop_back(), Some(1.0));
+
+        assert_eq!(buffer.back(), None);
+        assert_eq!(buffer.pop_back(), None);
     }
 
     #[test]
