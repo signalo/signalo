@@ -99,8 +99,7 @@ impl<T, const N: usize> CircularBuffer<T, N> {
             None
         };
 
-        let capacity = Self::capacity();
-        let index = self.end % capacity;
+        let index = self.end % Self::capacity();
 
         if self.end == usize::MAX {
             self.modulorize_cursors();
@@ -119,8 +118,7 @@ impl<T, const N: usize> CircularBuffer<T, N> {
             return None;
         }
 
-        let capacity = Self::capacity();
-        let index = self.start % capacity;
+        let index = self.start % Self::capacity();
 
         self.start += 1;
         assert!(self.start <= self.end);
