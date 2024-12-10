@@ -149,9 +149,7 @@ impl<T, const N: usize> CircularBuffer<T, N> {
     }
 
     pub fn pop_front(&mut self) -> Option<T> {
-        let Some(index) = self.front_index() else {
-            return None;
-        };
+        let index = self.front_index()?;
 
         let slot = &mut self.array[index];
         let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
@@ -165,9 +163,7 @@ impl<T, const N: usize> CircularBuffer<T, N> {
     }
 
     pub fn pop_back(&mut self) -> Option<T> {
-        let Some(index) = self.back_index() else {
-            return None;
-        };
+        let index = self.back_index()?;
 
         let slot = &mut self.array[index];
         let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
@@ -241,6 +237,12 @@ impl<T, const N: usize> CircularBuffer<T, N> {
     }
 
     pub fn as_slices(&self) -> (&[T], &[T]) {
+        // FIXME: use `slice_assume_init_ref` instead, once stable:
+        // https://github.com/rust-lang/rust/issues/63569
+        unsafe fn slice_assume_init_ref<T>(slice: &[MaybeUninit<T>]) -> &[T] {
+            unsafe { &*(slice as *const [MaybeUninit<T>] as *const [T]) }
+        }
+
         let len = self.len();
 
         if len == 0 {
@@ -260,16 +262,16 @@ impl<T, const N: usize> CircularBuffer<T, N> {
 
         debug_assert_eq!(prefix.len() + suffix.len(), len);
 
-        // FIXME: use `slice_assume_init_ref` instead, once stable:
-        // https://github.com/rust-lang/rust/issues/63569
-        unsafe fn slice_assume_init_ref<T>(slice: &[MaybeUninit<T>]) -> &[T] {
-            unsafe { &*(slice as *const [MaybeUninit<T>] as *const [T]) }
-        }
-
         unsafe { (slice_assume_init_ref(prefix), slice_assume_init_ref(suffix)) }
     }
 
     pub fn as_mut_slices(&mut self) -> (&mut [T], &mut [T]) {
+        // FIXME: use `slice_assume_init_mut` instead, once stable:
+        // https://github.com/rust-lang/rust/issues/63569
+        unsafe fn slice_assume_init_mut<T>(slice: &mut [MaybeUninit<T>]) -> &mut [T] {
+            unsafe { &mut *(slice as *mut [MaybeUninit<T>] as *mut [T]) }
+        }
+
         let len = self.len();
 
         if len == 0 {
@@ -288,12 +290,6 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         };
 
         debug_assert_eq!(prefix.len() + suffix.len(), len);
-
-        // FIXME: use `slice_assume_init_mut` instead, once stable:
-        // https://github.com/rust-lang/rust/issues/63569
-        unsafe fn slice_assume_init_mut<T>(slice: &mut [MaybeUninit<T>]) -> &mut [T] {
-            unsafe { &mut *(slice as *mut [MaybeUninit<T>] as *mut [T]) }
-        }
 
         unsafe { (slice_assume_init_mut(prefix), slice_assume_init_mut(suffix)) }
     }
