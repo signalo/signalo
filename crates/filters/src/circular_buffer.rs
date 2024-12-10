@@ -102,11 +102,14 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         let capacity = Self::capacity();
         let index = self.end % capacity;
 
+        if self.end == usize::MAX {
+            self.modulorize_cursors();
+        }
+
         self.end += 1;
+        assert!(self.start <= self.end);
 
         self.array[index] = MaybeUninit::new(value);
-
-        assert!(self.start <= self.end);
 
         result
     }
@@ -121,12 +124,11 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         let index = self.start % capacity;
 
         self.start += 1;
+        assert!(self.start <= self.end);
 
         let slot = &mut self.array[index];
         let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
         let value = unsafe { maybe_uninit.assume_init() };
-
-        assert!(self.start <= self.end);
 
         Some(value)
     }
@@ -153,6 +155,11 @@ impl<T, const N: usize> CircularBuffer<T, N> {
             end: self.end,
             buffer: self,
         }
+    }
+
+    fn modulorize_cursors(&mut self) {
+        self.start = self.start % Self::capacity();
+        self.end = self.end % Self::capacity();
     }
 }
 
