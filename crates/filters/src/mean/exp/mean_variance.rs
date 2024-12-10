@@ -127,7 +127,7 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, N> ResetMut for MeanVariance<T, N> where Self: Reset {}
+impl<T> ResetMut for MeanVariance<T> where Self: Reset {}
 
 impl<T> Filter<T> for MeanVariance<T>
 where
