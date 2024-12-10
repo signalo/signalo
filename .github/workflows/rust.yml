@@ -19,7 +19,18 @@ jobs:
       - name: Rustup Version
         shell: bash
         run: rustup --version
-
+  
+  check_no_std:
+    name: Check no_std
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          targets: thumbv7em-none-eabihf
+      - run: cargo check --target thumbv7em-none-eabihf
+      
   test:
     name: Test Suite
     runs-on: ubuntu-latest
@@ -87,14 +98,3 @@ jobs:
         run: cargo msrv --version
       - name: run cargo-msrv verify
         run: cargo msrv verify
-
-  check_no_std:
-    name: Check no_std
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-          targets: thumbv7em-none-eabihf
-      - run: cargo check --target thumbv7em-none-eabihf
