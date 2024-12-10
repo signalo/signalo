@@ -5,7 +5,6 @@
 use core::{
     iter::FromIterator,
     mem::{self, MaybeUninit},
-    ptr,
 };
 
 #[derive(Debug)]
@@ -82,8 +81,7 @@ impl<T, const N: usize> Drop for CircularBuffer<T, N> {
         for index in self.read..self.write {
             let maybe_uninit = &mut self.array[index % capacity];
             unsafe {
-                // FIXME: use `maybe_uninit.assume_init_drop()` once stabilized.
-                ptr::drop_in_place(maybe_uninit.as_mut_ptr());
+                maybe_uninit.assume_init_drop();
             }
         }
     }
