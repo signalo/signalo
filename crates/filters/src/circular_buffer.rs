@@ -229,11 +229,8 @@ impl<T, const N: usize> CircularBuffer<T, N> {
     }
 
     pub fn iter(&self) -> Iter<'_, T, N> {
-        Iter {
-            start: self.start,
-            end: self.end,
-            buffer: self,
-        }
+        let (prefix, suffix) = self.as_slices();
+        Iter::new(prefix, suffix)
     }
 
     pub fn as_slices(&self) -> (&[T], &[T]) {
@@ -326,30 +323,22 @@ impl<T, const N: usize> CircularBuffer<T, N> {
 }
 
 pub struct Iter<'a, T, const N: usize> {
-    start: usize,
-    end: usize,
-    buffer: &'a CircularBuffer<T, N>,
+    inner: core::iter::Chain<core::slice::Iter<'a, T>, core::slice::Iter<'a, T>>,
+}
+
+impl<'a, T, const N: usize> Iter<'a, T, N> {
+    fn new(prefix: &'a [T], suffix: &'a [T]) -> Self {
+        Self {
+            inner: prefix.iter().chain(suffix.iter()),
+        }
+    }
 }
 
 impl<'a, T, const N: usize> Iterator for Iter<'a, T, N> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.start == self.end {
-            return None;
-        }
-
-        let capacity = CircularBuffer::<T, N>::capacity();
-        let index = self.start;
-
-        self.start += 1;
-
-        let value = {
-            let maybe_uninit = &self.buffer.array[index % capacity];
-            unsafe { maybe_uninit.assume_init_ref() }
-        };
-
-        Some(value)
+        self.inner.next()
     }
 }
 
@@ -610,10 +599,16 @@ mod tests {
 
     #[test]
     fn iter() {
-        let buffer: CircularBuffer<f32, 3> = CircularBuffer::from_iter(vec![1.0, 2.0, 3.0]);
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::from_iter(vec![1.0, 2.0, 3.0]);
 
         let items: Vec<&f32> = buffer.iter().collect();
         assert_eq!(items, vec![&1.0, &2.0, &3.0]);
+
+        buffer.push_back(4.0);
+        buffer.push_back(5.0);
+
+        let items: Vec<&f32> = buffer.iter().collect();
+        assert_eq!(items, vec![&3.0, &4.0, &5.0]);
     }
 
     #[test]
