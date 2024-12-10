@@ -32,9 +32,6 @@ extern crate core as std;
 #[cfg(all(test, feature = "std"))]
 extern crate std;
 
-#[cfg(test)]
-extern crate testdrop;
-
 pub extern crate num_traits;
 
 #[cfg(feature = "dimensioned")]
