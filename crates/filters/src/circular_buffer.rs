@@ -269,6 +269,11 @@ pub struct IntoIter<T, const N: usize> {
 impl<T, const N: usize> Iterator for IntoIter<T, N> {
     type Item = T;
 
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.buffer.len();
+        (len, Some(len))
+    }
+
     fn next(&mut self) -> Option<Self::Item> {
         self.buffer.pop_front()
     }
