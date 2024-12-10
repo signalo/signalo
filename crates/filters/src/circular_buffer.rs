@@ -240,6 +240,35 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         }
     }
 
+    pub fn as_slices(&self) -> (&[T], &[T]) {
+        let len = self.len();
+
+        if len == 0 {
+            return (&[], &[]);
+        }
+
+        let start = self.start_index();
+        let end = self.end_index();
+
+        let (suffix, prefix) = self.array.split_at(start);
+
+        let (prefix, suffix) = if start < end {
+            (&prefix[..len], &[][..])
+        } else {
+            (&prefix[..(len - end)], &suffix[..(end)])
+        };
+
+        debug_assert_eq!(prefix.len() + suffix.len(), len);
+
+        // FIXME: use `slice_assume_init_ref` instead, once stable:
+        // https://github.com/rust-lang/rust/issues/63569
+        unsafe fn slice_assume_init_ref<T>(slice: &[MaybeUninit<T>]) -> &[T] {
+            unsafe { &*(slice as *const [MaybeUninit<T>] as *const [T]) }
+        }
+
+        unsafe { (slice_assume_init_ref(prefix), slice_assume_init_ref(suffix)) }
+    }
+
     fn start_index(&self) -> usize {
         self.start % Self::capacity()
     }
@@ -568,6 +597,24 @@ mod tests {
 
         let items: Vec<f32> = buffer.into_iter().collect();
         assert_eq!(items, vec![1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn as_slices() {
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
+        assert_eq!(buffer.as_slices(), (&[][..], &[][..]));
+
+        buffer.push_back(1.0);
+        assert_eq!(buffer.as_slices(), (&[1.0][..], &[][..]));
+        buffer.push_back(2.0);
+        assert_eq!(buffer.as_slices(), (&[1.0, 2.0][..], &[][..]));
+        buffer.push_back(3.0);
+        assert_eq!(buffer.as_slices(), (&[1.0, 2.0, 3.0][..], &[][..]));
+
+        buffer.push_back(4.0);
+        assert_eq!(buffer.as_slices(), (&[2.0, 3.0][..], &[4.0][..]));
+        buffer.push_back(5.0);
+        assert_eq!(buffer.as_slices(), (&[3.0][..], &[4.0, 5.0][..]));
     }
 
     #[test]
