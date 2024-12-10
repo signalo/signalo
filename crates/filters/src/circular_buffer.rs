@@ -269,6 +269,35 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         unsafe { (slice_assume_init_ref(prefix), slice_assume_init_ref(suffix)) }
     }
 
+    pub fn as_mut_slices(&mut self) -> (&mut [T], &mut [T]) {
+        let len = self.len();
+
+        if len == 0 {
+            return (&mut [], &mut []);
+        }
+
+        let start = self.start_index();
+        let end = self.end_index();
+
+        let (suffix, prefix) = self.array.split_at_mut(start);
+
+        let (prefix, suffix) = if start < end {
+            (&mut prefix[..len], &mut [][..])
+        } else {
+            (&mut prefix[..(len - end)], &mut suffix[..(end)])
+        };
+
+        debug_assert_eq!(prefix.len() + suffix.len(), len);
+
+        // FIXME: use `slice_assume_init_mut` instead, once stable:
+        // https://github.com/rust-lang/rust/issues/63569
+        unsafe fn slice_assume_init_mut<T>(slice: &mut [MaybeUninit<T>]) -> &mut [T] {
+            unsafe { &mut *(slice as *mut [MaybeUninit<T>] as *mut [T]) }
+        }
+
+        unsafe { (slice_assume_init_mut(prefix), slice_assume_init_mut(suffix)) }
+    }
+
     fn start_index(&self) -> usize {
         self.start % Self::capacity()
     }
@@ -615,6 +644,33 @@ mod tests {
         assert_eq!(buffer.as_slices(), (&[2.0, 3.0][..], &[4.0][..]));
         buffer.push_back(5.0);
         assert_eq!(buffer.as_slices(), (&[3.0][..], &[4.0, 5.0][..]));
+    }
+
+    #[test]
+    fn as_mut_slices() {
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
+        assert_eq!(buffer.as_mut_slices(), (&mut [][..], &mut [][..]));
+
+        buffer.push_back(1.0);
+        assert_eq!(buffer.as_mut_slices(), (&mut [1.0][..], &mut [][..]));
+        buffer.push_back(2.0);
+        assert_eq!(buffer.as_mut_slices(), (&mut [1.0, 2.0][..], &mut [][..]));
+        buffer.push_back(3.0);
+        assert_eq!(
+            buffer.as_mut_slices(),
+            (&mut [1.0, 2.0, 3.0][..], &mut [][..])
+        );
+
+        buffer.push_back(4.0);
+        assert_eq!(
+            buffer.as_mut_slices(),
+            (&mut [2.0, 3.0][..], &mut [4.0][..])
+        );
+        buffer.push_back(5.0);
+        assert_eq!(
+            buffer.as_mut_slices(),
+            (&mut [3.0][..], &mut [4.0, 5.0][..])
+        );
     }
 
     #[test]
