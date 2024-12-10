@@ -340,15 +340,49 @@ mod tests {
 
     #[test]
     fn drop() {
-        use testdrop::{Item, TestDrop};
+        use droptest::prelude::*;
 
-        let td = TestDrop::new();
+        let registry = DropRegistry::default();
 
-        let buffer: CircularBuffer<Item, 5> = (0..3).map(|_| td.new_item().1).collect();
+        let mut buffer: CircularBuffer<DropGuard<()>, 5> =
+            (0..3).map(|_| registry.new_guard()).collect();
+
+        let drop_stats = registry.stats();
+
+        // Buffer holds 3 guards, out of capacity of 5.
+        // Thus 0 guard should have been dropped by now:
+        assert_eq!(3, drop_stats.created);
+        assert_eq!(0, drop_stats.dropped);
+
+        for _ in 0..2 {
+            buffer.push_back(registry.new_guard());
+        }
+
+        // Buffer holds 5 guards, out of capacity of 5:
+        // Thus 0 guard should have been dropped by now:
+        let drop_stats = registry.stats();
+
+        assert_eq!(5, drop_stats.created);
+        assert_eq!(0, drop_stats.dropped);
+
+        for _ in 0..2 {
+            buffer.push_back(registry.new_guard());
+        }
+
+        // Buffer holds 5 guards, out of capacity of 5:
+        // Thus 2 guard should have been dropped by now:
+        let drop_stats = registry.stats();
+
+        assert_eq!(7, drop_stats.created);
+        assert_eq!(2, drop_stats.dropped);
 
         std::mem::drop(buffer);
 
-        assert_eq!(3, td.num_tracked_items());
-        assert_eq!(3, td.num_dropped_items());
+        // Buffer held 5 guards, out of capacity of 5:
+        // Thus 2 + 5 = 7 guard should have been dropped by now:
+        let drop_stats = registry.stats();
+
+        assert_eq!(7, drop_stats.created);
+        assert_eq!(7, drop_stats.dropped);
     }
 }

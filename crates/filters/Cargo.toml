@@ -19,7 +19,7 @@ signalo_traits = { workspace = true }
 
 [dev-dependencies]
 nearly_eq = { workspace = true }
-testdrop = "0.1.2"
+droptest = "0.2.1"
 
 [features]
 default = []
