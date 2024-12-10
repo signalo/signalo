@@ -80,8 +80,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
+      - uses: cargo-bins/cargo-binstall@v1.10.13
       - name: Install cargo-msrv
-        run: cargo install cargo-msrv@0.16.0-beta.21 --all-features
+        run: cargo binstall cargo-msrv@0.16.0-beta.21 --no-confirm --all-features
       - name: cargo-msrv version
         run: cargo msrv --version
       - name: run cargo-msrv verify
