@@ -48,11 +48,12 @@ impl<T, const N: usize> Default for CircularBuffer<T, N> {
         // FIXME: use `uninit_array` instead, once stable:
         // https://github.com/rust-lang/rust/issues/96097
         let array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+        let offset = Self::cursor_alignment();
 
         Self {
             array,
-            start: 0,
-            end: 0,
+            start: offset,
+            end: offset,
         }
     }
 }
@@ -99,11 +100,9 @@ impl<T, const N: usize> CircularBuffer<T, N> {
             None
         };
 
-        let index = self.end % Self::capacity();
+        self.realign_cursors_if_necessary();
 
-        if self.end == usize::MAX {
-            self.modulorize_cursors();
-        }
+        let index = self.end % Self::capacity();
 
         self.end += 1;
         assert!(self.start <= self.end);
@@ -190,9 +189,16 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         }
     }
 
-    fn modulorize_cursors(&mut self) {
-        self.start = self.start % Self::capacity();
-        self.end = self.end % Self::capacity();
+    const fn cursor_alignment() -> usize {
+        (usize::MAX - usize::MIN) / 2
+    }
+
+    fn realign_cursors_if_necessary(&mut self) {
+        if self.start == usize::MIN || self.end == usize::MAX {
+            let offset = Self::cursor_alignment();
+            self.start = offset + (self.start % Self::capacity());
+            self.end = offset + (self.end % Self::capacity());
+        }
     }
 }
 
