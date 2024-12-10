@@ -307,9 +307,14 @@ mod tests {
         assert_eq!(buffer.front(), None);
         assert_eq!(buffer.pop_front(), None);
 
-        buffer.push_back(42.0);
-        assert_eq!(buffer.front(), Some(&42.0));
-        assert_eq!(buffer.pop_front(), Some(42.0));
+        buffer.push_back(1.0);
+        buffer.push_back(2.0);
+
+        assert_eq!(buffer.front(), Some(&1.0));
+        assert_eq!(buffer.pop_front(), Some(1.0));
+
+        assert_eq!(buffer.front(), Some(&2.0));
+        assert_eq!(buffer.pop_front(), Some(2.0));
 
         assert_eq!(buffer.front(), None);
         assert_eq!(buffer.pop_front(), None);
