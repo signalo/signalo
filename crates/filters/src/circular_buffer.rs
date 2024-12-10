@@ -114,7 +114,6 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         result
     }
 
-    #[must_use]
     pub fn pop_front(&mut self) -> Option<T> {
         if self.is_empty() {
             return None;
@@ -258,7 +257,7 @@ mod tests {
         buffer.push_back(42.0);
         assert_eq!(buffer.is_empty(), false);
 
-        let _ = buffer.pop_front();
+        buffer.pop_front();
         assert_eq!(buffer.is_empty(), true);
     }
 
@@ -277,7 +276,7 @@ mod tests {
         buffer.push_back(3.0);
         assert_eq!(buffer.is_full(), true);
 
-        let _ = buffer.pop_front();
+        buffer.pop_front();
         assert_eq!(buffer.is_full(), false);
     }
 
@@ -296,7 +295,7 @@ mod tests {
         buffer.push_back(3.0);
         assert_eq!(buffer.len(), 3);
 
-        let _ = buffer.pop_front();
+        buffer.pop_front();
         assert_eq!(buffer.len(), 2);
     }
 
