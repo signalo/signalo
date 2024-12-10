@@ -11,6 +11,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive")]
+use signalo_traits::ResetMut;
+
 use super::mean::{Config as MeanConfig, Mean};
 
 /// Output of `MeanVariance` filter.

@@ -10,6 +10,9 @@ use num_traits::Zero;
 
 use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
+#[cfg(feature = "derive")]
+use signalo_traits::ResetMut;
+
 /// The differentiate filter's state.
 #[derive(Clone, Debug)]
 pub struct State<T> {

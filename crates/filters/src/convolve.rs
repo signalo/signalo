@@ -11,6 +11,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive")]
+use signalo_traits::ResetMut;
+
 use crate::circular_buffer::CircularBuffer;
 
 pub mod savitzky_golay;

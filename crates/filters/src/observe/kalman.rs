@@ -11,6 +11,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive")]
+use signalo_traits::ResetMut;
+
 /// The kalman filter's configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T> {

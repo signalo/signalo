@@ -11,6 +11,9 @@ use signalo_traits::{
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "derive")]
+use signalo_traits::ResetMut;
+
 /// The alpha-beta filter's configuration.
 ///
 /// Note: _Values of `alpha` and `beta` typically are adjusted experimentally.

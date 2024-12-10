@@ -10,6 +10,9 @@ use num_traits::{Num, Zero};
 
 use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
+#[cfg(feature = "derive")]
+use signalo_traits::ResetMut;
+
 use crate::circular_buffer::CircularBuffer;
 
 /// The mean filter's state.

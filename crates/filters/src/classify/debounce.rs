@@ -108,9 +108,6 @@ impl<T, U> Reset for Debounce<T, U> {
 #[cfg(feature = "derive")]
 impl<T, U> ResetMut for Debounce<T, U> where Self: Reset {}
 
-#[cfg(feature = "derive")]
-impl<T, U> ResetMut for Debounce<T, U> where Self: Reset {}
-
 impl<T, U> Filter<T> for Debounce<T, U>
 where
     T: Clone + PartialEq<T>,

@@ -10,6 +10,9 @@ use num_traits::{Num, Signed};
 
 use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
+#[cfg(feature = "derive")]
+use signalo_traits::ResetMut;
+
 use super::mean::Mean;
 
 /// Output of `MeanVariance` filter.

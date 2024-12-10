@@ -9,6 +9,9 @@ use core::mem::MaybeUninit;
 
 use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
+#[cfg(feature = "derive")]
+use signalo_traits::ResetMut;
+
 pub mod exp;
 
 /// The median filter's state.
