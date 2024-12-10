@@ -338,18 +338,18 @@ mod tests {
 
     fn split_analysis(output: &[Decomposition<f32>]) -> (Vec<f32>, Vec<f32>) {
         let low: Vec<_> = output
-            .into_iter()
+            .iter()
             .map(|Decomposition { low, .. }| *low)
             .collect();
         let high: Vec<_> = output
-            .into_iter()
+            .iter()
             .map(|Decomposition { high, .. }| *high)
             .collect();
         (low, high)
     }
 
     fn with_padding<T: Clone>(vec: Vec<T>, prefix: usize, suffix: usize) -> Vec<T> {
-        debug_assert!(vec.len() > 0);
+        debug_assert!(!vec.is_empty());
 
         let len = vec.len();
         let prefix_item = vec[0].clone();

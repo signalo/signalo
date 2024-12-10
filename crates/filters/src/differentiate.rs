@@ -98,7 +98,7 @@ mod tests {
     fn test() {
         let filter = Differentiate::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let input = vec![
+        let input = [
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0,
         ];

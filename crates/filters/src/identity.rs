@@ -26,8 +26,8 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Identity::default();
-        let input = vec![1.0, 1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0, 34.0];
+        let filter = Identity;
+        let input = [1.0, 1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0, 34.0];
         let output: Vec<_> = input
             .iter()
             .scan(filter, |filter, &input| Some(filter.filter(input)))

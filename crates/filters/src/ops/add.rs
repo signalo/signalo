@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter = Add::default();
+        let filter = Add;
         let input = get_input();
         let output: Vec<_> = input
             .iter()
