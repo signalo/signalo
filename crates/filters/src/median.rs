@@ -129,6 +129,7 @@ impl<T, const N: usize> Default for Median<T, N> {
 
                 // Everything is initialized. Cast the array to the initialized type.
                 // FIXME: use `array_assume_init` instead, once stable:
+                // https://github.com/rust-lang/rust/issues/96097
                 unsafe {
                     #[allow(clippy::ptr_as_ptr)]
                     (array.as_ptr() as *const [ListNode<T>; N]).read()
