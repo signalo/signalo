@@ -103,11 +103,10 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         self.realign_cursors_if_necessary();
 
         let index = self.end % Self::capacity();
+        self.array[index] = MaybeUninit::new(value);
 
         self.end += 1;
         assert!(self.start <= self.end);
-
-        self.array[index] = MaybeUninit::new(value);
 
         result
     }
@@ -118,13 +117,12 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         }
 
         let index = self.start % Self::capacity();
-
-        self.start += 1;
-        assert!(self.start <= self.end);
-
         let slot = &mut self.array[index];
         let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
         let value = unsafe { maybe_uninit.assume_init() };
+
+        self.start += 1;
+        assert!(self.start <= self.end);
 
         Some(value)
     }
