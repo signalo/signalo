@@ -48,12 +48,11 @@ impl<T, const N: usize> Default for CircularBuffer<T, N> {
         // FIXME: use `uninit_array` instead, once stable:
         // https://github.com/rust-lang/rust/issues/96097
         let array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
-        let offset = Self::cursor_alignment();
 
         Self {
             array,
-            start: offset,
-            end: offset,
+            start: 0,
+            end: 0,
         }
     }
 }
@@ -100,13 +99,23 @@ impl<T, const N: usize> CircularBuffer<T, N> {
             None
         };
 
-        self.realign_cursors_if_necessary();
-
         let index = self.end_index();
         self.array[index] = MaybeUninit::new(value);
 
-        self.end += 1;
-        assert!(self.start <= self.end);
+        debug_assert!(self.start <= self.end);
+
+        if self.end < usize::MAX {
+            self.end += 1;
+        } else {
+            let delta = self.end - self.start + 1;
+
+            // Jump to largest possible `end` index (within capacity) on overflow:
+            self.end = Self::capacity();
+            // Shift `start` index accordingly:
+            self.start = self.end - delta;
+        }
+
+        debug_assert!(self.start < self.end);
 
         result
     }
@@ -118,10 +127,20 @@ impl<T, const N: usize> CircularBuffer<T, N> {
             None
         };
 
-        self.realign_cursors_if_necessary();
+        debug_assert!(self.start <= self.end);
 
-        self.start -= 1;
-        assert!(self.start <= self.end);
+        if self.start > usize::MIN {
+            self.start -= 1;
+        } else {
+            let delta = self.end - self.start + 1;
+
+            // Jump to smallest possible `start` index (within capacity) on overflow:
+            self.start = 0;
+            // Shift `end` index accordingly:
+            self.end = self.start + delta;
+        }
+
+        debug_assert!(self.start < self.end);
 
         let index = self.start_index();
         self.array[index] = MaybeUninit::new(value);
@@ -130,33 +149,33 @@ impl<T, const N: usize> CircularBuffer<T, N> {
     }
 
     pub fn pop_front(&mut self) -> Option<T> {
-        if self.is_empty() {
+        let Some(index) = self.front_index() else {
             return None;
-        }
+        };
 
-        let index = self.start_index();
         let slot = &mut self.array[index];
         let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
         let value = unsafe { maybe_uninit.assume_init() };
 
+        assert!(self.start < self.end);
+
         self.start += 1;
-        assert!(self.start <= self.end);
 
         Some(value)
     }
 
     pub fn pop_back(&mut self) -> Option<T> {
-        if self.is_empty() {
+        let Some(index) = self.back_index() else {
             return None;
-        }
+        };
 
-        let index = self.end_index() - 1;
         let slot = &mut self.array[index];
         let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
         let value = unsafe { maybe_uninit.assume_init() };
 
+        assert!(self.start < self.end);
+
         self.end -= 1;
-        assert!(self.start <= self.end);
 
         Some(value)
     }
@@ -198,11 +217,11 @@ impl<T, const N: usize> CircularBuffer<T, N> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.start == self.end
+        (Self::capacity() == 0) || (self.start == self.end)
     }
 
     pub fn is_full(&self) -> bool {
-        self.len() == Self::capacity()
+        (Self::capacity() == 0) || (self.len() == Self::capacity())
     }
 
     pub fn len(&self) -> usize {
@@ -229,15 +248,25 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         self.end % Self::capacity()
     }
 
-    const fn cursor_alignment() -> usize {
-        (usize::MAX - usize::MIN) / 2
+    fn front_index(&self) -> Option<usize> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.start_index())
+        }
     }
 
-    fn realign_cursors_if_necessary(&mut self) {
-        if self.start == usize::MIN || self.end == usize::MAX {
-            let offset = Self::cursor_alignment();
-            self.start = offset + (self.start % Self::capacity());
-            self.end = offset + (self.end % Self::capacity());
+    fn back_index(&self) -> Option<usize> {
+        if self.is_empty() {
+            None
+        } else {
+            let end_index = self.end_index();
+
+            if end_index > 0 {
+                Some(end_index - 1)
+            } else {
+                Some(Self::capacity() - 1)
+            }
         }
     }
 }
