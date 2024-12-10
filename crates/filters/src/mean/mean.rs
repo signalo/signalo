@@ -8,8 +8,7 @@ use core::fmt;
 
 use num_traits::{Num, Zero};
 
-use signalo_traits::Filter;
-use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
+use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
 use crate::circular_buffer::CircularBuffer;
 

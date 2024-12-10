@@ -4,9 +4,8 @@
 
 //! Caching wrapper filters.
 
-use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
     State as StateTrait, StateMut, WithConfig,
 };
 

@@ -5,15 +5,13 @@
 //! Dimensional analysis wrapper filters.
 
 #![cfg(feature = "dimensioned")]
-
 use dimensioned::{
     traits::{Dimensioned, MapUnsafe},
     unit_systems::{cgs::CGS, fps::FPS, mks::MKS, si::SI, ucum::UCUM},
 };
 
-use signalo_traits::Filter;
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, FromGuts, Guts, IntoGuts, Reset,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
     State as StateTrait, StateMut, WithConfig,
 };
 
