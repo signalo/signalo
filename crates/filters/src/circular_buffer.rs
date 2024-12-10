@@ -274,6 +274,12 @@ impl<T, const N: usize> Iterator for IntoIter<T, N> {
     }
 }
 
+impl<T, const N: usize> DoubleEndedIterator for IntoIter<T, N> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.buffer.pop_back()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
