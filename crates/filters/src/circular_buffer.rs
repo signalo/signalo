@@ -20,6 +20,7 @@ where
 {
     fn clone(&self) -> Self {
         // FIXME: use `uninit_array` instead, once stable:
+        // https://github.com/rust-lang/rust/issues/96097
         let mut array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 
         let capacity = Self::capacity();
@@ -43,6 +44,7 @@ where
 impl<T, const N: usize> Default for CircularBuffer<T, N> {
     fn default() -> Self {
         // FIXME: use `uninit_array` instead, once stable:
+        // https://github.com/rust-lang/rust/issues/96097
         let array: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 
         Self {
