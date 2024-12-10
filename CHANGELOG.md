@@ -20,7 +20,12 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- n/a
+- Added `front()`/`back()` methods to `CircularBuffer`.
+- Added `pop_back()` method to `CircularBuffer`.
+- Added `push_front()` method to `CircularBuffer`.
+- Implement  `DoubleEndedIterator` for `CircularBuffer`.
+- Implement  `size_hint()` for `CircularBuffer`.
+- Implement  `ExactSizeIterator` for `CircularBuffer`.
 
 ### Changed
 
