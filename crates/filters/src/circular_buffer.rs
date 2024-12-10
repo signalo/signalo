@@ -111,6 +111,24 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         result
     }
 
+    pub fn push_front(&mut self, value: T) -> Option<T> {
+        let result = if self.is_full() {
+            self.pop_back()
+        } else {
+            None
+        };
+
+        self.realign_cursors_if_necessary();
+
+        self.start -= 1;
+        assert!(self.start <= self.end);
+
+        let index = self.start % Self::capacity();
+        self.array[index] = MaybeUninit::new(value);
+
+        result
+    }
+
     pub fn pop_front(&mut self) -> Option<T> {
         if self.is_empty() {
             return None;
@@ -288,6 +306,32 @@ mod tests {
             .scan(buffer, |buffer, &input| Some(buffer.push_back(input)))
             .collect();
         assert_eq!(output, get_output());
+    }
+
+    #[test]
+    fn push_front() {
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
+        assert_eq!(buffer.len(), 0);
+
+        buffer.push_front(1.0);
+        assert_eq!(buffer.len(), 1);
+        assert_eq!(buffer.front(), Some(&1.0));
+
+        buffer.push_front(2.0);
+        assert_eq!(buffer.len(), 2);
+        assert_eq!(buffer.front(), Some(&2.0));
+
+        buffer.push_front(3.0);
+        assert_eq!(buffer.len(), 3);
+        assert_eq!(buffer.front(), Some(&3.0));
+
+        buffer.push_front(4.0);
+        assert_eq!(buffer.len(), 3);
+        assert_eq!(buffer.front(), Some(&4.0));
+
+        buffer.push_front(5.0);
+        assert_eq!(buffer.len(), 3);
+        assert_eq!(buffer.front(), Some(&5.0));
     }
 
     #[test]
