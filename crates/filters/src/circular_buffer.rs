@@ -237,6 +237,27 @@ mod tests {
     }
 
     #[test]
+    fn push_back() {
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
+        assert_eq!(buffer.len(), 0);
+
+        buffer.push_back(1.0);
+        assert_eq!(buffer.len(), 1);
+
+        buffer.push_back(2.0);
+        assert_eq!(buffer.len(), 2);
+
+        buffer.push_back(3.0);
+        assert_eq!(buffer.len(), 3);
+
+        buffer.push_back(4.0);
+        assert_eq!(buffer.len(), 3);
+
+        buffer.push_back(5.0);
+        assert_eq!(buffer.len(), 3);
+    }
+
+    #[test]
     fn pop_front() {
         let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::default();
 
