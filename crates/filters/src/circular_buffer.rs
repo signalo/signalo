@@ -233,6 +233,11 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         Iter::new(prefix, suffix)
     }
 
+    pub fn iter_mut(&mut self) -> IterMut<'_, T, N> {
+        let (prefix, suffix) = self.as_mut_slices();
+        IterMut::new(prefix, suffix)
+    }
+
     pub fn as_slices(&self) -> (&[T], &[T]) {
         // FIXME: use `slice_assume_init_ref` instead, once stable:
         // https://github.com/rust-lang/rust/issues/63569
@@ -336,6 +341,26 @@ impl<'a, T, const N: usize> Iter<'a, T, N> {
 
 impl<'a, T, const N: usize> Iterator for Iter<'a, T, N> {
     type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+pub struct IterMut<'a, T, const N: usize> {
+    inner: core::iter::Chain<core::slice::IterMut<'a, T>, core::slice::IterMut<'a, T>>,
+}
+
+impl<'a, T, const N: usize> IterMut<'a, T, N> {
+    fn new(prefix: &'a mut [T], suffix: &'a mut [T]) -> Self {
+        Self {
+            inner: prefix.iter_mut().chain(suffix.iter_mut()),
+        }
+    }
+}
+
+impl<'a, T, const N: usize> Iterator for IterMut<'a, T, N> {
+    type Item = &'a mut T;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
@@ -609,6 +634,27 @@ mod tests {
 
         let items: Vec<&f32> = buffer.iter().collect();
         assert_eq!(items, vec![&3.0, &4.0, &5.0]);
+    }
+
+    #[test]
+    fn iter_mut() {
+        let mut buffer: CircularBuffer<f32, 3> = CircularBuffer::from_iter(vec![1.0, 2.0, 3.0]);
+
+        let items: Vec<&mut f32> = buffer.iter_mut().collect();
+        assert_eq!(items, vec![&mut 1.0, &mut 2.0, &mut 3.0]);
+
+        buffer.push_back(4.0);
+        buffer.push_back(5.0);
+
+        let items: Vec<&mut f32> = buffer.iter_mut().collect();
+        assert_eq!(items, vec![&mut 3.0, &mut 4.0, &mut 5.0]);
+
+        for item in buffer.iter_mut() {
+            *item += 1.0;
+        }
+
+        let items: Vec<f32> = buffer.into_iter().collect();
+        assert_eq!(items, vec![4.0, 5.0, 6.0]);
     }
 
     #[test]

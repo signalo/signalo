@@ -28,6 +28,7 @@ Please make sure to add your changes to the appropriate categories:
 - Implement  `ExactSizeIterator` for `CircularBuffer`.
 - Added `as_slices()` method to `CircularBuffer`.
 - Added `as_mut_slices()` method to `CircularBuffer`.
+- Added `.iter_mut()` method to `CircularBuffer`.
 
 ### Changed
 
