@@ -328,7 +328,7 @@ mod tests {
     #[test]
     fn from_iter() {
         let mut buffer: CircularBuffer<f32, 3> =
-            vec![1.0, 2.0, 3.0, 4.0, 5.0].into_iter().collect();
+            CircularBuffer::from_iter(vec![1.0, 2.0, 3.0, 4.0, 5.0]);
 
         assert_eq!(buffer.pop_front(), Some(3.0));
 
@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn iter() {
-        let buffer: CircularBuffer<f32, 3> = vec![1.0, 2.0, 3.0].into_iter().collect();
+        let buffer: CircularBuffer<f32, 3> = CircularBuffer::from_iter(vec![1.0, 2.0, 3.0]);
 
         let items: Vec<&f32> = buffer.iter().collect();
         assert_eq!(items, vec![&1.0, &2.0, &3.0]);
@@ -347,7 +347,7 @@ mod tests {
 
     #[test]
     fn into_iter() {
-        let buffer: CircularBuffer<f32, 3> = vec![1.0, 2.0, 3.0].into_iter().collect();
+        let buffer: CircularBuffer<f32, 3> = CircularBuffer::from_iter(vec![1.0, 2.0, 3.0]);
 
         let items: Vec<f32> = buffer.into_iter().collect();
         assert_eq!(items, vec![1.0, 2.0, 3.0]);
@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn clone() {
-        let buffer: CircularBuffer<f32, 3> = vec![1.0, 2.0].into_iter().collect();
+        let buffer: CircularBuffer<f32, 3> = CircularBuffer::from_iter(vec![1.0, 2.0]);
 
         let clone = buffer.clone();
 
