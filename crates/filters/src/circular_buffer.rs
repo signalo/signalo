@@ -10,8 +10,10 @@ use core::{
 #[derive(Debug)]
 pub struct CircularBuffer<T, const N: usize> {
     array: [MaybeUninit<T>; N],
-    read: usize,
-    write: usize,
+    // The index of the buffer's "front" item.
+    start: usize,
+    // The index after the buffer's "back" item.
+    end: usize,
 }
 
 impl<T, const N: usize> Clone for CircularBuffer<T, N>
@@ -25,7 +27,7 @@ where
 
         let capacity = Self::capacity();
 
-        for index in self.read..self.write {
+        for index in self.start..self.end {
             let index = index % capacity;
             let source = &self.array[index];
             let destination = &mut array[index];
@@ -35,8 +37,8 @@ where
 
         Self {
             array,
-            read: self.read,
-            write: self.write,
+            start: self.start,
+            end: self.end,
         }
     }
 }
@@ -49,8 +51,8 @@ impl<T, const N: usize> Default for CircularBuffer<T, N> {
 
         Self {
             array,
-            read: 0,
-            write: 0,
+            start: 0,
+            end: 0,
         }
     }
 }
@@ -80,7 +82,7 @@ impl<T, const N: usize> IntoIterator for CircularBuffer<T, N> {
 impl<T, const N: usize> Drop for CircularBuffer<T, N> {
     fn drop(&mut self) {
         let capacity = Self::capacity();
-        for index in self.read..self.write {
+        for index in self.start..self.end {
             let maybe_uninit = &mut self.array[index % capacity];
             unsafe {
                 maybe_uninit.assume_init_drop();
@@ -98,13 +100,13 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         };
 
         let capacity = Self::capacity();
-        let index = self.write % capacity;
+        let index = self.end % capacity;
 
-        self.write += 1;
+        self.end += 1;
 
         self.array[index] = MaybeUninit::new(value);
 
-        assert!(self.read <= self.write);
+        assert!(self.start <= self.end);
 
         result
     }
@@ -116,21 +118,21 @@ impl<T, const N: usize> CircularBuffer<T, N> {
         }
 
         let capacity = Self::capacity();
-        let index = self.read % capacity;
+        let index = self.start % capacity;
 
-        self.read += 1;
+        self.start += 1;
 
         let slot = &mut self.array[index];
         let maybe_uninit = mem::replace(slot, MaybeUninit::uninit());
         let value = unsafe { maybe_uninit.assume_init() };
 
-        assert!(self.read <= self.write);
+        assert!(self.start <= self.end);
 
         Some(value)
     }
 
     pub fn is_empty(&self) -> bool {
-        self.read == self.write
+        self.start == self.end
     }
 
     pub fn is_full(&self) -> bool {
@@ -138,7 +140,7 @@ impl<T, const N: usize> CircularBuffer<T, N> {
     }
 
     pub fn len(&self) -> usize {
-        self.write - self.read
+        self.end - self.start
     }
 
     pub const fn capacity() -> usize {
@@ -147,8 +149,8 @@ impl<T, const N: usize> CircularBuffer<T, N> {
 
     pub fn iter(&self) -> Iter<'_, T, N> {
         Iter {
-            start: self.read,
-            end: self.write,
+            start: self.start,
+            end: self.end,
             buffer: self,
         }
     }
@@ -330,8 +332,8 @@ mod tests {
 
         let clone = buffer.clone();
 
-        assert_eq!(buffer.read, clone.read);
-        assert_eq!(buffer.write, clone.write);
+        assert_eq!(buffer.start, clone.start);
+        assert_eq!(buffer.end, clone.end);
 
         for (original, clone) in buffer.iter().zip(clone.iter()) {
             assert_eq!(original, clone);
