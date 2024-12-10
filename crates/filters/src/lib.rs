@@ -34,6 +34,7 @@ extern crate alloc;
 
 pub use signalo_traits as traits;
 
+pub mod bounds;
 pub mod cache;
 pub mod classify;
 pub mod convolve;

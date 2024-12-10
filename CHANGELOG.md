@@ -20,11 +20,11 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- Replaced own `CircularBuffer` with `circular_buffer` crate.
+- Added sliding window filters for moving minimum/maximum/bounds.
 
 ### Changed
 
-- n/a
+- Replaced own `CircularBuffer` with `circular_buffer` crate.
 
 ### Deprecated
 
