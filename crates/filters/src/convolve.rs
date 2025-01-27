@@ -4,6 +4,7 @@
 
 //! Convolution filters.
 
+use circular_buffer::CircularBuffer;
 use num_traits::Num;
 
 use signalo_traits::{
@@ -13,8 +14,6 @@ use signalo_traits::{
 
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
-
-use crate::circular_buffer::CircularBuffer;
 
 pub mod savitzky_golay;
 
@@ -29,7 +28,7 @@ pub struct Config<T, const N: usize> {
 #[derive(Clone, Debug)]
 pub struct State<T, const N: usize> {
     /// The filter's taps (i.e. buffered input).
-    pub taps: CircularBuffer<T, N>,
+    pub taps: CircularBuffer<N, T>,
 }
 
 /// A convolution filter.
