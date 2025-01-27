@@ -125,6 +125,9 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::vec;
+    use std::vec::Vec;
+
     use nearly_eq::assert_nearly_eq;
 
     use super::*;

@@ -128,8 +128,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::vec;
+    use std::vec::Vec;
+
     use crate::classify::Classification;
+
+    use super::*;
 
     #[test]
     fn test() {

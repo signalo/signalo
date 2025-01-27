@@ -24,7 +24,9 @@ droptest = "0.2.1"
 
 [features]
 default = []
+alloc = []
 std = [
+    "alloc",
     "circular-buffer/std",
     "dimensioned/std",
     "num-traits/std",
