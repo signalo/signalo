@@ -6,18 +6,17 @@
 
 use core::fmt;
 
+use circular_buffer::CircularBuffer;
 use num_traits::Num;
 
 use signalo_traits::Filter;
 use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
 
-use crate::circular_buffer::CircularBuffer;
-
 /// The delay filter's state.
 #[derive(Clone)]
 pub struct State<T, const N: usize> {
     /// The current taps buffer.
-    pub taps: CircularBuffer<T, N>,
+    pub taps: CircularBuffer<N, T>,
 }
 
 impl<T, const N: usize> fmt::Debug for State<T, N>

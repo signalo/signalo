@@ -9,6 +9,7 @@ rust-version = "1.68.2"
 edition = "2021"
 
 [workspace.dependencies]
+circular-buffer = { version = "1.0.0", default-features = false }
 num-traits = { version = "0.2", default-features = false }
 
 # workspace members:

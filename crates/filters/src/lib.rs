@@ -42,5 +42,3 @@ pub mod observe;
 pub mod ops;
 pub mod unit_system;
 pub mod wavelet;
-
-mod circular_buffer;

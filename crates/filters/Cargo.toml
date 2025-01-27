@@ -11,6 +11,7 @@ edition.workspace = true
 version = "0.6.0"
 
 [dependencies]
+circular-buffer = { workspace = true }
 dimensioned = { version = "0.7", optional = true, default-features = false }
 num-traits = { workspace = true }
 
@@ -23,6 +24,11 @@ droptest = "0.2.1"
 
 [features]
 default = []
-std = ["signalo_traits/std", "num-traits/std", "dimensioned/std"]
+std = [
+    "circular-buffer/std",
+    "dimensioned/std",
+    "num-traits/std",
+    "signalo_traits/std",
+]
 panic_abort = ["signalo_traits/panic_abort"]
 derive = []

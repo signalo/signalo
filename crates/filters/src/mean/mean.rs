@@ -6,6 +6,7 @@
 
 use core::fmt;
 
+use circular_buffer::CircularBuffer;
 use num_traits::{Num, Zero};
 
 use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
@@ -13,15 +14,13 @@ use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrai
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
-use crate::circular_buffer::CircularBuffer;
-
 /// The mean filter's state.
 #[derive(Clone)]
 pub struct State<T, const N: usize> {
     /// The current mean value.
     pub mean: Option<T>,
     /// The current taps buffer.
-    pub taps: CircularBuffer<T, N>,
+    pub taps: CircularBuffer<N, T>,
     /// The current weight.
     pub weight: T,
 }
