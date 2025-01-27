@@ -154,9 +154,12 @@ impl_dimensioned!(UCUM);
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::vec;
+    use std::vec::Vec;
 
     use dimensioned::unit_systems::si::Meter;
+
+    use super::*;
 
     struct AddFourPointTwo;
 

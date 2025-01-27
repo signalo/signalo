@@ -24,7 +24,13 @@
     clippy::unwrap_used,
     clippy::wrong_self_convention,
 )]
-#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
+#![no_std]
+
+#[cfg(any(test, feature = "std"))]
+extern crate std;
+
+#[cfg(any(test, feature = "alloc"))]
+extern crate alloc;
 
 pub use signalo_traits as traits;
 

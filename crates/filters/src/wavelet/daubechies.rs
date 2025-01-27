@@ -244,12 +244,16 @@ daubechies_impl_float!(f32, f64: 20 => [
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::vec;
+    use std::vec::Vec;
 
     use nearly_eq::assert_nearly_eq;
+
     use signalo_traits::Filter;
 
     use crate::wavelet::Decomposition;
+
+    use super::*;
 
     fn get_input() -> Vec<f32> {
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
