@@ -7,7 +7,7 @@
 use num_traits::{Num, One, Zero};
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset,
     State as StateTrait, StateMut, WithConfig,
 };
 
@@ -158,7 +158,7 @@ impl<T> StateMut for Kalman<T> {
     }
 }
 
-impl<T> Guts for Kalman<T> {
+impl<T> HasGuts for Kalman<T> {
     type Guts = (Config<T>, State<T>);
 }
 

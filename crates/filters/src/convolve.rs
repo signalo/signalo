@@ -8,8 +8,9 @@ use circular_buffer::CircularBuffer;
 use num_traits::Num;
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
-    State as StateTrait, StateMut, WithConfig,
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 #[cfg(feature = "derive")]
@@ -98,7 +99,7 @@ impl<T, const N: usize> StateMut for Convolve<T, N> {
     }
 }
 
-impl<T, const N: usize> Guts for Convolve<T, N> {
+impl<T, const N: usize> HasGuts for Convolve<T, N> {
     type Guts = (Config<T, N>, State<T, N>);
 }
 

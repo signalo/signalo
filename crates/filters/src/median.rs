@@ -7,7 +7,10 @@
 use core::fmt;
 use core::mem::MaybeUninit;
 
-use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
+use signalo_traits::{
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Filter, Reset, State as StateTrait, StateMut,
+};
 
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
@@ -163,7 +166,7 @@ impl<T, const N: usize> StateMut for Median<T, N> {
     }
 }
 
-impl<T, const N: usize> Guts for Median<T, N> {
+impl<T, const N: usize> HasGuts for Median<T, N> {
     type Guts = State<T, N>;
 }
 

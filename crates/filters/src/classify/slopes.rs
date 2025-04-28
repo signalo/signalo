@@ -7,8 +7,9 @@
 use core::cmp::{Ordering, PartialOrd};
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
-    State as StateTrait, StateMut, WithConfig,
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 #[cfg(feature = "derive")]
@@ -98,7 +99,7 @@ impl<T, U> StateMut for Slopes<T, U> {
     }
 }
 
-impl<T, U> Guts for Slopes<T, U> {
+impl<T, U> HasGuts for Slopes<T, U> {
     type Guts = (Config<U>, State<T>);
 }
 

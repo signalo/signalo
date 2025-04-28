@@ -7,8 +7,9 @@
 use core::cmp::PartialOrd;
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
-    State as StateTrait, StateMut, WithConfig,
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 #[cfg(feature = "derive")]
@@ -80,7 +81,7 @@ impl<T, U> StateMut for Schmitt<T, U> {
     }
 }
 
-impl<T, U> Guts for Schmitt<T, U> {
+impl<T, U> HasGuts for Schmitt<T, U> {
     type Guts = (Config<T, U>, State);
 }
 

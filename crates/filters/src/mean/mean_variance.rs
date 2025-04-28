@@ -8,7 +8,7 @@ use core::fmt;
 
 use num_traits::{Num, Signed};
 
-use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
+use signalo_traits::{Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset, State as StateTrait, StateMut};
 
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
@@ -86,7 +86,7 @@ impl<T, const N: usize> StateMut for MeanVariance<T, N> {
     }
 }
 
-impl<T, const N: usize> Guts for MeanVariance<T, N> {
+impl<T, const N: usize> HasGuts for MeanVariance<T, N> {
     type Guts = State<T, N>;
 }
 

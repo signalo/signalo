@@ -7,7 +7,7 @@
 use num_traits::Num;
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset,
     State as StateTrait, StateMut, WithConfig,
 };
 
@@ -79,7 +79,7 @@ impl<T> StateMut for Mean<T> {
     }
 }
 
-impl<T> Guts for Mean<T> {
+impl<T> HasGuts for Mean<T> {
     type Guts = (Config<T>, State<T>);
 }
 
