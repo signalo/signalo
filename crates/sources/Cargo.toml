@@ -11,7 +11,7 @@ edition.workspace = true
 version = "0.5.2"
 
 [dependencies]
-dimensioned = { version = "0.7", optional = true, default-features = false }
+dimensioned = { version = "0.8", optional = true, default-features = false }
 num-traits = { workspace = true }
 
 # workspace members:
