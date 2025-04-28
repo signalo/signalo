@@ -25,6 +25,9 @@ Please make sure to add your changes to the appropriate categories:
 ### Changed
 
 - Replaced own `CircularBuffer` with `circular_buffer` crate.
+- Updated dependencies:
+  - `dimensioned` from `0.7` to `0.8`
+  - `guts` from `0.1.1` to `0.2.0`
 
 ### Deprecated
 
