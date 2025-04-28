@@ -8,7 +8,10 @@ use core::fmt;
 
 use num_traits::{Num, Signed};
 
-use signalo_traits::{Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset, State as StateTrait, StateMut};
+use signalo_traits::{
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Filter, Reset, State as StateTrait, StateMut,
+};
 
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;

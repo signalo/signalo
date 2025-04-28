@@ -7,8 +7,8 @@
 use core::cmp::PartialOrd;
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset,
-    WithConfig,
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, WithConfig,
 };
 
 #[cfg(feature = "derive")]
