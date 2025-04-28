@@ -7,8 +7,9 @@
 use num_traits::{Num, Zero};
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset,
-    State as StateTrait, StateMut, WithConfig,
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 #[cfg(feature = "derive")]
