@@ -82,6 +82,8 @@ savitzky_golay_impl_float!(13 => [
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unreadable_literal)]
+
     use std::vec;
     use std::vec::Vec;
 
