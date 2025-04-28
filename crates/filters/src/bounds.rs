@@ -8,7 +8,10 @@ use core::fmt;
 
 use num_traits::Num;
 
-use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
+use signalo_traits::{
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Filter, Reset, State as StateTrait, StateMut,
+};
 
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
@@ -81,7 +84,7 @@ impl<T, const N: usize> StateMut for Bounds<T, N> {
     }
 }
 
-impl<T, const N: usize> Guts for Bounds<T, N> {
+impl<T, const N: usize> HasGuts for Bounds<T, N> {
     type Guts = State<T, N>;
 }
 

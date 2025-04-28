@@ -7,7 +7,7 @@
 use num_traits::{Num, Signed};
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset,
     State as StateTrait, StateMut, WithConfig,
 };
 
@@ -100,7 +100,7 @@ impl<T> StateMut for MeanVariance<T> {
     }
 }
 
-impl<T> Guts for MeanVariance<T> {
+impl<T> HasGuts for MeanVariance<T> {
     type Guts = (Config<T>, State<T>);
 }
 

@@ -7,7 +7,7 @@
 use core::cmp::PartialOrd;
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset,
     WithConfig,
 };
 
@@ -56,7 +56,7 @@ where
     }
 }
 
-impl<T, U> Guts for Threshold<T, U> {
+impl<T, U> HasGuts for Threshold<T, U> {
     type Guts = Config<T, U>;
 }
 

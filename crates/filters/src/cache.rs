@@ -5,8 +5,9 @@
 //! Caching wrapper filters.
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
-    State as StateTrait, StateMut, WithConfig,
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 #[cfg(feature = "derive")]
@@ -108,7 +109,7 @@ where
     }
 }
 
-impl<T, U> Guts for Cache<T, U> {
+impl<T, U> HasGuts for Cache<T, U> {
     type Guts = State<T, U>;
 }
 

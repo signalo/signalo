@@ -10,7 +10,10 @@ use circular_buffer::CircularBuffer;
 use num_traits::Num;
 
 use signalo_traits::Filter;
-use signalo_traits::{FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
+use signalo_traits::{
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Reset, State as StateTrait, StateMut,
+};
 
 /// The delay filter's state.
 #[derive(Clone)]
@@ -63,7 +66,7 @@ impl<T, const N: usize> StateMut for Delay<T, N> {
     }
 }
 
-impl<T, const N: usize> Guts for Delay<T, N> {
+impl<T, const N: usize> HasGuts for Delay<T, N> {
     type Guts = State<T, N>;
 }
 

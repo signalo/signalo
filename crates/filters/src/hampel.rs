@@ -7,8 +7,9 @@
 use num_traits::{Num, Signed};
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
-    State as StateTrait, StateMut, WithConfig,
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 #[cfg(feature = "derive")]
@@ -129,7 +130,7 @@ impl<T, const N: usize> StateMut for Hampel<T, N> {
     }
 }
 
-impl<T, const N: usize> Guts for Hampel<T, N> {
+impl<T, const N: usize> HasGuts for Hampel<T, N> {
     type Guts = (Config<T>, State<T, N>);
 }
 

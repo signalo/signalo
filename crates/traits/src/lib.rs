@@ -7,7 +7,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
 
-pub use guts::{FromGuts, Guts, IntoGuts};
+pub use guts;
 
 pub mod filter;
 pub mod finalize;

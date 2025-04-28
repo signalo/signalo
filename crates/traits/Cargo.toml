@@ -11,11 +11,11 @@ edition.workspace = true
 version = "0.5.0"
 
 [dependencies]
-guts = "0.2.0"
+guts = { version = "0.2.0", default-features = false }
 replace_with = { version = "0.1.5", default-features = false, features = [] }
 
 [features]
 default = []
-std = ["replace_with/std"]
+std = ["guts/std", "replace_with/std"]
 panic_abort = ["replace_with/panic_abort"]
 derive_reset_mut = []

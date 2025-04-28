@@ -7,7 +7,7 @@
 use num_traits::Num;
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, Filter, FromGuts, Guts, IntoGuts, Reset,
+    Config as ConfigTrait, ConfigClone, Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset,
     State as StateTrait, StateMut, WithConfig,
 };
 
@@ -87,7 +87,7 @@ impl<T, const N: usize> StateMut for Synthesize<T, N> {
     }
 }
 
-impl<T, const N: usize> Guts for Synthesize<T, N> {
+impl<T, const N: usize> HasGuts for Synthesize<T, N> {
     type Guts = State<T, N>;
 }
 

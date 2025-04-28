@@ -9,7 +9,7 @@ use core::fmt;
 use circular_buffer::CircularBuffer;
 use num_traits::{Num, Zero};
 
-use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
+use signalo_traits::{Filter, guts::{FromGuts, HasGuts, IntoGuts}, Reset, State as StateTrait, StateMut};
 
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
@@ -78,7 +78,7 @@ impl<T, const N: usize> StateMut for Mean<T, N> {
     }
 }
 
-impl<T, const N: usize> Guts for Mean<T, N> {
+impl<T, const N: usize> HasGuts for Mean<T, N> {
     type Guts = State<T, N>;
 }
 

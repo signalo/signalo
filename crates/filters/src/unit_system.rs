@@ -11,8 +11,9 @@ use dimensioned::{
 };
 
 use signalo_traits::{
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, FromGuts, Guts, IntoGuts, Reset,
-    State as StateTrait, StateMut, WithConfig,
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
 
 #[cfg(feature = "derive")]
@@ -99,7 +100,7 @@ where
     }
 }
 
-impl<T> Guts for UnitSystem<T> {
+impl<T> HasGuts for UnitSystem<T> {
     type Guts = State<T>;
 }
 

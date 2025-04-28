@@ -8,7 +8,10 @@ use core::ops::Sub;
 
 use num_traits::Zero;
 
-use signalo_traits::{Filter, FromGuts, Guts, IntoGuts, Reset, State as StateTrait, StateMut};
+use signalo_traits::{
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Filter, Reset, State as StateTrait, StateMut,
+};
 
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
@@ -46,7 +49,7 @@ impl<T> StateMut for Differentiate<T> {
     }
 }
 
-impl<T> Guts for Differentiate<T> {
+impl<T> HasGuts for Differentiate<T> {
     type Guts = State<T>;
 }
 
