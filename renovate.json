@@ -3,6 +3,12 @@
     "extends": ["config:recommended"],
     "packageRules": [
         {
+            "extends": ["schedule:automergeMonthly"],
+            "groupName": "cargo-binstall",
+            "groupSlug": "cargo-binstall",
+            "matchPackageNames": ["cargo-binstall"]
+        },
+        {
             "allowedVersions": "!/^=/",
             "groupName": "dependencies",
             "groupSlug": "dependencies",
