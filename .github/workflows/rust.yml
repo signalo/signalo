@@ -110,7 +110,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
-      - uses: cargo-bins/cargo-binstall@v1.14.3
+      - uses: cargo-bins/cargo-binstall@v1.14.4
       - name: Install cargo-msrv
         run: cargo binstall cargo-msrv@0.16.0-beta.21 --no-confirm --all-features
       - name: Run `cargo msrv --version`
