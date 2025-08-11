@@ -24,7 +24,7 @@ jobs:
     name: Check (std)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -39,7 +39,7 @@ jobs:
     name: Check (no_std)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -51,7 +51,7 @@ jobs:
     name: Test Suite
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -63,7 +63,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -75,7 +75,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -87,7 +87,7 @@ jobs:
     name: Compile and test with minimal versions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
@@ -106,7 +106,7 @@ jobs:
     # Temove this line to re-enable the job:
     if: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: nightly
