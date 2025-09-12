@@ -3,16 +3,30 @@
     "extends": ["config:recommended"],
     "packageRules": [
         {
+            "allowedVersions": "!/^=/",
+            "groupName": "dependencies",
+            "groupSlug": "dependencies",
+            "matchDepTypes": ["dependencies"],
+            "matchPackageNames": ["*"]
+        },
+        {
+            "allowedVersions": "!/^=/",
+            "groupName": "dev-dependencies",
+            "groupSlug": "dev-dependencies",
+            "matchDepTypes": ["dev-dependencies"],
+            "matchPackageNames": ["*"]
+        },
+        {
             "extends": ["schedule:automergeMonthly"],
             "groupName": "cargo-binstall",
             "groupSlug": "cargo-binstall",
             "matchPackageNames": ["cargo-binstall"]
         },
         {
-            "allowedVersions": "!/^=/",
-            "groupName": "dependencies",
-            "groupSlug": "dependencies",
-            "matchPackageNames": ["*"]
+            "groupName": "github actions",
+            "groupSlug": "github-actions",
+            "matchDepTypes": ["action"],
+            "pinDigests": true
         }
     ]
 }
