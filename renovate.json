@@ -20,7 +20,8 @@
             "extends": ["schedule:automergeMonthly"],
             "groupName": "cargo-binstall",
             "groupSlug": "cargo-binstall",
-            "matchPackageNames": ["cargo-binstall"]
+            "matchPackageNames": ["cargo-binstall"],
+            "automerge": true
         },
         {
             "groupName": "github actions",
