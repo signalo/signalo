@@ -4,30 +4,46 @@
     "packageRules": [
         {
             "allowedVersions": "!/^=/",
+            "matchDepTypes": ["dependencies", "dev-dependencies"],
+            "matchPackageNames": ["*"],
+            "description": "only match non-pinned versions"
+        },
+        {
+            "matchDepTypes": ["dependencies", "dev-dependencies"],
+            "matchUpdateTypes": ["major"],
+            "matchPackageNames": ["*"],
+            "description": "create separate PRs for major upgrades"
+        },
+        {
             "groupName": "dependencies",
             "groupSlug": "dependencies",
             "matchDepTypes": ["dependencies"],
-            "matchPackageNames": ["*"]
+            "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+            "matchPackageNames": ["*"],
+            "description": "create grouped PRs for non-major dependency upgrades"
         },
         {
-            "allowedVersions": "!/^=/",
             "groupName": "dev-dependencies",
             "groupSlug": "dev-dependencies",
             "matchDepTypes": ["dev-dependencies"],
-            "matchPackageNames": ["*"]
+            "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+            "matchPackageNames": ["*"],
+            "description": "create grouped PRs for non-major dev-dependency upgrades"
         },
         {
             "extends": ["schedule:automergeMonthly"],
             "groupName": "cargo-binstall",
             "groupSlug": "cargo-binstall",
             "matchPackageNames": ["cargo-binstall"],
-            "automerge": true
+            "automerge": true,
+            "description": "upgrade once a month and auto-merge"
         },
         {
             "groupName": "github actions",
             "groupSlug": "github-actions",
             "matchDepTypes": ["action"],
-            "pinDigests": true
+            "pinDigests": true,
+            "description": "always pin github actions"
         }
     ]
 }
