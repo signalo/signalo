@@ -18,8 +18,7 @@ use signalo_traits::ResetMut;
 use crate::classify::Classification;
 
 /// A slope's kind.
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-#[derive(Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub enum Slope {
     /// A rising slope.
     Rising,
@@ -29,7 +28,6 @@ pub enum Slope {
     /// A falling slope.
     Falling,
 }
-
 
 impl Classification<Slope, 3> for Slope {
     fn classes() -> [Self; 3] {

@@ -23,8 +23,7 @@ use crate::classify::{
 };
 
 /// A slope's kind.
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-#[derive(Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub enum Peak {
     /// A local maximum.
     Max,
@@ -34,7 +33,6 @@ pub enum Peak {
     /// A local minimum.
     Min,
 }
-
 
 impl Classification<Peak, 3> for Peak {
     fn classes() -> [Self; 3] {
