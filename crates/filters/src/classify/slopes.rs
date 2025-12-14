@@ -19,20 +19,17 @@ use crate::classify::Classification;
 
 /// A slope's kind.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Default)]
 pub enum Slope {
     /// A rising slope.
     Rising,
     /// A flat slope.
+    #[default]
     None,
     /// A falling slope.
     Falling,
 }
 
-impl Default for Slope {
-    fn default() -> Self {
-        Self::None
-    }
-}
 
 impl Classification<Slope, 3> for Slope {
     fn classes() -> [Self; 3] {
