@@ -117,7 +117,7 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let old_mean = self.state.mean.clone().unwrap_or_else(|| input.clone());
+        let old_mean = self.state.mean.clone().unwrap_or_else(|| T::zero());
         let old_weight = self.state.weight.clone();
 
         #[allow(clippy::option_if_let_else)]
@@ -173,5 +173,17 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
         assert_nearly_eq!(output, get_output(), 0.001);
+    }
+
+    #[test]
+    fn test_non_zero_start() {
+        let filter: Mean<f32, 3> = Mean::default();
+        let inputs = vec![10.0, 20.0, 30.0];
+        let expected_outputs = vec![10.0, 15.0, 20.0];
+        let outputs: Vec<_> = inputs
+            .iter()
+            .scan(filter, |filter, &input| Some(filter.filter(input)))
+            .collect();
+        assert_nearly_eq!(outputs, expected_outputs, 0.001);
     }
 }

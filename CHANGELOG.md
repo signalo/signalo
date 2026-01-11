@@ -39,7 +39,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Fixed
 
-- n/a
+- Fixed `Mean` filter incorrectly doubling the first input value (#126).
 
 ### Performance
 
