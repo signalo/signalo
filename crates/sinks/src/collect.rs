@@ -20,8 +20,21 @@ where
 {
     type Output = Vec<T>;
 
-    // FIXME: add documentation pointing out the performance overhead
-    // due to `self.collected.clone()`.
+    /// Consumes the input and returns a clone of all collected values.
+    ///
+    /// # Performance Note
+    ///
+    /// This implementation has **O(n²) time complexity** where n is the number of samples,
+    /// since each call clones the entire collected vector. For large collections or
+    /// expensive `Clone` types, consider using `Sink` + `Finalize` instead:
+    ///
+    /// ```ignore
+    /// let mut sink = Collect::default();
+    /// for value in values {
+    ///     sink.sink(value);
+    /// }
+    /// let result = sink.finalize();  // Returns owned Vec, no cloning
+    /// ```
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
         self.sink(input);
