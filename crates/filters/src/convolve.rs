@@ -132,6 +132,9 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
+        // Note: push_back may return None until the circular buffer is full.
+        // Once full, it returns Some with the evicted old value.
+        // This loop is guaranteed to terminate when the buffer is full.
         loop {
             if self.state.taps.push_back(input.clone()).is_some() {
                 break;
