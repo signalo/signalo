@@ -6,7 +6,7 @@
 
 use core::fmt;
 
-use num_traits::{Num, Signed};
+use num_traits::Num;
 
 use signalo_traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
@@ -120,11 +120,13 @@ impl<T, const N: usize> ResetMut for MeanVariance<T, N> where Self: Reset {}
 
 impl<T, const N: usize> Filter<T> for MeanVariance<T, N>
 where
-    T: Clone + Num + Signed + PartialOrd,
+    T: Clone + Num + PartialOrd,
 {
     type Output = Output<T>;
 
     fn filter(&mut self, input: T) -> Self::Output {
+        // Filters the input value, returning the current mean and variance.
+        // Calculates variance using Welford's method.
         let mean_old = unsafe {
             self.state
                 .mean
@@ -134,8 +136,8 @@ where
                 .unwrap_or_else(|| input.clone())
         };
         let mean = self.state.mean.filter(input.clone());
-        let deviation_old = (input.clone() - mean_old).abs();
-        let deviation_new = (input - mean.clone()).abs();
+        let deviation_old = input.clone() - mean_old;
+        let deviation_new = input - mean.clone();
         let squared = deviation_old * deviation_new;
         let variance = self.state.variance.filter(squared);
         Output { mean, variance }
@@ -172,12 +174,12 @@ mod tests {
 
     fn get_variance() -> Vec<f32> {
         vec![
-            0.000, 0.250, 8.833, 11.500, 11.889, 9.222, 8.667, 60.111, 71.000, 104.444, 57.111,
-            46.889, 22.444, 44.444, 53.778, 155.333, 137.333, 156.000, 57.556, 178.889, 202.000,
-            221.556, 104.000, 76.222, 82.111, 124.556, 1522.556, 2672.889, 3868.333, 2440.333,
-            2267.222, 2752.222, 3427.445, 2479.445, 788.889, 168.778, 123.000, 78.222, 106.889,
-            378.444, 1278.000, 2799.000, 3133.667, 2306.333, 755.000, 125.666, 1148.555, 2456.222,
-            3252.777, 2323.777,
+            0.000, 0.250, 8.833, 11.500, 10.778, -3.889, -4.444, 48.111, 37.222, 70.667, 14.000,
+            37.556, 13.111, -8.889, -31.556, 70.000, 88.000, 69.333, -57.556, 81.111, 173.556,
+            154.000, 11.556, -16.222, -22.111, 45.222, 1443.222, 2672.889, 3868.333, 2440.333,
+            2267.222, 2752.222, 3427.445, 2479.445, 788.889, 58.556, -33.444, -78.222, -106.889,
+            210.889, 1110.444, 2799.000, 3133.667, 2306.333, 755.000, 125.666, 1148.555, 2456.222,
+            3252.777, 1991.556,
         ]
     }
 

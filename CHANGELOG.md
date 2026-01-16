@@ -40,6 +40,7 @@ Please make sure to add your changes to the appropriate categories:
 ### Fixed
 
 - Fixed `Mean` filter incorrectly doubling the first input value (#126).
+- Fixed variance calculation in `MeanVariance` filter.
 
 ### Performance
 
