@@ -75,7 +75,10 @@ where
         } = self.config;
         let (value, cov) = {
             let State { ref cov, ref value } = self.state;
-            let c_squared = c.clone() * c.clone();
+            let c_squared = {
+                let c_copy = c.clone();
+                c_copy.clone() * c_copy
+            };
             match value {
                 None => {
                     let new_value = input / c.clone();
@@ -84,16 +87,17 @@ where
                 }
                 Some(ref value) => {
                     // Compute prediction:
-                    let pred_state = (a.clone() * value.clone()) + (b.clone() * control);
-                    let pred_cov = (a.clone() * cov.clone() * a.clone()) + r.clone();
+                    let a_copy = a.clone();
+                    let pred_state = (a_copy.clone() * value.clone()) + (b.clone() * control);
+                    let pred_cov = (a_copy * cov.clone() * a.clone()) + r.clone();
 
                     // Compute Kalman gain:
-                    let gain =
-                        pred_cov.clone() * c.clone() / ((pred_cov.clone() * c_squared) + q.clone());
+                    let denominator = (pred_cov.clone() * c_squared) + q.clone();
+                    let gain = pred_cov.clone() * c.clone() / denominator;
 
                     // Correction:
-                    let new_value =
-                        pred_state.clone() + gain.clone() * (input - (c.clone() * pred_state));
+                    let c_pred_state = c.clone() * pred_state.clone();
+                    let new_value = pred_state + gain.clone() * (input - c_pred_state);
                     let new_cov = pred_cov.clone() - (gain * c.clone() * pred_cov);
                     (new_value, new_cov)
                 }

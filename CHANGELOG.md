@@ -44,7 +44,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Performance
 
-- n/a
+- Reduced redundant clones in Kalman filter.
 
 ### Security
 
