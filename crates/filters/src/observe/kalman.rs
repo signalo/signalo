@@ -16,11 +16,23 @@ use signalo_traits::{
 use signalo_traits::ResetMut;
 
 /// The kalman filter's configuration.
+///
+/// # Numerical Stability
+///
+/// The measurement noise covariance `q` must be greater than zero for numerical stability.
+/// Division by a denominator approaching zero can cause unstable gain calculations.
+///
+/// # Performance Note
+///
+/// The filter performs multiple `Clone` operations on the configuration and state values
+/// during each filter call. For types with expensive cloning (e.g., arbitrary precision
+/// numbers, complex numbers), consider the performance implications when processing
+/// high-frequency signals.
 #[derive(Clone, Debug)]
 pub struct Config<T> {
     /// Process noise covariance
     pub r: T,
-    /// Measurement noise covariance
+    /// Measurement noise covariance (must be > 0)
     pub q: T,
     /// State transition
     pub a: T,
