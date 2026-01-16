@@ -15,6 +15,10 @@ use signalo_traits::{
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
+/// Exponential median filter.
+///
+/// Computes a weighted median emphasizing recent values, useful for adaptive robust filtering
+/// that combines median robustness with exponential weighting.
 pub mod exp;
 
 /// The median filter's state.
