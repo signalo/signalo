@@ -41,12 +41,12 @@ where
 
     #[inline]
     fn filter(&mut self, input: T) -> Self::Output {
-        let (old_count, old_mean, old_variance) = match &self.state {
+        let (old_count, old_mean, old_variance) = match self.state.take() {
             Some(State {
-                ref count,
-                ref mean,
-                ref variance,
-            }) => (count.clone(), mean.clone(), variance.clone()),
+                count,
+                mean,
+                variance,
+            }) => (count, mean, variance),
             None => (T::zero(), T::zero(), T::zero()),
         };
 
