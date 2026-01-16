@@ -9,9 +9,30 @@
 
 pub use guts;
 
+/// Signal transformers that accept an input value and produce an output.
+///
+/// Filters are the primary building blocks for signal processing pipelines. They transform
+/// input signals according to their internal state and logic, supporting complex operations
+/// like filtering, decimation, and statistical analysis.
 pub mod filter;
+
+/// Trait for extracting results from pipelines.
+///
+/// Finalizers consume the pipeline and produce a final output value, typically used to
+/// extract accumulated results (sums, means, collected values, etc.) from sinks or filters.
 pub mod finalize;
+
+/// Signal consumers that process values without direct output.
+///
+/// Sinks accept values from filters or sources and perform side effects or accumulate results
+/// (writing to buffers, computing statistics, etc.). They must be paired with a [`Finalize`]
+/// implementation to extract the final result.
 pub mod sink;
+
+/// Signal generators that produce values when queried.
+///
+/// Sources are the entry points for signal processing pipelines. They generate or provide
+/// signal values on demand, such as waveform generators or iterators over buffered data.
 pub mod source;
 
 pub use filter::Filter;
@@ -19,13 +40,21 @@ pub use finalize::Finalize;
 pub use sink::Sink;
 pub use source::Source;
 
-/// Trait for **configurable** systems.
+/// Trait for **configurable** systems that expose their configuration type.
+///
+/// This trait associates a configuration type with a system, typically used alongside
+/// [`WithConfig`] to enable construction from configuration, or [`ConfigClone`]/[`ConfigRef`]
+/// to access configuration state.
 pub trait Config {
     /// The filter's configuration.
     type Config;
 }
 
 /// Trait for **config-constructable** systems.
+///
+/// Enables factory-pattern construction of filters, sources, and sinks from a configuration.
+/// The configuration is provided at construction time and may be accessed later via
+/// [`ConfigClone`] or [`ConfigRef`].
 pub trait WithConfig: Config {
     /// The return type of `fn with_config(…)`.
     type Output;
@@ -34,13 +63,19 @@ pub trait WithConfig: Config {
     fn with_config(config: Self::Config) -> Self::Output;
 }
 
-/// Trait for **configurable** systems.
+/// Trait for systems with cloneable configuration.
+///
+/// Provides mutable access to configuration state by cloning it. Use this when the configuration
+/// can be cheaply copied or when mutations should not affect the internal state.
 pub trait ConfigClone: Config {
     /// Returns the config.
     fn config(&self) -> Self::Config;
 }
 
-/// Trait for **configurable** systems.
+/// Trait for systems with borrowable configuration.
+///
+/// Provides non-mutable reference access to configuration without cloning. Use this for
+/// read-only configuration inspection or when cloning is expensive.
 pub trait ConfigRef: Config {
     /// Returns a reference to the config.
     fn config_ref(&self) -> &Self::Config;

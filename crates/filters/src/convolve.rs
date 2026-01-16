@@ -16,6 +16,10 @@ use signalo_traits::{
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
+/// Savitzky-Golay polynomial smoothing filter.
+///
+/// Smooths signals by fitting local polynomial patches, preserving signal features like edges
+/// and peaks while reducing noise. Provides excellent results for spectral data and derivatives.
 pub mod savitzky_golay;
 
 /// The convolution filter's configuration.

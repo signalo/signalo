@@ -16,7 +16,14 @@ use signalo_traits::{
 #[cfg(feature = "derive")]
 use signalo_traits::ResetMut;
 
+/// Maximum value filter tracking the largest value in a sliding window.
+///
+/// Efficiently computes the moving maximum using an optimized data structure.
 pub mod max;
+
+/// Minimum value filter tracking the smallest value in a sliding window.
+///
+/// Efficiently computes the moving minimum using an optimized data structure.
 pub mod min;
 
 /// The bounds filter's state.

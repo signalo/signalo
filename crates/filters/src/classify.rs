@@ -7,11 +7,34 @@
 #![allow(clippy::use_self)]
 #![allow(clippy::wildcard_imports)]
 
+/// Debounce filter for noise reduction in digital signals.
+///
+/// Filters out short pulses and noise spikes by requiring signals to remain stable for a
+/// configurable duration before state changes are recognized.
 pub mod debounce;
+
+/// Schmitt trigger hysteresis filter.
+///
+/// Implements hysteresis with separate threshold values for rising and falling edges,
+/// preventing oscillation around a single threshold and improving noise immunity.
 pub mod schmitt;
+
+/// Threshold detector for binary signal classification.
+///
+/// Classifies input values as above or below a threshold, producing binary output useful for
+/// level detection, event triggering, and signal digitization.
 pub mod threshold;
 
+/// Peak detection filter.
+///
+/// Identifies local maximum values in signals, useful for finding peaks in waveforms,
+/// detecting events, and ridge extraction.
 pub mod peaks;
+
+/// Slope detection filter.
+///
+/// Classifies signal regions based on slope direction (rising, falling, or flat),
+/// useful for trend analysis and phase detection.
 pub mod slopes;
 
 /// A trait describing a classification value.
