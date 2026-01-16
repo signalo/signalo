@@ -45,6 +45,7 @@ Please make sure to add your changes to the appropriate categories:
 ### Performance
 
 - Reduced redundant clones in Kalman filter.
+- Used `take()` pattern in `MeanVariance` sink to reduce clones.
 
 ### Security
 
