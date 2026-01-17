@@ -9,3 +9,6 @@
 ## Synopsis
 
 A collection of filters for constructing low-level DSP pipelines via composition.
+
+> [!IMPORTANT]
+> ⚠️ This is the last published version of `signalo-filters`. All `signalo-*` crates are being merged into a single [`signalo`](https://crates.io/crates/signalo) crate. Future development and updates will happen in the unified crate.
