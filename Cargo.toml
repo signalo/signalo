@@ -13,11 +13,11 @@ circular-buffer = { version = "1.0.0", default-features = false }
 num-traits = { version = "0.2", default-features = false }
 
 # workspace members:
-signalo_filters = { version = "0.6.0", path = "./crates/filters", default-features = false }
-signalo_pipes = { version = "0.5.1", path = "./crates/pipes", default-features = false }
-signalo_sinks = { version = "0.5.2", path = "./crates/sinks", default-features = false }
-signalo_sources = { version = "0.5.2", path = "./crates/sources", default-features = false }
-signalo_traits = { version = "0.5.0", path = "./crates/traits", default-features = false }
+signalo_filters = { version = "0.6.1", path = "./crates/filters", default-features = false }
+signalo_pipes = { version = "0.5.2", path = "./crates/pipes", default-features = false }
+signalo_sinks = { version = "0.5.3", path = "./crates/sinks", default-features = false }
+signalo_sources = { version = "0.5.3", path = "./crates/sources", default-features = false }
+signalo_traits = { version = "0.5.1", path = "./crates/traits", default-features = false }
 
 # dev-dependencies:
 nearly_eq = "0.2.0"
