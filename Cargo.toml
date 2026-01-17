@@ -1,23 +1,38 @@
-[workspace]
-members = ["crates/*"]
-resolver = "2"
-
-[workspace.package]
+[package]
+name = "signalo"
+description = "A DSP toolbox with focus on embedded environments."
+categories = ["no-std", "embedded", "multimedia", "science", "algorithms"]
+keywords = ["dsp", "digital-signal", "signal-processing", "filters", "pipeline"]
+readme = "README.md"
 license = "MPL-2.0"
 repository = "https://github.com/signalo/signalo"
 rust-version = "1.68.2"
 edition = "2021"
+version = "0.7.0"
 
-[workspace.dependencies]
+[dependencies]
 circular-buffer = { version = "1.0.0", default-features = false }
+dimensioned = { version = "0.8", optional = true, default-features = false }
+guts = { version = "0.2.0", default-features = false }
 num-traits = { version = "0.2", default-features = false }
+replace_with = { version = "0.1.5", default-features = false }
 
-# workspace members:
-signalo_filters = { version = "0.6.1", path = "./crates/filters", default-features = false }
-signalo_pipes = { version = "0.5.2", path = "./crates/pipes", default-features = false }
-signalo_sinks = { version = "0.5.3", path = "./crates/sinks", default-features = false }
-signalo_sources = { version = "0.5.3", path = "./crates/sources", default-features = false }
-signalo_traits = { version = "0.5.1", path = "./crates/traits", default-features = false }
-
-# dev-dependencies:
+[dev-dependencies]
 nearly_eq = "0.2.0"
+droptest = "0.2.1"
+
+[features]
+default = []
+alloc = []
+std = [
+    "alloc",
+    "guts/std",
+    "replace_with/std",
+    "circular-buffer/std",
+    "num-traits/std",
+    "dimensioned?/std",
+]
+panic_abort = ["replace_with/panic_abort"]
+derive = []
+derive_reset_mut = []
+dimensioned = ["dep:dimensioned"]

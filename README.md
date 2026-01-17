@@ -11,11 +11,11 @@ based on zero-cost, zero-allocation abstractions, which can be **assembled via c
 
 ## About
 
-Signalo basically consists of four basic [traits](./crates/traits) and implementations thereof:
+Signalo basically consists of four basic traits and implementations thereof:
 
-- [`Source<T>`](./crates/sources): `() -> T`
-- [`Filter<T>`](./crates/filters): `T -> U`
-- [`Sink<T>`](./crates/sinks): `T -> ()`
+- `Source<T>`: `() -> T`
+- `Filter<T>`: `T -> U`
+- `Sink<T>`: `T -> ()`
 - `Finalize`: `() -> U`
 
 Roughly signalo's traits are equivalent in semantics to the following stdlib APIs:
@@ -27,8 +27,8 @@ Roughly signalo's traits are equivalent in semantics to the following stdlib API
 
 Types implementing `Finalize` usually also implement either `Filter<T>` or `Sink<T>`.
 
-Signalo provides the **basic building-blocks** for **low-level real-time filtering pipelines**,  
-which can be **assembled via composition** either manually or through the use of [pipes](./crates/pipes).
+Signalo provides the **basic building-blocks** for **low-level real-time filtering pipelines**,
+which can be **assembled via composition** either manually or through the use of pipes.
 
 ## Versioning
 
