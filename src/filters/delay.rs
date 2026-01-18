@@ -147,4 +147,44 @@ mod tests {
             .collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
+
+    #[test]
+    fn test_state_mut() {
+        let mut filter: Delay<i32, 2> = Delay::default();
+        filter.filter(1);
+        filter.filter(2);
+
+        unsafe {
+            let state = filter.state_mut();
+            // Verify we can access the state
+            assert!(state.taps.len() > 0);
+        }
+
+        // Continue filtering
+        let output = filter.filter(3);
+        assert_eq!(output, 1);
+    }
+
+    #[test]
+    fn test_from_into_guts() {
+        let filter: Delay<i32, 2> = Delay::default();
+        let guts = filter.into_guts();
+        let _new_filter: Delay<i32, 2> = FromGuts::from_guts(guts);
+    }
+
+    #[test]
+    fn test_reset() {
+        let mut filter: Delay<i32, 2> = Delay::default();
+        filter.filter(10);
+        filter.filter(20);
+
+        let reset_filter = filter.reset();
+        let mut filter_mut = reset_filter;
+
+        // After reset, should behave like new filter
+        filter_mut.filter(1);
+        filter_mut.filter(2);
+        let output = filter_mut.filter(3);
+        assert_eq!(output, 1);
+    }
 }

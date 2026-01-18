@@ -129,4 +129,114 @@ mod tests {
         ];
         assert_eq!(subject, expected);
     }
+
+    #[test]
+    fn test_bitor_operator() {
+        let input = [1, 2, 3, 4, 5];
+        let pipe1 = Pipe::new(DummyFilterAdd, DummyFilterMul);
+        let mut pipe = pipe1;
+        let subject: Vec<_> = input.iter().map(|&input| pipe.filter(input)).collect();
+        let expected = vec![4, 6, 8, 10, 12];
+        assert_eq!(subject, expected);
+    }
+
+    #[test]
+    fn test_chained_bitor() {
+        let input = [1, 2, 3];
+        let pipe1 = Pipe::new(DummyFilterAdd, DummyFilterMul);
+        let mut pipe = pipe1 | DummyFilterAdd;
+        let subject: Vec<_> = input.iter().map(|&input| pipe.filter(input)).collect();
+        // (1 + 1) * 2 + 1 = 5
+        // (2 + 1) * 2 + 1 = 7
+        // (3 + 1) * 2 + 1 = 9
+        let expected = vec![5, 7, 9];
+        assert_eq!(subject, expected);
+    }
+
+    struct DummySource {
+        values: Vec<Value>,
+        index: usize,
+    }
+
+    impl Source for DummySource {
+        type Output = Value;
+
+        fn source(&mut self) -> Option<Self::Output> {
+            if self.index < self.values.len() {
+                let value = self.values[self.index];
+                self.index += 1;
+                Some(value)
+            } else {
+                None
+            }
+        }
+    }
+
+    #[test]
+    fn test_source_pipe() {
+        let source = DummySource {
+            values: vec![1, 2, 3, 4, 5],
+            index: 0,
+        };
+        let filter = DummyFilterMul;
+        let mut pipe = Pipe::new(source, filter);
+
+        let mut results = vec![];
+        while let Some(value) = pipe.source() {
+            results.push(value);
+        }
+
+        let expected = vec![2, 4, 6, 8, 10];
+        assert_eq!(results, expected);
+    }
+
+    struct DummySink {
+        sum: Value,
+    }
+
+    impl Sink<Value> for DummySink {
+        fn sink(&mut self, input: Value) {
+            self.sum += input;
+        }
+    }
+
+    impl Finalize for DummySink {
+        type Output = Value;
+
+        fn finalize(self) -> Self::Output {
+            self.sum
+        }
+    }
+
+    #[test]
+    fn test_sink_pipe() {
+        let filter = DummyFilterAdd;
+        let sink = DummySink { sum: 0 };
+        let mut pipe = Pipe::new(filter, sink);
+
+        let inputs = [1, 2, 3, 4, 5];
+        for &input in &inputs {
+            pipe.sink(input);
+        }
+
+        let result = pipe.finalize();
+        // (1+1) + (2+1) + (3+1) + (4+1) + (5+1) = 2 + 3 + 4 + 5 + 6 = 20
+        assert_eq!(result, 20);
+    }
+
+    #[test]
+    fn test_default() {
+        #[derive(Default)]
+        struct DefaultFilter;
+
+        impl Filter<Value> for DefaultFilter {
+            type Output = Value;
+
+            fn filter(&mut self, input: Value) -> Self::Output {
+                input
+            }
+        }
+
+        let _pipe: Pipe<DefaultFilter, DefaultFilter> = Pipe::default();
+    }
 }

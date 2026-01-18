@@ -153,4 +153,104 @@ mod tests {
             vec![0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
         );
     }
+
+    #[test]
+    fn test_config_ref() {
+        let config = Config {
+            threshold: 5,
+            predicate: true,
+            outputs: [false, true],
+        };
+        let filter = Debounce::with_config(config);
+        let config_ref = filter.config_ref();
+        assert_eq!(config_ref.threshold, 5);
+        assert_eq!(config_ref.predicate, true);
+        assert_eq!(config_ref.outputs, [false, true]);
+    }
+
+    #[test]
+    fn test_config_clone() {
+        let config = Config {
+            threshold: 4,
+            predicate: 42,
+            outputs: [0, 1],
+        };
+        let filter = Debounce::with_config(config.clone());
+        let cloned_config = filter.config();
+        assert_eq!(cloned_config.threshold, 4);
+        assert_eq!(cloned_config.predicate, 42);
+        assert_eq!(cloned_config.outputs, [0, 1]);
+    }
+
+    #[test]
+    fn test_state_mut() {
+        let config = Config {
+            threshold: 3,
+            predicate: 1,
+            outputs: [10, 20],
+        };
+        let mut filter = Debounce::with_config(config);
+        filter.filter(1);
+        filter.filter(1);
+
+        unsafe {
+            let state = filter.state_mut();
+            assert_eq!(state.count, 2);
+            state.count = 5;
+        }
+
+        // After modifying state, the filter should reflect the change
+        let output = filter.filter(0);
+        // count was 5, but input doesn't match predicate, so count resets to 0
+        // index = (0 >= 3) = false = 0, so output[0] = 10
+        assert_eq!(output, 10);
+    }
+
+    #[test]
+    fn test_from_into_guts() {
+        use crate::traits::guts::{FromGuts, IntoGuts};
+
+        let config = Config {
+            threshold: 2,
+            predicate: 5,
+            outputs: [100, 200],
+        };
+        let mut filter = Debounce::with_config(config);
+        filter.filter(5);
+        filter.filter(5);
+
+        let (guts_config, guts_state) = filter.into_guts();
+        assert_eq!(guts_config.threshold, 2);
+        assert_eq!(guts_state.count, 2);
+
+        let filter2 = Debounce::from_guts((guts_config, guts_state));
+        let mut filter2 = filter2;
+        // count is 2, threshold is 2, so next matching input should trigger
+        let output = filter2.filter(5);
+        assert_eq!(output, 200);
+    }
+
+    #[test]
+    fn test_reset() {
+        let config = Config {
+            threshold: 3,
+            predicate: 7,
+            outputs: [0, 1],
+        };
+        let mut filter = Debounce::with_config(config);
+
+        // Build up the count
+        filter.filter(7);
+        filter.filter(7);
+        filter.filter(7);
+        let output = filter.filter(7);
+        assert_eq!(output, 1); // count >= threshold
+
+        // Reset the filter
+        let mut reset_filter = filter.reset();
+
+        // After reset, count should be 0
+        let output = reset_filter.filter(7);
+        assert_eq!(output, 0); // count = 1, which is < threshold
+    }
 }
