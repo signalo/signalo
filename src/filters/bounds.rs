@@ -216,4 +216,73 @@ mod tests {
             .collect();
         assert_eq!(output, get_output());
     }
+
+    #[test]
+    fn test_default_state() {
+        use crate::traits::guts::FromGuts;
+
+        const N: usize = 5;
+
+        let state: State<f32, N> = State::default();
+        let bounds = Bounds::from_guts(state);
+
+        // Filter should work correctly after default initialization
+        let mut bounds = bounds;
+        let output = bounds.filter(10.0);
+        assert_eq!(output, (10.0, 10.0));
+    }
+
+    #[test]
+    fn test_state_mut() {
+        const N: usize = 3;
+
+        let mut filter: Bounds<f32, N> = Bounds::default();
+        filter.filter(10.0);
+        filter.filter(20.0);
+
+        unsafe {
+            let state = filter.state_mut();
+            // Verify we can access the internal min and max filters
+            let _ = &state.min;
+            let _ = &state.max;
+        }
+    }
+
+    #[test]
+    fn test_from_into_guts() {
+        use crate::traits::guts::{FromGuts, IntoGuts};
+
+        const N: usize = 3;
+
+        let mut filter: Bounds<f32, N> = Bounds::default();
+        filter.filter(5.0);
+        filter.filter(15.0);
+        filter.filter(10.0);
+
+        let guts = filter.into_guts();
+        let filter2 = Bounds::from_guts(guts);
+
+        // The reconstructed filter should produce the same results
+        let mut filter2 = filter2;
+        let output = filter2.filter(8.0);
+        assert_eq!(output, (8.0, 15.0));
+    }
+
+    #[test]
+    fn test_reset() {
+        const N: usize = 3;
+
+        let mut filter: Bounds<f32, N> = Bounds::default();
+        filter.filter(100.0);
+        filter.filter(200.0);
+        filter.filter(50.0);
+
+        // Reset the filter
+        let mut reset_filter = filter.reset();
+
+        // After reset, the bounds should start fresh
+        reset_filter.filter(10.0);
+        let output = reset_filter.filter(20.0);
+        assert_eq!(output, (10.0, 20.0));
+    }
 }

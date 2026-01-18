@@ -123,4 +123,61 @@ mod tests {
             vec![0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0]
         );
     }
+
+    #[test]
+    fn test_from_guts() {
+        let config = Config {
+            threshold: 5,
+            outputs: [10, 20],
+        };
+        let filter: Threshold<i32, i32> = FromGuts::from_guts(config);
+        assert_eq!(filter.config.threshold, 5);
+    }
+
+    #[test]
+    fn test_into_guts() {
+        let config = Config {
+            threshold: 5,
+            outputs: [10, 20],
+        };
+        let filter = Threshold::with_config(config);
+        let guts = filter.into_guts();
+        assert_eq!(guts.threshold, 5);
+        assert_eq!(guts.outputs, [10, 20]);
+    }
+
+    #[test]
+    fn test_reset() {
+        let config = Config {
+            threshold: 5,
+            outputs: [10, 20],
+        };
+        let filter = Threshold::with_config(config);
+        let reset_filter = filter.reset();
+        assert_eq!(reset_filter.config.threshold, 5);
+    }
+
+    #[test]
+    fn test_threshold_at_boundary() {
+        let mut filter = Threshold::with_config(Config {
+            threshold: 10,
+            outputs: [0, 1],
+        });
+
+        assert_eq!(filter.filter(9), 0);
+        assert_eq!(filter.filter(10), 1);
+        assert_eq!(filter.filter(11), 1);
+    }
+
+    #[test]
+    fn test_string_outputs() {
+        let mut filter = Threshold::with_config(Config {
+            threshold: 5.0,
+            outputs: ["low", "high"],
+        });
+
+        assert_eq!(filter.filter(3.0), "low");
+        assert_eq!(filter.filter(7.0), "high");
+        assert_eq!(filter.filter(5.0), "high");
+    }
 }

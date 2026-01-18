@@ -197,4 +197,141 @@ mod tests {
             .collect();
         assert_nearly_eq!(output, get_output(), 0.001);
     }
+
+    #[test]
+    fn test_normalized() {
+        // Test normalizing coefficients
+        let filter = Convolve::<f32, 3>::normalized(Config {
+            coefficients: [2.0, 4.0, 6.0],
+        });
+        let config = filter.config_ref();
+        // Sum is 12.0, so normalized coefficients should be [2/12, 4/12, 6/12] = [1/6, 1/3, 1/2]
+        assert_nearly_eq!(config.coefficients[0], 1.0 / 6.0, 0.0001);
+        assert_nearly_eq!(config.coefficients[1], 1.0 / 3.0, 0.0001);
+        assert_nearly_eq!(config.coefficients[2], 1.0 / 2.0, 0.0001);
+    }
+
+    #[test]
+    fn test_normalized_zero_sum() {
+        // Test normalizing coefficients that sum to zero
+        let filter = Convolve::<f32, 3>::normalized(Config {
+            coefficients: [1.0, -1.0, 0.0],
+        });
+        let config = filter.config_ref();
+        // Sum is 0.0, so coefficients should remain unchanged
+        assert_nearly_eq!(config.coefficients[0], 1.0, 0.0001);
+        assert_nearly_eq!(config.coefficients[1], -1.0, 0.0001);
+        assert_nearly_eq!(config.coefficients[2], 0.0, 0.0001);
+    }
+
+    #[test]
+    fn test_config_ref() {
+        let config = Config {
+            coefficients: [0.5, 0.25, 0.25],
+        };
+        let filter = Convolve::<f32, 3>::with_config(config.clone());
+        let config_ref = filter.config_ref();
+        assert_nearly_eq!(config_ref.coefficients[0], 0.5, 0.0001);
+        assert_nearly_eq!(config_ref.coefficients[1], 0.25, 0.0001);
+        assert_nearly_eq!(config_ref.coefficients[2], 0.25, 0.0001);
+    }
+
+    #[test]
+    fn test_config_clone() {
+        let config = Config {
+            coefficients: [0.5, 0.25, 0.25],
+        };
+        let filter = Convolve::<f32, 3>::with_config(config.clone());
+        let cloned_config = filter.config();
+        assert_nearly_eq!(cloned_config.coefficients[0], 0.5, 0.0001);
+        assert_nearly_eq!(cloned_config.coefficients[1], 0.25, 0.0001);
+        assert_nearly_eq!(cloned_config.coefficients[2], 0.25, 0.0001);
+    }
+
+    #[test]
+    fn test_state_mut() {
+        use circular_buffer::CircularBuffer;
+
+        let config = Config {
+            coefficients: [1.0, 0.5],
+        };
+        let mut filter = Convolve::<f32, 2>::with_config(config);
+        filter.filter(1.0);
+        filter.filter(2.0);
+
+        unsafe {
+            let state = filter.state_mut();
+            // Modify the internal taps buffer
+            state.taps = CircularBuffer::from([3.0, 4.0]);
+        }
+
+        // Next filter call should use the modified state
+        let output = filter.filter(5.0);
+        // Output should be: 5.0 * 1.0 + 4.0 * 0.5 = 5.0 + 2.0 = 7.0
+        assert_nearly_eq!(output, 7.0, 0.0001);
+    }
+
+    #[test]
+    fn test_from_into_guts() {
+        use crate::traits::guts::{FromGuts, IntoGuts};
+
+        let config = Config {
+            coefficients: [1.0, 0.5],
+        };
+        let mut filter = Convolve::<f32, 2>::with_config(config.clone());
+        filter.filter(3.0);
+        filter.filter(4.0);
+
+        let (guts_config, guts_state) = filter.into_guts();
+        assert_nearly_eq!(guts_config.coefficients[0], 1.0, 0.0001);
+        assert_nearly_eq!(guts_config.coefficients[1], 0.5, 0.0001);
+
+        let filter2 = Convolve::from_guts((guts_config, guts_state));
+        let output = filter2.config_ref();
+        assert_nearly_eq!(output.coefficients[0], 1.0, 0.0001);
+    }
+
+    #[test]
+    fn test_reset() {
+        let config = Config {
+            coefficients: [1.0, 1.0, 1.0],
+        };
+        let mut filter = Convolve::<f32, 3>::with_config(config);
+
+        // Fill the buffer
+        filter.filter(1.0);
+        filter.filter(2.0);
+        filter.filter(3.0);
+        let output = filter.filter(4.0);
+        assert_nearly_eq!(output, 9.0, 0.0001); // 2 + 3 + 4
+
+        // Reset the filter
+        let mut reset_filter = filter.reset();
+
+        // After reset, buffer should be empty and fill again
+        reset_filter.filter(10.0);
+        reset_filter.filter(20.0);
+        reset_filter.filter(30.0);
+        let output = reset_filter.filter(40.0);
+        assert_nearly_eq!(output, 90.0, 0.0001); // 20 + 30 + 40
+    }
+
+    #[test]
+    fn test_filter_buffer_filling() {
+        // Test the loop that fills the circular buffer initially
+        let config = Config {
+            coefficients: [0.25, 0.25, 0.25, 0.25],
+        };
+        let mut filter = Convolve::<f32, 4>::with_config(config);
+
+        // First input - buffer not full yet, loops until full
+        let output1 = filter.filter(4.0);
+        // All positions get 4.0, output = 4 * 4.0 * 0.25 = 4.0
+        assert_nearly_eq!(output1, 4.0, 0.0001);
+
+        // Second input - buffer now full
+        let output2 = filter.filter(8.0);
+        // Buffer: [4, 4, 4, 8], output = 4*0.25 + 4*0.25 + 4*0.25 + 8*0.25 = 5.0
+        assert_nearly_eq!(output2, 5.0, 0.0001);
+    }
 }

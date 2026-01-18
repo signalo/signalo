@@ -153,4 +153,94 @@ mod tests {
             vec![0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]
         );
     }
+
+    #[test]
+    fn test_config_ref() {
+        let config = Config {
+            thresholds: [3.0, 7.0],
+            outputs: [false, true],
+        };
+        let filter = Schmitt::with_config(config);
+        let config_ref = filter.config_ref();
+        assert_eq!(config_ref.thresholds, [3.0, 7.0]);
+        assert_eq!(config_ref.outputs, [false, true]);
+    }
+
+    #[test]
+    fn test_config_clone() {
+        let config = Config {
+            thresholds: [10, 20],
+            outputs: [0, 100],
+        };
+        let filter = Schmitt::with_config(config.clone());
+        let cloned_config = filter.config();
+        assert_eq!(cloned_config.thresholds, [10, 20]);
+        assert_eq!(cloned_config.outputs, [0, 100]);
+    }
+
+    #[test]
+    fn test_state_mut() {
+        let config = Config {
+            thresholds: [5, 10],
+            outputs: [0, 1],
+        };
+        let mut filter = Schmitt::with_config(config);
+
+        // Initially off
+        assert_eq!(filter.filter(3), 0);
+
+        unsafe {
+            let state = filter.state_mut();
+            assert_eq!(state.on, false);
+            // Force the state to on
+            state.on = true;
+        }
+
+        // Now with state forced to on, even low values should keep it on until below threshold
+        let output = filter.filter(6);
+        assert_eq!(output, 1); // 6 >= 5, so stays on
+    }
+
+    #[test]
+    fn test_from_into_guts() {
+        use crate::traits::guts::{FromGuts, IntoGuts};
+
+        let config = Config {
+            thresholds: [2.5, 7.5],
+            outputs: [10.0, 20.0],
+        };
+        let mut filter = Schmitt::with_config(config);
+        filter.filter(10.0); // Turn on
+
+        let (guts_config, guts_state) = filter.into_guts();
+        assert_eq!(guts_config.thresholds, [2.5, 7.5]);
+        assert_eq!(guts_state.on, true);
+
+        let filter2 = Schmitt::from_guts((guts_config, guts_state));
+        let mut filter2 = filter2;
+        // State is on, so it should output 20.0 for values >= 2.5
+        let output = filter2.filter(5.0);
+        assert_eq!(output, 20.0);
+    }
+
+    #[test]
+    fn test_reset() {
+        let config = Config {
+            thresholds: [5, 10],
+            outputs: [0, 1],
+        };
+        let mut filter = Schmitt::with_config(config);
+
+        // Turn the schmitt trigger on
+        filter.filter(15);
+        let output = filter.filter(8);
+        assert_eq!(output, 1); // Still on because 8 >= 5
+
+        // Reset the filter
+        let mut reset_filter = filter.reset();
+
+        // After reset, state should be off again
+        let output = reset_filter.filter(8);
+        assert_eq!(output, 0); // Off because 8 is not > 10
+    }
 }
