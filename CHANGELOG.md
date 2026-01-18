@@ -20,15 +20,11 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- Added sliding window filters for moving minimum/maximum/bounds.
+- n/a
 
 ### Changed
 
-- Replaced own `CircularBuffer` with `circular_buffer` crate.
-- Updated dependencies:
-  - `dimensioned` from `0.7` to `0.8`
-  - `guts` from `0.1.1` to `0.2.0`
-  - `replace_with` from `0.1.5` to `0.1.8`
+- n/a
 
 ### Deprecated
 
@@ -40,13 +36,11 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Fixed
 
-- Fixed `Mean` filter incorrectly doubling the first input value (#126).
-- Fixed variance calculation in `MeanVariance` filter.
+- n/a
 
 ### Performance
 
-- Reduced redundant clones in Kalman filter.
-- Used `take()` pattern in `MeanVariance` sink to reduce clones.
+- n/a
 
 ### Security
 
@@ -55,6 +49,39 @@ Please make sure to add your changes to the appropriate categories:
 ### Other
 
 - n/a
+
+## [0.7.0] - 2026-01-18
+
+### Added
+
+- Added sliding window filters for moving minimum/maximum/bounds.
+
+### Changed
+
+- Merged `signalo_…` crates into the `signalo` umbrella crate.
+- Replaced own `CircularBuffer` with `circular_buffer` crate.
+- Updated dependencies:
+  - `dimensioned` from `0.7` to `0.8`
+  - `guts` from `0.1.1` to `0.2.0`
+  - `replace_with` from `0.1.5` to `0.1.8`
+
+### Removed
+
+- Removed the `signalo_traits` crate (merging it into the `signalo` umbrella crate).
+- Removed the `signalo_filters` crate (merging it into the `signalo` umbrella crate).
+- Removed the `signalo_pipes` crate (merging it into the `signalo` umbrella crate).
+- Removed the `signalo_sources` crate (merging it into the `signalo` umbrella crate).
+- Removed the `signalo_sinks` crate (merging it into the `signalo` umbrella crate).
+
+### Fixed
+
+- Fixed `Mean` filter incorrectly doubling the first input value (#126).
+- Fixed variance calculation in `MeanVariance` filter.
+
+### Performance
+
+- Reduced redundant clones in Kalman filter.
+- Used `take()` pattern in `MeanVariance` sink to reduce clones.
 
 ## [0.6.0] - 2021-06-28
 
