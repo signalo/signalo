@@ -21,6 +21,7 @@ Please make sure to add your changes to the appropriate categories:
 ### Added
 
 - Added `BiquadCascade` and `Butterworth` low-pass, high-pass, band-pass, and band-stop biquad filters
+- Added `Allpass`, `Comb`, `DcBlocker`, and `FirstOrder` IIR filters
 
 ### Changed
 
