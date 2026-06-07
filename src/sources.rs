@@ -61,11 +61,10 @@ pub mod into_iter;
 /// suitable for DSP and embedded applications requiring fast, simple PRNG behavior.
 pub mod noise;
 
-/// Wrapper converting IntoIterator to Source trait implementation.
+/// Oscillators for generating periodic waveforms.
 ///
-/// Adapts types implementing IntoIterator into the Source trait, enabling flexible
-/// integration with Rust's iterator ecosystem.
-pub mod into_iter;
+/// Provides stable recursive generators for sine, cosine, and other periodic signals.
+pub mod oscillator;
 
 /// Padding source that extends sequences with padding values.
 ///
