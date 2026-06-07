@@ -76,3 +76,15 @@ pub mod rms;
 ///
 /// Tracks the maximum absolute value of a signal, with optional decay when no larger signal arrives.
 pub mod peak_hold;
+
+/// Histogram sinks for signal distribution analysis.
+///
+/// Divides a signal's range into equally-sized bins and counts how many samples fall into each bin,
+/// providing a distribution histogram. Out-of-bounds values are clamped to edge bins.
+pub mod histogram;
+
+/// Percentile approximation sinks based on histogram binning.
+///
+/// Approximates percentiles (quartiles, medians, etc.) by computing cumulative bin counts
+/// from the underlying histogram and returning interpolated quantile values.
+pub mod percentile;
