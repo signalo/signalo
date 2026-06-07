@@ -39,6 +39,11 @@ where
 }
 
 /// A min filter producing the moving minimum over a given signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) amortised O(1) — same monotone-deque argument as `Max`.
+/// - **Space:** O(N) — deque holds at most N `(value, timestamp)` pairs.
 #[derive(Clone)]
 pub struct Min<T, const N: usize> {
     state: State<T, N>,
@@ -46,6 +51,7 @@ pub struct Min<T, const N: usize> {
 
 impl<T, const N: usize> Default for Min<T, N> {
     fn default() -> Self {
+        assert!(N > 0, "Min: window size N must be > 0");
         Self {
             state: State {
                 time: 0,
@@ -69,7 +75,7 @@ impl<T, const N: usize> StateTrait for Min<T, N> {
 }
 
 impl<T, const N: usize> StateMut for Min<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -140,11 +146,15 @@ where
             for (_, time) in self.state.taps.iter_mut() {
                 *time -= offset;
             }
-            self.state.time = N;
+            self.state.time = N + 1;
         }
 
-        #[allow(clippy::unwrap_used)]
-        self.state.taps.front().unwrap().0.clone()
+        self.state
+            .taps
+            .front()
+            .expect("min taps must be non-empty; push_back guarantees at least one element")
+            .0
+            .clone()
     }
 }
 
@@ -154,6 +164,12 @@ mod tests {
     use std::vec::Vec;
 
     use super::*;
+
+    #[test]
+    #[should_panic(expected = "window size N must be > 0")]
+    fn zero_window_panics() {
+        let _: Min<f32, 0> = Min::default();
+    }
 
     fn get_input() -> Vec<f32> {
         vec![
@@ -171,6 +187,24 @@ mod tests {
             5.0, 5.0, 13.0, 13.0, 13.0, 21.0, 21.0, 8.0, 8.0, 8.0, 8.0, 8.0, 16.0, 16.0, 16.0,
             11.0, 11.0, 11.0,
         ]
+    }
+
+    #[test]
+    fn overflow_monotonicity() {
+        const N: usize = 3;
+        let mut filter: Min<usize, N> = Min::default();
+        // Pump N values so the deque has realistic content, then wind time forward.
+        filter.filter(0);
+        filter.filter(0);
+        filter.filter(0);
+        filter.state_mut().time = usize::MAX;
+        // Forcibly clear the deque so stale timestamps don't trigger overflow
+        // in the expiry check before the recovery branch can run.
+        filter.state_mut().taps.clear();
+        filter.filter(10); // time == usize::MAX → triggers overflow branch
+        filter.filter(20);
+        // Window = [10, 20]; min = 10
+        assert_eq!(filter.filter(15), 10);
     }
 
     #[test]

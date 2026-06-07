@@ -46,6 +46,11 @@ pub struct State<T> {
 }
 
 /// A mean/variance filter producing the exponential moving average and variance over a given signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — two EMA updates (mean and variance), each O(1).
+/// - **Space:** O(1) — two inner `exp::Mean<T>` instances, each O(1).
 #[derive(Clone, Debug)]
 pub struct MeanVariance<T> {
     config: Config<T>,
@@ -96,7 +101,7 @@ where
 }
 
 impl<T> StateMut for MeanVariance<T> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -138,14 +143,13 @@ where
     type Output = Output<T>;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let mean_old = unsafe {
-            self.state
-                .mean
-                .state_mut()
-                .mean
-                .clone()
-                .unwrap_or_else(|| input.clone())
-        };
+        let mean_old = self
+            .state
+            .mean
+            .state_mut()
+            .mean
+            .clone()
+            .unwrap_or_else(|| input.clone());
         let mean = self.state.mean.filter(input.clone());
         let deviation_old = (input.clone() - mean_old).abs();
         let deviation_new = (input - mean.clone()).abs();

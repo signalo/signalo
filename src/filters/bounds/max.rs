@@ -39,6 +39,12 @@ where
 }
 
 /// A max filter producing the moving maximum over a given signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) amortised O(1) — each element is pushed and popped at most once
+///   across N calls (monotone deque); O(N) only on the rare `usize::MAX` timestamp recovery.
+/// - **Space:** O(N) — deque holds at most N `(value, timestamp)` pairs.
 #[derive(Clone)]
 pub struct Max<T, const N: usize> {
     state: State<T, N>,
@@ -46,6 +52,7 @@ pub struct Max<T, const N: usize> {
 
 impl<T, const N: usize> Default for Max<T, N> {
     fn default() -> Self {
+        assert!(N > 0, "Max: window size N must be > 0");
         Self {
             state: State {
                 time: 0,
@@ -69,7 +76,7 @@ impl<T, const N: usize> StateTrait for Max<T, N> {
 }
 
 impl<T, const N: usize> StateMut for Max<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -140,11 +147,15 @@ where
             for (_, time) in self.state.taps.iter_mut() {
                 *time -= offset;
             }
-            self.state.time = N;
+            self.state.time = N + 1;
         }
 
-        #[allow(clippy::unwrap_used)]
-        self.state.taps.front().unwrap().0.clone()
+        self.state
+            .taps
+            .front()
+            .expect("max taps must be non-empty; push_back guarantees at least one element")
+            .0
+            .clone()
     }
 }
 
@@ -154,6 +165,12 @@ mod tests {
     use std::vec::Vec;
 
     use super::*;
+
+    #[test]
+    #[should_panic(expected = "window size N must be > 0")]
+    fn zero_window_panics() {
+        let _: Max<f32, 0> = Max::default();
+    }
 
     fn get_input() -> Vec<f32> {
         vec![
@@ -171,6 +188,25 @@ mod tests {
             18.0, 106.0, 106.0, 106.0, 26.0, 26.0, 21.0, 21.0, 21.0, 34.0, 34.0, 109.0, 109.0,
             109.0, 29.0, 29.0, 16.0, 104.0, 104.0, 104.0, 24.0,
         ]
+    }
+
+    #[test]
+    fn overflow_monotonicity() {
+        const N: usize = 3;
+        let mut filter: Max<usize, N> = Max::default();
+        // Pump N values so the deque has realistic content, then wind time forward.
+        filter.filter(0);
+        filter.filter(0);
+        filter.filter(0);
+        filter.state_mut().time = usize::MAX;
+        // Forcibly clear the deque so stale timestamps don't trigger overflow
+        // in the expiry check before the recovery branch can run.
+        filter.state_mut().taps.clear();
+        filter.filter(10); // time == usize::MAX → triggers overflow branch
+        filter.filter(20);
+        filter.filter(15);
+        // Window should contain [10, 20, 15]; max = 20
+        assert_eq!(filter.filter(1), 20);
     }
 
     #[test]

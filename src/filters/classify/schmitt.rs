@@ -15,11 +15,45 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
+/// A validated pair of threshold values for a Schmitt trigger,
+/// guaranteeing that `low <= high`.
+#[derive(Clone, Debug)]
+pub struct Thresholds<T> {
+    low: T,
+    high: T,
+}
+
+impl<T> Thresholds<T>
+where
+    T: PartialOrd,
+{
+    /// Creates a new `Thresholds` pair.
+    ///
+    /// Returns `None` if `low > high`.
+    pub fn new(low: T, high: T) -> Option<Self> {
+        if low <= high {
+            Some(Self { low, high })
+        } else {
+            None
+        }
+    }
+
+    /// Returns the low threshold.
+    pub fn low(&self) -> &T {
+        &self.low
+    }
+
+    /// Returns the high threshold.
+    pub fn high(&self) -> &T {
+        &self.high
+    }
+}
+
 /// The [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger)'s configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T, U> {
-    /// [low, high] input thresholds.
-    pub thresholds: [T; 2],
+    /// Validated [low, high] input thresholds.
+    pub thresholds: Thresholds<T>,
     /// [off, on] outputs.
     pub outputs: [U; 2],
 }
@@ -32,6 +66,11 @@ pub struct State {
 }
 
 /// A [Schmitt trigger](https://en.wikipedia.org/wiki/Schmitt_trigger).
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — two threshold comparisons and an array index.
+/// - **Space:** O(1) — stores one `bool`.
 #[derive(Clone, Debug)]
 pub struct Schmitt<T, U> {
     /// The filter's configuration.
@@ -76,7 +115,7 @@ where
 }
 
 impl<T, U> StateMut for Schmitt<T, U> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -116,9 +155,9 @@ where
 
     fn filter(&mut self, input: T) -> Self::Output {
         self.state.on = if self.state.on {
-            input >= self.config.thresholds[0]
+            input >= *self.config.thresholds.low()
         } else {
-            input > self.config.thresholds[1]
+            input > *self.config.thresholds.high()
         };
         let index: usize = self.state.on.into();
         self.config.outputs[index].clone()
@@ -137,7 +176,7 @@ mod tests {
     #[test]
     fn test() {
         let filter = Schmitt::with_config(Config {
-            thresholds: [5, 10],
+            thresholds: Thresholds::new(5, 10).unwrap(),
             outputs: u8::classes(),
         });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
@@ -157,31 +196,33 @@ mod tests {
     #[test]
     fn test_config_ref() {
         let config = Config {
-            thresholds: [3.0, 7.0],
+            thresholds: Thresholds::new(3.0, 7.0).unwrap(),
             outputs: [false, true],
         };
         let filter = Schmitt::with_config(config);
         let config_ref = filter.config_ref();
-        assert_eq!(config_ref.thresholds, [3.0, 7.0]);
+        assert_eq!(*config_ref.thresholds.low(), 3.0);
+        assert_eq!(*config_ref.thresholds.high(), 7.0);
         assert_eq!(config_ref.outputs, [false, true]);
     }
 
     #[test]
     fn test_config_clone() {
         let config = Config {
-            thresholds: [10, 20],
+            thresholds: Thresholds::new(10, 20).unwrap(),
             outputs: [0, 100],
         };
         let filter = Schmitt::with_config(config.clone());
         let cloned_config = filter.config();
-        assert_eq!(cloned_config.thresholds, [10, 20]);
+        assert_eq!(*cloned_config.thresholds.low(), 10);
+        assert_eq!(*cloned_config.thresholds.high(), 20);
         assert_eq!(cloned_config.outputs, [0, 100]);
     }
 
     #[test]
     fn test_state_mut() {
         let config = Config {
-            thresholds: [5, 10],
+            thresholds: Thresholds::new(5, 10).unwrap(),
             outputs: [0, 1],
         };
         let mut filter = Schmitt::with_config(config);
@@ -189,12 +230,10 @@ mod tests {
         // Initially off
         assert_eq!(filter.filter(3), 0);
 
-        unsafe {
-            let state = filter.state_mut();
-            assert_eq!(state.on, false);
-            // Force the state to on
-            state.on = true;
-        }
+        let state = filter.state_mut();
+        assert_eq!(state.on, false);
+        // Force the state to on
+        state.on = true;
 
         // Now with state forced to on, even low values should keep it on until below threshold
         let output = filter.filter(6);
@@ -206,14 +245,15 @@ mod tests {
         use crate::traits::guts::{FromGuts, IntoGuts};
 
         let config = Config {
-            thresholds: [2.5, 7.5],
+            thresholds: Thresholds::new(2.5, 7.5).unwrap(),
             outputs: [10.0, 20.0],
         };
         let mut filter = Schmitt::with_config(config);
         filter.filter(10.0); // Turn on
 
         let (guts_config, guts_state) = filter.into_guts();
-        assert_eq!(guts_config.thresholds, [2.5, 7.5]);
+        assert_eq!(*guts_config.thresholds.low(), 2.5);
+        assert_eq!(*guts_config.thresholds.high(), 7.5);
         assert_eq!(guts_state.on, true);
 
         let filter2 = Schmitt::from_guts((guts_config, guts_state));
@@ -226,7 +266,7 @@ mod tests {
     #[test]
     fn test_reset() {
         let config = Config {
-            thresholds: [5, 10],
+            thresholds: Thresholds::new(5, 10).unwrap(),
             outputs: [0, 1],
         };
         let mut filter = Schmitt::with_config(config);
@@ -242,5 +282,18 @@ mod tests {
         // After reset, state should be off again
         let output = reset_filter.filter(8);
         assert_eq!(output, 0); // Off because 8 is not > 10
+    }
+
+    #[test]
+    fn thresholds_rejects_inverted() {
+        assert!(Thresholds::<i32>::new(10, 5).is_none());
+        assert!(Thresholds::<f32>::new(1.0, 0.0).is_none());
+    }
+
+    #[test]
+    fn thresholds_accepts_equal() {
+        // low == high is valid (degenerate trigger that never produces hysteresis,
+        // but does not break the invariant).
+        assert!(Thresholds::<i32>::new(5, 5).is_some());
     }
 }

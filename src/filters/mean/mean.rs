@@ -42,6 +42,12 @@ where
 }
 
 /// A mean filter producing the moving median over a given signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) when the window is full (sum recomputed from scratch to
+///   prevent floating-point drift); O(1) during the initial N-sample warm-up.
+/// - **Space:** O(N) — circular buffer of N samples plus scalar accumulators.
 #[derive(Clone)]
 pub struct Mean<T, const N: usize> {
     state: State<T, N>,
@@ -52,6 +58,7 @@ where
     T: Zero,
 {
     fn default() -> Self {
+        assert!(N > 0, "Mean: window size N must be > 0");
         let state = {
             let mean = None;
             let taps = CircularBuffer::default();
@@ -76,7 +83,7 @@ impl<T, const N: usize> StateTrait for Mean<T, N> {
 }
 
 impl<T, const N: usize> StateMut for Mean<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -117,14 +124,18 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let old_mean = self.state.mean.clone().unwrap_or_else(|| T::zero());
         let old_weight = self.state.weight.clone();
 
         #[allow(clippy::option_if_let_else)]
-        let (mean, weight) = if let Some(old_input) = self.state.taps.push_back(input.clone()) {
-            let mean = old_mean - old_input + input;
-            (mean, old_weight)
+        let (mean, weight) = if let Some(_old_input) = self.state.taps.push_back(input.clone()) {
+            let sum = self
+                .state
+                .taps
+                .iter()
+                .fold(T::zero(), |acc, x| acc + x.clone());
+            (sum, old_weight)
         } else {
+            let old_mean = self.state.mean.clone().unwrap_or_else(T::zero);
             let mean = old_mean + input;
             let weight = old_weight + T::one();
             (mean, weight)
@@ -143,6 +154,12 @@ mod tests {
     use nearly_eq::assert_nearly_eq;
 
     use super::*;
+
+    #[test]
+    #[should_panic(expected = "window size N must be > 0")]
+    fn zero_window_panics() {
+        let _: Mean<f32, 0> = Mean::default();
+    }
 
     fn get_input() -> Vec<f32> {
         vec![
@@ -185,5 +202,20 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
         assert_nearly_eq!(outputs, expected_outputs, 0.001);
+    }
+
+    #[test]
+    fn no_float_drift_over_long_run() {
+        let mut filter: Mean<f64, 4> = Mean::default();
+        for _ in 0..1_000_000 {
+            filter.filter(1.0);
+            filter.filter(3.0);
+            filter.filter(1.0);
+            filter.filter(3.0);
+        }
+        // Buffer is [1,3,1,3]
+        // Adding 2.0 replaces 1.0. Buffer becomes [3,1,3,2], sum 9.0, mean 2.25.
+        let result = filter.filter(2.0);
+        assert!((result - 2.25).abs() < 1e-10, "mean drifted to {result}");
     }
 }

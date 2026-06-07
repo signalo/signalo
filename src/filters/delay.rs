@@ -32,6 +32,12 @@ where
 }
 
 /// A delay filter producing the moving median over a given signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) only on the first N calls (buffer fill); O(1) thereafter —
+///   one `push_back` to the circular buffer.
+/// - **Space:** O(N) — circular buffer of N delayed samples.
 #[derive(Clone)]
 pub struct Delay<T, const N: usize> {
     state: State<T, N>,
@@ -61,7 +67,7 @@ impl<T, const N: usize> StateTrait for Delay<T, N> {
 }
 
 impl<T, const N: usize> StateMut for Delay<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -154,11 +160,9 @@ mod tests {
         filter.filter(1);
         filter.filter(2);
 
-        unsafe {
-            let state = filter.state_mut();
-            // Verify we can access the state
-            assert!(state.taps.len() > 0);
-        }
+        let state = filter.state_mut();
+        // Verify we can access the state
+        assert!(state.taps.len() > 0);
 
         // Continue filtering
         let output = filter.filter(3);

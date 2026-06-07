@@ -86,7 +86,7 @@ impl<T, const N: usize> StateTrait for Bounds<T, N> {
 }
 
 impl<T, const N: usize> StateMut for Bounds<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -240,12 +240,10 @@ mod tests {
         filter.filter(10.0);
         filter.filter(20.0);
 
-        unsafe {
-            let state = filter.state_mut();
-            // Verify we can access the internal min and max filters
-            let _ = &state.min;
-            let _ = &state.max;
-        }
+        let state = filter.state_mut();
+        // Verify we can access the internal min and max filters
+        let _ = &state.min;
+        let _ = &state.max;
     }
 
     #[test]

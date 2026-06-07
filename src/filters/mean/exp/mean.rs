@@ -33,6 +33,11 @@ pub struct State<T> {
 }
 
 /// A mean filter producing the exponential moving average over a given signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — one multiply-accumulate update.
+/// - **Space:** O(1) — stores one `Option<T>`.
 #[derive(Clone, Debug)]
 pub struct Mean<T> {
     config: Config<T>,
@@ -75,7 +80,7 @@ where
 }
 
 impl<T> StateMut for Mean<T> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }

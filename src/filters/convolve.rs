@@ -37,6 +37,12 @@ pub struct State<T, const N: usize> {
 }
 
 /// A convolution filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) — dot product of N taps with N coefficients.
+///   The first call pads the buffer by repeating the input N times, also O(N).
+/// - **Space:** O(N) — circular tap buffer of N elements plus N coefficient array.
 #[derive(Clone, Debug)]
 pub struct Convolve<T, const N: usize> {
     config: Config<T, N>,
@@ -74,6 +80,7 @@ impl<T, const N: usize> WithConfig for Convolve<T, N> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
+        assert!(N > 0, "Convolve: window size N must be > 0");
         let state = {
             let taps = CircularBuffer::default();
             State { taps }
@@ -98,7 +105,7 @@ where
 }
 
 impl<T, const N: usize> StateMut for Convolve<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -164,6 +171,12 @@ mod tests {
     use nearly_eq::assert_nearly_eq;
 
     use super::*;
+
+    #[test]
+    #[should_panic(expected = "window size N must be > 0")]
+    fn zero_window_panics() {
+        let _ = Convolve::<f32, 0>::with_config(Config { coefficients: [] });
+    }
 
     fn get_input() -> Vec<f32> {
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
@@ -259,11 +272,9 @@ mod tests {
         filter.filter(1.0);
         filter.filter(2.0);
 
-        unsafe {
-            let state = filter.state_mut();
-            // Modify the internal taps buffer
-            state.taps = CircularBuffer::from([3.0, 4.0]);
-        }
+        let state = filter.state_mut();
+        // Modify the internal taps buffer
+        state.taps = CircularBuffer::from([3.0, 4.0]);
 
         // Next filter call should use the modified state
         let output = filter.filter(5.0);

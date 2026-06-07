@@ -45,6 +45,12 @@ pub struct State<T> {
 }
 
 /// A median filter producing the approximated exponential moving median over a given signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — two EMA updates (pre and post mean) plus one
+///   multiply-accumulate for the median estimate.
+/// - **Space:** O(1) — two inner `exp::Mean<T>` instances plus one `Option<T>`.
 #[derive(Clone, Debug)]
 pub struct Median<T> {
     config: Config<T>,
@@ -96,7 +102,7 @@ where
 }
 
 impl<T> StateMut for Median<T> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }

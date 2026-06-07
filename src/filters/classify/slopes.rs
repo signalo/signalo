@@ -50,6 +50,11 @@ pub struct State<T> {
 }
 
 /// A slope detection filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — one `partial_cmp` and an array index.
+/// - **Space:** O(1) — stores one `Option<T>`.
 #[derive(Clone, Debug)]
 pub struct Slopes<T, U> {
     config: Config<U>,
@@ -89,7 +94,7 @@ where
 }
 
 impl<T, U> StateMut for Slopes<T, U> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }

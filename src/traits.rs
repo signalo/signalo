@@ -90,13 +90,14 @@ pub trait State: Sized {
 
 /// Trait for systems with mutably accessible state.
 pub trait StateMut: State {
-    /// Returns a mutable reference to the internal state of the filter.
+    /// Returns a mutable reference to the internal state.
     ///
-    /// # Safety
+    /// # Warning
     ///
-    /// Relying on the internal structure of an object breaks encapsulation,
-    /// putting your code at risk of breaking your invariants.
-    unsafe fn state_mut(&mut self) -> &mut Self::State;
+    /// Relying on the internal structure of a filter breaks encapsulation
+    /// and risks violating internal invariants. Prefer using the public API.
+    #[doc(hidden)]
+    fn state_mut(&mut self) -> &mut Self::State;
 }
 
 /// Trait for **resettable** systems.
@@ -134,29 +135,36 @@ pub trait ResetMut: Reset {
     /// On panic (or to be more precise, unwinding) the process will **abort**
     /// to avoid returning control while `self` is in a potentially invalid state.
     ///
-    /// You are expected to have `features = ["panic_abort", …]` defined in `Cargo.toml`
-    /// and `panic = "abort"` defined in your profile for it to behave semantically correct:
+    /// # Safety
+    ///
+    /// This method is only sound when the active profile has `panic = "abort"`.
+    /// If `panic = "unwind"` is in effect and a panic occurs inside `reset()`,
+    /// this method triggers **undefined behaviour**: the `replace_with` crate
+    /// will leave `self` in an invalid state while unwinding continues.
+    ///
+    /// You **must** have both `features = ["panic_abort", …]` in `Cargo.toml`
+    /// **and** `panic = "abort"` in the relevant `[profile.*]` sections:
     ///
     /// ```toml
-    /// # Cargo.toml
-    ///
-    /// [profile.debug]
+    /// [profile.release]
     /// panic = "abort"
     ///
-    /// [profile.release]
+    /// [profile.dev]
     /// panic = "abort"
     /// ```
     ///
-    /// # Safety
+    /// # Panics
     ///
-    /// It is crucial to only ever use this function having defined `panic = "abort"`, or else bad
-    /// things may happen. It's *up to you* to uphold this invariant!
+    /// If the inner `reset()` call panics and the profile does **not** have
+    /// `panic = "abort"`, behaviour is undefined.
     #[cfg(all(
         feature = "derive_reset_mut",
         not(feature = "std"),
         feature = "panic_abort"
     ))]
     fn reset_mut(&mut self) {
+        // SAFETY: caller is responsible for ensuring `panic = "abort"` in
+        // every active Cargo profile. Violating this causes UB on panic.
         unsafe { self.reset_mut_or_abort_unchecked() }
     }
 
@@ -193,6 +201,9 @@ pub trait ResetMut: Reset {
     /// things may happen. It's *up to you* to uphold this invariant!
     #[cfg(feature = "panic_abort")]
     unsafe fn reset_mut_or_abort_unchecked(&mut self) {
+        // SAFETY: the caller guarantees that `panic = "abort"` is set in
+        // every active Cargo profile, so unwinding cannot occur. Without
+        // this guarantee `replace_with_or_abort_unchecked` causes UB on panic.
         replace_with::replace_with_or_abort_unchecked(self, |owned_self| owned_self.reset())
     }
 }

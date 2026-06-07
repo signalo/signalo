@@ -23,6 +23,11 @@ pub struct State<T, U> {
 }
 
 /// A filter wrapper that caches the wrapped inner filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the wrapped inner filter — `Cache` adds O(1) overhead (one clone of the output).
+/// - **Space:** O(1) extra — stores one `Option<U>` alongside the inner filter's own state.
 #[derive(Clone, Debug)]
 pub struct Cache<T, U> {
     state: State<T, U>,
@@ -104,7 +109,7 @@ impl<T, U> StateMut for Cache<T, U>
 where
     T: StateMut,
 {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -222,7 +227,7 @@ mod tests {
     }
 
     impl StateMut for ConfigurableAdd {
-        unsafe fn state_mut(&mut self) -> &mut Self::State {
+        fn state_mut(&mut self) -> &mut Self::State {
             &mut self.state_placeholder
         }
     }
@@ -296,11 +301,9 @@ mod tests {
         let mut cache: Cache<ConfigurableAdd, f32> = Cache::from(add);
         cache.filter(5.0);
 
-        unsafe {
-            let state = cache.state_mut();
-            assert_nearly_eq!(state.cached, Some(6.0));
-            state.cached = Some(10.0);
-        }
+        let state = cache.state_mut();
+        assert_nearly_eq!(state.cached, Some(6.0));
+        state.cached = Some(10.0);
 
         assert_nearly_eq!(cache.cached(), Some(10.0));
     }
