@@ -4,7 +4,7 @@
 
 //! Differentiation filters.
 
-use core::ops::Sub;
+use core::ops::Add;
 
 use num_traits::Zero;
 
@@ -24,6 +24,11 @@ pub struct State<T> {
 }
 
 /// A integration filter that produces the integral of the signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — one addition.
+/// - **Space:** O(1) — stores one running sum.
 #[derive(Clone, Debug)]
 pub struct Integrate<T> {
     state: State<T>,
@@ -47,7 +52,7 @@ impl<T> StateTrait for Integrate<T> {
 }
 
 impl<T> StateMut for Integrate<T> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -83,9 +88,9 @@ impl<T> ResetMut for Integrate<T> where Self: Reset {}
 
 impl<T> Filter<T> for Integrate<T>
 where
-    T: Clone + Sub<T, Output = T> + Zero,
+    T: Clone + Add<T, Output = T> + Zero,
 {
-    type Output = <T as Sub<T>>::Output;
+    type Output = <T as Add<T>>::Output;
 
     fn filter(&mut self, input: T) -> Self::Output {
         let state = self.state.value.clone() + input;

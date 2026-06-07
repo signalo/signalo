@@ -10,16 +10,16 @@
 /// which gives more weight to recent values. Useful for adaptive filtering and real-time signal smoothing.
 pub mod exp;
 
-#[allow(clippy::module_inception)]
 /// Basic moving average filter.
 ///
 /// Computes the arithmetic mean of values within a sliding window. Classic noise reduction filter
 /// with linear phase response.
+#[allow(clippy::module_inception)]
 pub mod mean;
 
-#[allow(clippy::module_name_repetitions)]
 /// Mean with simultaneous variance computation.
 ///
 /// Efficiently computes both mean and variance in a single pass over the data,
 /// useful for statistical analysis and adaptive filtering applications.
+#[allow(clippy::module_name_repetitions)]
 pub mod mean_variance;

@@ -5,7 +5,6 @@
 //! Moving median filters.
 
 use core::fmt;
-use core::mem::MaybeUninit;
 
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
@@ -32,6 +31,7 @@ pub struct State<T, const N: usize> {
     head: usize,
     // Cursor to median of circular list:
     median: usize,
+    filled: usize,
 }
 
 impl<T, const N: usize> fmt::Debug for State<T, N>
@@ -44,6 +44,7 @@ where
             .field("cursor", &self.cursor)
             .field("head", &self.head)
             .field("median", &self.median)
+            .field("filled", &self.filled)
             .finish()
     }
 }
@@ -107,6 +108,12 @@ where
 /// 8. **Return median value**.
 ///
 /// (_Based on Phil Ekstrom, Embedded Systems Programming, November 2000._)
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) — one linear scan to find the insertion point in the sorted
+///   linked list, plus an O(N) walk to recompute the median pointer from `head`.
+/// - **Space:** O(N) — fixed-size array of N `ListNode` entries embedded in-place.
 #[derive(Clone, Debug)]
 pub struct Median<T, const N: usize> {
     state: State<T, N>,
@@ -114,46 +121,25 @@ pub struct Median<T, const N: usize> {
 
 impl<T, const N: usize> Default for Median<T, N> {
     fn default() -> Self {
+        assert!(N > 0, "Median: window size N must be > 0");
         let state = {
-            let buffer = {
-                // Create an uninitialized array of `MaybeUninit`. The `assume_init` is
-                // safe because the type we are claiming to have initialized here is a
-                // bunch of `MaybeUninit`s, which do not require initialization.
-                let mut array: [MaybeUninit<ListNode<T>>; N] =
-                    unsafe { MaybeUninit::uninit().assume_init() };
-
-                // Dropping a `MaybeUninit` does nothing. Thus using raw pointer
-                // assignment instead of `ptr::write` does not cause the old
-                // uninitialized value to be dropped. Also if there is a panic during
-                // this loop, we have a memory leak, but there is no memory safety
-                // issue.
-                for (index, item) in array.iter_mut().enumerate().take(N) {
-                    let node = ListNode {
-                        value: None,
-                        previous: (index + N - 1) % N,
-                        next: (index + 1) % N,
-                    };
-                    *item = MaybeUninit::new(node);
-                }
-
-                // Everything is initialized. Cast the array to the initialized type.
-                // FIXME: use `array_assume_init` instead, once stable:
-                // https://github.com/rust-lang/rust/issues/96097
-                unsafe {
-                    #[allow(clippy::ptr_as_ptr)]
-                    (array.as_ptr() as *const [ListNode<T>; N]).read()
-                }
-            };
+            let buffer = core::array::from_fn(|index| ListNode {
+                value: None,
+                previous: (index + N - 1) % N,
+                next: (index + 1) % N,
+            });
 
             let cursor = 0;
             let head = 0;
             let median = 0;
+            let filled = 0;
 
             State {
                 buffer,
                 cursor,
                 head,
                 median,
+                filled,
             }
         };
         Self { state }
@@ -165,7 +151,7 @@ impl<T, const N: usize> StateTrait for Median<T, N> {
 }
 
 impl<T, const N: usize> StateMut for Median<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -203,6 +189,10 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
+        if self.state.filled < N {
+            self.state.filled += 1;
+        }
+
         // If the current head is about to be overwritten
         // we need to make sure to have the head point to
         // the next node after the current head:
@@ -214,12 +204,6 @@ where
         // from the linked list:
         unsafe {
             self.remove_node();
-        }
-
-        // Initialize `self.median` pointing
-        // to the first (smallest) node in the sorted list:
-        unsafe {
-            self.initialize_median();
         }
 
         // Search for the insertion index in the linked list
@@ -234,11 +218,8 @@ where
             self.update_head(&input);
         }
 
-        // If the filter has an even window size, then shift the median
-        // back one slot, so that it points to the left one
-        // of the middle pair of median values
         unsafe {
-            self.adjust_median_for_even_length();
+            self.recompute_median_from_head();
         }
 
         // Increment and wrap data in pointer:
@@ -265,22 +246,36 @@ where
         self.state.buffer.is_empty()
     }
 
-    /// Returns the filter buffer's current median value, panicking if empty.
+    /// Returns the filter buffer's current median value,
+    /// or `None` if the filter has not yet received any values.
     pub fn median(&self) -> Option<T> {
         let index = self.state.median;
         self.state.buffer[index].value.clone()
     }
 
-    /// Returns the filter buffer's current min value, panicking if empty.
+    /// Returns the filter buffer's current minimum value,
+    /// or `None` if the filter has not yet received any values.
     pub fn min(&self) -> Option<T> {
         let index = self.state.head;
         self.state.buffer[index].value.clone()
     }
 
-    /// Returns the filter buffer's current max value, panicking if empty.
+    /// Returns the filter buffer's current maximum value,
+    /// or `None` if the filter has not yet received any values.
     pub fn max(&self) -> Option<T> {
-        let index = (self.state.cursor + self.len() - 1) % (self.len());
+        // head points to the minimum in the sorted linked list;
+        // its predecessor in the circular list is therefore the maximum.
+        let index = self.state.buffer[self.state.head].previous;
         self.state.buffer[index].value.clone()
+    }
+
+    /// Iterates the current window values.
+    /// Returns the populated values in the current window.
+    pub fn window_iter(&self) -> impl Iterator<Item = &T> {
+        self.state
+            .buffer
+            .iter()
+            .filter_map(|node| node.value.as_ref())
     }
 }
 
@@ -321,11 +316,6 @@ where
     }
 
     #[inline]
-    unsafe fn initialize_median(&mut self) {
-        self.state.median = self.state.head;
-    }
-
-    #[inline]
     unsafe fn insert_value(&mut self, value: &T) {
         let mut current = self.state.head;
         let buffer_len = self.len();
@@ -340,10 +330,6 @@ where
                     has_inserted = true;
                 }
             }
-
-            // Shift median on every other element in the list,
-            // so that it ends up in the middle, eventually:
-            self.shift_median(index, current);
 
             current = self.state.buffer[current].next;
         }
@@ -364,13 +350,6 @@ where
     }
 
     #[inline]
-    unsafe fn shift_median(&mut self, index: usize, current: usize) {
-        if (index & 0b1 == 0b1) && (self.state.buffer[current].value.is_some()) {
-            self.state.median = self.state.buffer[self.state.median].next;
-        }
-    }
-
-    #[inline]
     unsafe fn update_head(&mut self, value: &T) {
         #[allow(clippy::option_if_let_else)]
         let should_update_head = if let Some(ref head) = self.state.buffer[self.state.head].value {
@@ -381,14 +360,15 @@ where
 
         if should_update_head {
             self.state.head = self.state.cursor;
-            self.state.median = self.state.buffer[self.state.median].previous;
         }
     }
 
     #[inline]
-    unsafe fn adjust_median_for_even_length(&mut self) {
-        if self.len() % 2 == 0 {
-            self.state.median = self.state.buffer[self.state.median].previous;
+    unsafe fn recompute_median_from_head(&mut self) {
+        let target = (self.state.filled.saturating_sub(1)) / 2;
+        self.state.median = self.state.head;
+        for _ in 0..target {
+            self.state.median = self.state.buffer[self.state.median].next;
         }
     }
 
@@ -399,8 +379,8 @@ where
 
     #[inline]
     unsafe fn median_unchecked(&mut self) -> T {
-        #[allow(clippy::unwrap_used)]
-        self.median().unwrap()
+        self.median()
+            .expect("median buffer must be non-empty after the first filter() call")
     }
 }
 
@@ -547,6 +527,23 @@ mod tests {
         assert_eq!(filter.min(), Some(10));
         assert_eq!(filter.max(), Some(60));
         assert_eq!(filter.median(), Some(30));
+    }
+
+    #[test]
+    #[should_panic(expected = "window size N must be > 0")]
+    fn zero_window_panics() {
+        let _: Median<f32, 0> = Median::default();
+    }
+
+    #[test]
+    fn max_is_not_most_recently_inserted() {
+        // Feed values such that the max is not the last inserted element.
+        let mut filter: Median<_, 3> = Median::default();
+        filter.filter(1);
+        filter.filter(100);
+        filter.filter(2);
+        // Window = [1, 100, 2]; max must be 100, not 2.
+        assert_eq!(filter.max(), Some(100));
     }
 
     fn get_input() -> Vec<f32> {

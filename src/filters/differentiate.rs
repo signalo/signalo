@@ -24,6 +24,11 @@ pub struct State<T> {
 }
 
 /// A differentiate filter that produces the derivative of the signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — one subtraction and one clone.
+/// - **Space:** O(1) — stores one `Option<T>`.
 #[derive(Clone, Debug)]
 pub struct Differentiate<T> {
     state: State<T>,
@@ -44,7 +49,7 @@ impl<T> StateTrait for Differentiate<T> {
 }
 
 impl<T> StateMut for Differentiate<T> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }

@@ -84,7 +84,7 @@ pub trait LinearPhaseShift: PhaseShift {
 /// independent of time. This means the behavior of system does not depend on time at which
 /// input is applied. For the discrete time system time invariance is called shift invariance.
 /// <sup>[Wikipedia](https://en.wikipedia.org/wiki/Time-invariant_system)</sup>
-pub trait TimeInvariant: DiscreteTime {}
+pub trait TimeInvariant: ContinuousTime {}
 
 /// Trait for **shift-invariant** filters.
 ///
@@ -98,7 +98,7 @@ pub trait TimeInvariant: DiscreteTime {}
 /// the contemporaneous response of the output variable to a given value of the input variable
 /// does not depend on when the input occurs; time shifts are irrelevant in this regard.
 /// <sup>[Wikipedia](https://en.wikipedia.org/wiki/Shift-invariant_system)</sup>
-pub trait ShiftInvariant: ContinuousTime {}
+pub trait ShiftInvariant: DiscreteTime {}
 
 /// Trait for **causal** systems.
 ///

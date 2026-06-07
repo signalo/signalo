@@ -34,6 +34,14 @@ pub struct State<T, const N: usize> {
 /// A hampel filter of fixed width.
 ///
 /// J. Astola, P. Kuosmanen, "Fundamentals of Nonlinear Digital Filtering", CRC Press, 1997.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) — delegates to the internal `Median` filter (O(N)), then
+///   collects N absolute deviations and sorts them with an insertion sort (O(N²) worst-case,
+///   but N is a small compile-time constant in practice).
+/// - **Space:** O(N) — stores the internal `Median<T, N>` window plus a stack-allocated
+///   deviation array of size N.
 #[derive(Clone, Debug)]
 pub struct Hampel<T, const N: usize> {
     config: Config<T>,
@@ -53,33 +61,55 @@ where
     /// If a sample differs from the median by more than `self.threshold` standard deviations,
     /// it is replaced with the median:
     fn filter_internal(&mut self, input: T, factor: T) -> T {
-        // Read window's current median and min/max boundaries:
-        let min = self.state.median.min().unwrap_or_else(|| input.clone());
-        let median = self.state.median.median().unwrap_or_else(|| input.clone());
-        let max = self.state.median.max().unwrap_or_else(|| input.clone());
+        // Read window's current median to use as outlier fallback:
+        let pre_median = self.state.median.median().unwrap_or_else(|| input.clone());
 
         // Feed the input to the internal median filter:
         self.state.median.filter(input.clone());
 
-        // Calculate the boundary's absolute deviations from the median:
-        let min_dev = (median.clone() - min).abs();
-        let max_dev = (max - median.clone()).abs();
+        // We use the updated median to calculate deviations:
+        let post_median = self.state.median.median().unwrap_or_else(|| input.clone());
 
-        // Calculate the overall median absolute deviation:
-        let med_abs_dev = if min_dev < max_dev { max_dev } else { min_dev };
+        let mut count = 0usize;
+        let mut devs: [T; N] = core::array::from_fn(|_| T::zero());
 
-        // Estimate the standard deviation:
-        let std_dev = med_abs_dev * factor;
+        for val in self.state.median.window_iter() {
+            let dev = (val.clone() - post_median.clone()).abs();
+            devs[count] = dev;
+            count += 1;
+        }
 
-        // Calculate the input's deviation from the median:
-        let dev = (input.clone() - median.clone()).abs();
+        let devs_init = &mut devs[..count];
 
-        // Calculate window's threshold:
+        // In-place insertion sort to avoid `alloc` requirement in `no_std`
+        for i in 1..count {
+            let mut j = i;
+            while j > 0 {
+                let a = &devs_init[j - 1];
+                let b = &devs_init[j];
+                if a.partial_cmp(b).unwrap_or(core::cmp::Ordering::Equal)
+                    == core::cmp::Ordering::Greater
+                {
+                    devs_init.swap(j - 1, j);
+                    j -= 1;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        let mad = if count == 0 {
+            T::zero()
+        } else {
+            devs_init[count / 2].clone()
+        };
+
+        let std_dev = mad * factor;
+        let dev = (input.clone() - pre_median.clone()).abs();
         let threshold = std_dev * self.config.threshold.clone();
 
-        // If input falls outside the threshold we return the median instead:
         if dev > threshold {
-            median
+            pre_median
         } else {
             input
         }
@@ -101,6 +131,7 @@ where
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
+        assert!(N > 0, "Hampel: window size N must be > 0");
         let state = {
             let median = Median::default();
             State { median }
@@ -125,7 +156,7 @@ where
 }
 
 impl<T, const N: usize> StateMut for Hampel<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -196,10 +227,10 @@ mod tests {
 
     fn get_output() -> Vec<f32> {
         vec![
-            0.0, 0.0, 0.0, 2.0, 1.0, 8.0, 16.0, 3.0, 5.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
-            12.0, 20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 10.0, 18.0, 18.0, 18.0, 18.0,
-            5.0, 26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 21.0, 8.0, 29.0, 16.0, 16.0, 16.0,
-            16.0, 11.0, 24.0, 24.0,
+            0.0, 1.0, 0.0, 2.0, 5.0, 8.0, 2.0, 3.0, 5.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
+            12.0, 20.0, 20.0, 17.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 10.0, 18.0, 18.0, 18.0,
+            18.0, 5.0, 26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 21.0, 8.0, 29.0, 16.0, 16.0,
+            16.0, 16.0, 11.0, 24.0, 24.0,
         ]
     }
 
@@ -213,5 +244,27 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
         assert_nearly_eq!(output, get_output(), 0.001);
+    }
+
+    #[test]
+    fn consecutive_outliers_are_both_rejected() {
+        // A correct Hampel filter must reject the second outlier too.
+        let filter: Hampel<f64, 7> = Hampel::with_config(Config { threshold: 2.0 });
+        let signal = vec![0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0];
+        let output: std::vec::Vec<_> = signal
+            .iter()
+            .scan(filter, |f, &x| Some(f.filter(x)))
+            .collect();
+        // Both 100.0 values should be suppressed (replaced by ~0.0).
+        assert!(
+            output[3] < 50.0,
+            "first outlier not rejected: {}",
+            output[3]
+        );
+        assert!(
+            output[7] < 50.0,
+            "second outlier not rejected: {}",
+            output[7]
+        );
     }
 }

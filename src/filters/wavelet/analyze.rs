@@ -38,6 +38,12 @@ pub struct State<T, const N: usize> {
 }
 
 /// A wavelet filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) — two independent `Convolve<T, N>` calls (low-pass and high-pass),
+///   each O(N).
+/// - **Space:** O(N) — two tap buffers of N elements each.
 #[derive(Clone, Debug)]
 pub struct Analyze<T, const N: usize> {
     state: State<T, N>,
@@ -82,7 +88,7 @@ where
 }
 
 impl<T, const N: usize> StateMut for Analyze<T, N> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }

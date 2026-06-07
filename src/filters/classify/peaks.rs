@@ -57,6 +57,11 @@ pub struct State<T> {
 }
 
 /// A peak detection filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — delegates to `Slopes` (O(1)) plus a fixed-depth match.
+/// - **Space:** O(1) — stores the inner `Slopes` filter and one `Option<Slope>`.
 #[derive(Clone, Debug)]
 pub struct Peaks<T, U> {
     config: Config<U>,
@@ -126,7 +131,7 @@ where
 }
 
 impl<T, U> StateMut for Peaks<T, U> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -180,10 +185,8 @@ where
 
     fn filter(&mut self, slope: Slope) -> Self::Output {
         let (state, index) = self.filter_internal(slope);
-        unsafe {
-            let inner_state = self.state.slopes.state_mut();
-            *inner_state = SlopesState { input: Some(slope) };
-        }
+        let inner_state = self.state.slopes.state_mut();
+        *inner_state = SlopesState { input: Some(slope) };
         self.state.slope = Some(state);
         self.config.outputs[index].clone()
     }

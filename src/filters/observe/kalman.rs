@@ -67,6 +67,12 @@ pub struct State<T> {
 }
 
 /// A 1-dimensional kalman filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — fixed number of scalar arithmetic operations
+///   (predict, gain computation, correction).
+/// - **Space:** O(1) — stores covariance and an `Option<T>` state estimate.
 #[derive(Clone, Debug)]
 pub struct Kalman<T> {
     config: Config<T>,
@@ -170,7 +176,7 @@ where
 }
 
 impl<T> StateMut for Kalman<T> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }

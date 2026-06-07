@@ -34,6 +34,11 @@ pub struct State {
 }
 
 /// A [Debounce](https://en.wikipedia.org/wiki/Switch#Contact_bounce) filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — one equality comparison and a counter increment.
+/// - **Space:** O(1) — stores a single `usize` counter.
 #[derive(Clone, Debug)]
 pub struct Debounce<T, U> {
     /// The filter's configuration.
@@ -78,7 +83,7 @@ where
 }
 
 impl<T, U> StateMut for Debounce<T, U> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
@@ -193,11 +198,9 @@ mod tests {
         filter.filter(1);
         filter.filter(1);
 
-        unsafe {
-            let state = filter.state_mut();
-            assert_eq!(state.count, 2);
-            state.count = 5;
-        }
+        let state = filter.state_mut();
+        assert_eq!(state.count, 2);
+        state.count = 5;
 
         // After modifying state, the filter should reflect the change
         let output = filter.filter(0);

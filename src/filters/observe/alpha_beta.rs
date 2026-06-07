@@ -43,6 +43,11 @@ pub struct State<T> {
 }
 
 /// An alpha-beta filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) — fixed number of arithmetic operations (predict + correct).
+/// - **Space:** O(1) — stores velocity and an `Option<T>` state estimate.
 #[derive(Clone, Debug)]
 pub struct AlphaBeta<T> {
     config: Config<T>,
@@ -89,7 +94,7 @@ where
 }
 
 impl<T> StateMut for AlphaBeta<T> {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }

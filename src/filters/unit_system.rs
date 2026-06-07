@@ -27,6 +27,12 @@ pub struct State<T> {
 }
 
 /// A filter wrapper that preserves the signal's dimensional unit.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the wrapped inner filter — `UnitSystem` adds O(1) overhead
+///   for unit stripping/restoring via `map_unsafe`.
+/// - **Space:** same as the wrapped inner filter.
 #[derive(Clone, Debug)]
 pub struct UnitSystem<T> {
     state: State<T>,
@@ -95,7 +101,7 @@ impl<T> StateMut for UnitSystem<T>
 where
     T: StateMut,
 {
-    unsafe fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
