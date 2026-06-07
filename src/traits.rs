@@ -57,6 +57,7 @@ pub trait WithConfig: Config {
     type Output;
 
     /// Creates an instance from a given config.
+    #[must_use]
     fn with_config(config: Self::Config) -> Self::Output;
 }
 
