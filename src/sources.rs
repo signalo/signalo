@@ -36,11 +36,30 @@ pub mod cycle;
 /// signal processing pipelines without modification.
 pub mod from_iter;
 
+/// Unit impulse signal source.
+///
+/// Generates a single-sample pulse at time zero with zero amplitude thereafter, representing
+/// the discrete-time unit impulse (Dirac delta function). Fundamental for impulse response
+/// measurement and filter characterization.
+pub mod impulse;
+
 /// Linear increment/ramp generator with configurable step.
 ///
 /// Generates linearly increasing or decreasing values with each call, useful for creating
 /// ramps, sweeps, and testing linear behavior.
 pub mod increment;
+
+/// Wrapper converting IntoIterator to Source trait implementation.
+///
+/// Adapts types implementing IntoIterator into the Source trait, enabling flexible
+/// integration with Rust's iterator ecosystem.
+pub mod into_iter;
+
+/// Noise source using xorshift32 pseudorandom number generator.
+///
+/// Generates deterministic sequences of pseudorandom u32 values with configurable seeding,
+/// suitable for DSP and embedded applications requiring fast, simple PRNG behavior.
+pub mod noise;
 
 /// Wrapper converting IntoIterator to Source trait implementation.
 ///
@@ -71,6 +90,12 @@ pub mod repeat;
 /// Ignores a specified number of values from the underlying source before beginning generation,
 /// useful for seeking and alignment in signal streams.
 pub mod skip;
+
+/// Unit step signal source.
+///
+/// Generates an infinite stream of a constant amplitude value, representing the discrete-time
+/// unit step function (Heaviside function). Useful for step response analysis and system testing.
+pub mod step;
 
 /// Take source limiting output to first N values.
 ///
