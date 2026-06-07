@@ -60,6 +60,12 @@ pub mod hampel;
 /// in generic code.
 pub mod identity;
 
+/// Infinite Impulse Response (IIR) filters with feedback.
+///
+/// Implements IIR filters including first-order and higher-order types for low-pass,
+/// high-pass, and band-pass filtering with recursive feedback architectures.
+pub mod iir;
+
 /// Numerical integration (cumulative sum) filter.
 ///
 /// Computes the discrete integral or cumulative sum of input signals, useful for slope
