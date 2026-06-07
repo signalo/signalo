@@ -65,3 +65,14 @@ pub mod statistics;
 /// Enables type-safe signal analysis with physical units, ensuring dimensional consistency
 /// in statistical operations and measurements.
 pub mod unit_system;
+
+/// Root Mean Square (RMS) sinks.
+///
+/// Computes the mean square value over a fixed-size sliding window. Returns mean square value.
+/// Apply `sqrt()` (requires `std`) for true RMS.
+pub mod rms;
+
+/// Peak hold sinks.
+///
+/// Tracks the maximum absolute value of a signal, with optional decay when no larger signal arrives.
+pub mod peak_hold;
