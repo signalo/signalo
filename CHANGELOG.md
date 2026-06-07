@@ -20,11 +20,16 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- n/a
+- Added `Thresholds<T>` validated type to Schmitt trigger, guaranteeing `low <= high`
+- Added zero-window-size assertions (panic on `N = 0`) to `Max`, `Min`, `Median`, `Mean`, `MeanVariance`, `Hampel`, and `Convolve`
+- Added `Median::window_iter()` for iterating populated window values
+- Added `#[doc(hidden)]` to `StateMut::state_mut()` to discourage direct state manipulation
+- Added Complexity documentation sections to all filters, pipes, sinks, and sources
 
 ### Changed
 
-- n/a
+- Made `StateMut::state_mut()` safe (was `unsafe fn`)
+- Changed Schmitt trigger `Config.thresholds` type from `[T; 2]` to `Thresholds<T>`
 
 ### Deprecated
 
@@ -36,7 +41,14 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Fixed
 
-- n/a
+- Fixed Hampel filter: replaced incorrect min/max-based MAD with full-window median absolute deviation computation
+- Fixed `Mean` filter: recompute sum from scratch on each call to prevent floating-point drift
+- Fixed `MeanVariance` filter: replaced delegation to two internal `Mean` instances with a direct `sum`/`sum_sq` accumulator for correct variance computation
+- Fixed `Median` filter: `max()` returned wrong value after certain insertion patterns
+- Fixed `Integrate` filter trait bound (`Sub` → `Add`)
+- Fixed `TimeInvariant` supertrait: now extends `ContinuousTime` instead of `DiscreteTime`
+- Fixed `ShiftInvariant` supertrait: now extends `DiscreteTime` instead of `ContinuousTime`
+- Fixed `Max`/`Min` timestamp recovery on `usize::MAX` overflow
 
 ### Performance
 
