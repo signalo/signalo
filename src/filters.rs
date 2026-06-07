@@ -42,6 +42,12 @@ pub mod convolve;
 /// operations, and finite impulse response (FIR) filter implementations.
 pub mod delay;
 
+/// Envelope follower filter with asymmetric attack and release.
+///
+/// Tracks the peak amplitude of a signal with fast attack and slow release characteristics,
+/// useful for dynamic range compression, peak detection, and amplitude modulation.
+pub mod envelope;
+
 /// Numerical differentiation (first derivative) filter.
 ///
 /// Computes the discrete first derivative of input signals, useful for edge detection,
