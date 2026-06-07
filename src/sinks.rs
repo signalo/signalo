@@ -18,6 +18,12 @@ pub mod bounds;
 /// and later analysis. Requires the `std` or `alloc` feature.
 pub mod collect;
 
+/// Cross-correlation sinks for signal correlation analysis.
+///
+/// Computes the normalized cross-correlation coefficient between two input signals over
+/// a fixed-size sliding window. Takes tuple inputs `(T, T)` and produces correlation values.
+pub mod correlation;
+
 /// Sink computing cumulative sum/integration over input values.
 ///
 /// Accumulates inputs through running addition, effectively computing a discrete integral
