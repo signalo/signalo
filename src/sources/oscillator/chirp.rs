@@ -348,12 +348,7 @@ mod tests {
             chirp.state.sample_index, 0,
             "Reset should reset sample index to 0"
         );
-        assert_nearly_eq!(
-            chirp.state.phase,
-            0.0,
-            1e-5,
-            "Reset should reset phase to 0"
-        );
+        assert_nearly_eq!(chirp.state.phase, 0.0, 1e-5);
     }
 
     #[test]
@@ -412,7 +407,7 @@ mod tests {
         };
         let chirp = Chirp::with_config(config);
 
-        assert_nearly_eq!(chirp.state.phase, 0.0, 1e-5, "Initial phase should be 0");
+        assert_nearly_eq!(chirp.state.phase, 0.0, 1e-5);
         assert_eq!(
             chirp.state.sample_index, 0,
             "Initial sample index should be 0"

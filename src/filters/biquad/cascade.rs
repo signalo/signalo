@@ -1,0 +1,328 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+//! Biquad cascade filter implementation.
+//!
+//! A cascade of N biquad filters applied sequentially. Each stage is a second-order IIR filter.
+//! Stages are applied in index order: `sections[0]` receives the input first,
+//! its output feeds `sections[1]`, and so on through `sections[N-1]`.
+//!
+//! This is useful for higher-order filtering without explicit state-space implementations,
+//! as each biquad stage can be designed independently (e.g., using `sos` format from filter design).
+
+use num_traits::Num;
+
+use crate::traits::{
+    guts::{FromGuts, HasGuts, IntoGuts},
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
+};
+
+use super::{df2t_step, Config as BiquadConfig, State as BiquadState};
+
+#[cfg(feature = "derive")]
+use crate::traits::ResetMut;
+
+/// The biquad cascade configuration.
+///
+/// Holds the configuration (coefficients) for each of the N biquad stages.
+#[derive(Clone, Debug)]
+pub struct Config<T, const N: usize> {
+    /// Array of biquad configurations (one per stage).
+    pub sections: [BiquadConfig<T>; N],
+}
+
+impl<T, const N: usize> Default for Config<T, N>
+where
+    T: Clone + Num,
+{
+    fn default() -> Self {
+        Self {
+            sections: core::array::from_fn(|_| BiquadConfig::default()),
+        }
+    }
+}
+
+/// The biquad cascade state.
+///
+/// Holds the state (delay lines) for each of the N biquad stages.
+#[derive(Clone, Debug)]
+pub struct State<T, const N: usize> {
+    /// Array of biquad states (one per stage).
+    pub sections: [BiquadState<T>; N],
+}
+
+impl<T, const N: usize> Default for State<T, N>
+where
+    T: Clone + Num,
+{
+    fn default() -> Self {
+        Self {
+            sections: core::array::from_fn(|_| BiquadState {
+                s1: T::zero(),
+                s2: T::zero(),
+            }),
+        }
+    }
+}
+
+/// A cascade of N biquad filters applied sequentially.
+#[derive(Clone, Debug)]
+pub struct BiquadCascade<T, const N: usize> {
+    config: Config<T, N>,
+    state: State<T, N>,
+}
+
+impl<T, const N: usize> Default for BiquadCascade<T, N>
+where
+    T: Clone + Num,
+{
+    fn default() -> Self {
+        Self::with_config(Config::default())
+    }
+}
+
+impl<T, const N: usize> ConfigTrait for BiquadCascade<T, N> {
+    type Config = Config<T, N>;
+}
+
+impl<T, const N: usize> StateTrait for BiquadCascade<T, N> {
+    type State = State<T, N>;
+}
+
+impl<T, const N: usize> WithConfig for BiquadCascade<T, N>
+where
+    T: Clone + Num,
+{
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        Self {
+            config,
+            state: State::default(),
+        }
+    }
+}
+
+impl<T, const N: usize> ConfigClone for BiquadCascade<T, N>
+where
+    Config<T, N>: Clone,
+{
+    fn config(&self) -> Self::Config {
+        self.config.clone()
+    }
+}
+
+impl<T, const N: usize> ConfigRef for BiquadCascade<T, N> {
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl<T, const N: usize> StateMut for BiquadCascade<T, N> {
+    fn state_mut(&mut self) -> &mut Self::State {
+        &mut self.state
+    }
+}
+
+impl<T, const N: usize> HasGuts for BiquadCascade<T, N> {
+    type Guts = (Config<T, N>, State<T, N>);
+}
+
+impl<T, const N: usize> FromGuts for BiquadCascade<T, N> {
+    fn from_guts(guts: Self::Guts) -> Self {
+        let (config, state) = guts;
+        Self { config, state }
+    }
+}
+
+impl<T, const N: usize> IntoGuts for BiquadCascade<T, N> {
+    fn into_guts(self) -> Self::Guts {
+        (self.config, self.state)
+    }
+}
+
+impl<T, const N: usize> Reset for BiquadCascade<T, N>
+where
+    T: Clone + Num,
+{
+    fn reset(self) -> Self {
+        Self::with_config(self.config)
+    }
+}
+
+#[cfg(feature = "derive")]
+impl<T, const N: usize> ResetMut for BiquadCascade<T, N> where Self: Reset {}
+
+impl<T, const N: usize> Filter<T> for BiquadCascade<T, N>
+where
+    T: Clone + Num,
+{
+    type Output = T;
+
+    fn filter(&mut self, input: T) -> Self::Output {
+        let mut x = input;
+        for i in 0..N {
+            let cfg = &self.config.sections[i];
+            let st = &mut self.state.sections[i];
+            x = df2t_step(cfg, st, x);
+        }
+        x
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::vec::Vec;
+
+    use nearly_eq::assert_nearly_eq;
+
+    use super::*;
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_nan_propagation() {
+        let config = Config {
+            sections: [BiquadConfig {
+                b0: 1.0,
+                b1: 0.0,
+                b2: 0.0,
+                a1: 0.0,
+                a2: 0.0,
+            }],
+        };
+        let mut filter = BiquadCascade::with_config(config);
+        let result = filter.filter(f32::NAN);
+        assert!(result.is_nan());
+    }
+
+    #[test]
+    fn test_identity_single_stage() {
+        let config = Config {
+            sections: [BiquadConfig {
+                b0: 1.0,
+                b1: 0.0,
+                b2: 0.0,
+                a1: 0.0,
+                a2: 0.0,
+            }],
+        };
+
+        let mut filter = BiquadCascade::with_config(config);
+
+        let input = [
+            0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
+            12.0, 20.0, 20.0, 7.0,
+        ];
+
+        let output: Vec<_> = input.iter().map(|&x| filter.filter(x)).collect();
+
+        assert_nearly_eq!(output, input.to_vec(), 1e-6);
+    }
+
+    #[test]
+    fn test_reset() {
+        let config = Config {
+            sections: [BiquadConfig {
+                b0: 1.0,
+                b1: 0.5,
+                b2: 0.0,
+                a1: 0.0,
+                a2: 0.0,
+            }],
+        };
+
+        let mut filter = BiquadCascade::with_config(config);
+        let first_output = filter.filter(1.0);
+
+        let filter = filter.reset();
+        let mut filter = filter;
+        let after_reset = filter.filter(1.0);
+        assert_eq!(first_output, after_reset);
+    }
+
+    #[test]
+    fn test_n8_identity() {
+        let sections: [BiquadConfig<f64>; 8] = core::array::from_fn(|_| BiquadConfig {
+            b0: 1.0,
+            b1: 0.0,
+            b2: 0.0,
+            a1: 0.0,
+            a2: 0.0,
+        });
+        let config = Config { sections };
+        let mut filter = BiquadCascade::with_config(config);
+        let result = filter.filter(42.0);
+        assert_eq!(result, 42.0);
+    }
+
+    #[test]
+    fn test_integer_type() {
+        let config = Config {
+            sections: [BiquadConfig {
+                b0: 1_i32,
+                b1: 0,
+                b2: 0,
+                a1: 0,
+                a2: 0,
+            }],
+        };
+        let mut filter = BiquadCascade::with_config(config);
+        assert_eq!(filter.filter(7), 7);
+    }
+
+    #[test]
+    fn test_state_mut() {
+        let config = Config {
+            sections: [BiquadConfig {
+                b0: 1.0,
+                b1: 0.0,
+                b2: 0.0,
+                a1: 0.5,
+                a2: 0.0,
+            }],
+        };
+
+        let mut filter = BiquadCascade::with_config(config);
+        let _ = filter.filter(1.0);
+
+        let state = filter.state_mut();
+        let s1 = state.sections[0].s1;
+        // output = b0*1.0 + 0 = 1.0; s1_new = b1*1.0 - a1*1.0 + 0 = 0 - 0.5*1.0 = -0.5
+        assert_eq!(s1, -0.5);
+    }
+
+    #[test]
+    fn test_two_stages() {
+        let config = Config {
+            sections: [
+                BiquadConfig {
+                    b0: 1.0,
+                    b1: 0.0,
+                    b2: 0.0,
+                    a1: 0.0,
+                    a2: 0.0,
+                },
+                BiquadConfig {
+                    b0: 1.0,
+                    b1: 0.0,
+                    b2: 0.0,
+                    a1: 0.0,
+                    a2: 0.0,
+                },
+            ],
+        };
+
+        let mut filter = BiquadCascade::with_config(config);
+
+        let input = [
+            0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
+            12.0, 20.0, 20.0, 7.0,
+        ];
+
+        let output: Vec<_> = input.iter().map(|&x| filter.filter(x)).collect();
+
+        assert_nearly_eq!(output, input.to_vec(), 1e-6);
+    }
+}

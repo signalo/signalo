@@ -153,6 +153,8 @@ mod tests {
         let config = Config {
             phase_increment: 0.25f32,
             amplitude: 1.0f32,
+            half: 0.5f32,
+            four_times: 4.0f32,
         };
 
         let mut oscillator = TriangleOscillator::with_config(config);
@@ -180,6 +182,8 @@ mod tests {
         let config = Config {
             phase_increment: 0.125f32,
             amplitude: 2.0f32,
+            half: 0.5f32,
+            four_times: 4.0f32,
         };
 
         let mut oscillator = TriangleOscillator::with_config(config);
@@ -203,6 +207,8 @@ mod tests {
         let config = Config {
             phase_increment: 0.1f32,
             amplitude: 1.0f32,
+            half: 0.5f32,
+            four_times: 4.0f32,
         };
 
         let mut oscillator = TriangleOscillator::with_config(config);
@@ -228,6 +234,8 @@ mod tests {
         let config = Config {
             phase_increment: 0.25f64,
             amplitude: 1.0f64,
+            half: 0.5f64,
+            four_times: 4.0f64,
         };
         let mut oscillator = TriangleOscillator::<f64>::with_config(config);
         let samples: Vec<_> = (0..4).map(|_| oscillator.source().unwrap()).collect();
