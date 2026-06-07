@@ -107,3 +107,9 @@ pub mod unit_system;
 /// Implements discrete wavelet transforms and related filters for multi-resolution signal
 /// analysis, compression, and feature extraction.
 pub mod wavelet;
+
+/// Zero-crossing detection filters.
+///
+/// Detects when signals cross zero, with optional hysteresis to suppress spurious crossings
+/// near the zero threshold.
+pub mod zero_crossing;
