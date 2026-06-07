@@ -20,7 +20,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- n/a
+- Added `BiquadCascade` and `Butterworth` low, high, and band-pass biquad filters
 
 ### Changed
 

@@ -6,6 +6,12 @@
 
 pub use crate::traits;
 
+/// Biquad (second-order IIR) filters using Direct Form II Transposed topology.
+///
+/// Provides a core building block for designing more complex digital filters with
+/// arbitrary frequency response characteristics. Can be cascaded for higher-order responses.
+pub mod biquad;
+
 /// Min/max moving window filters that track boundary values.
 ///
 /// Provides efficient computation of the minimum and maximum values within a sliding window
