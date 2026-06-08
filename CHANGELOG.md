@@ -25,6 +25,8 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Median::window_iter()` for iterating populated window values
 - Added `#[doc(hidden)]` to `StateMut::state_mut()` to discourage direct state manipulation
 - Added Complexity documentation sections to all filters, pipes, sinks, and sources
+- Added `Chirp`, `Pulse`, `Sawtooth`, `Sine`, `Square`, and `Triangle` oscillator signal sources
+- Added `Impulse`, `Step`, and `Noise` signal sources
 
 ### Changed
 
