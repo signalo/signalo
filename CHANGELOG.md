@@ -27,6 +27,9 @@ Please make sure to add your changes to the appropriate categories:
 - Added Complexity documentation sections to all filters, pipes, sinks, and sources
 - Added `Chirp`, `Pulse`, `Sawtooth`, `Sine`, `Square`, and `Triangle` oscillator signal sources
 - Added `Impulse`, `Step`, and `Noise` signal sources
+- Added `PeakHold` and `Rms` signal sinks
+- Added `Histogram` and `Percentile` signal sinks
+- Added `Correlation` signal sink
 
 ### Changed
 
