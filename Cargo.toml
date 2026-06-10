@@ -8,7 +8,7 @@ license = "MPL-2.0"
 repository = "https://github.com/signalo/signalo"
 rust-version = "1.68.2"
 edition = "2021"
-version = "0.7.0"
+version = "0.8.0"
 
 [dependencies]
 circular-buffer = { version = "1.0.0", default-features = false }

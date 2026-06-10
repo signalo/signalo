@@ -20,6 +20,40 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
+- n/a
+
+### Changed
+
+- n/a
+
+### Deprecated
+
+- n/a
+
+### Removed
+
+- n/a
+
+### Fixed
+
+- n/a
+
+### Performance
+
+- n/a
+
+### Security
+
+- n/a
+
+### Other
+
+- n/a
+
+## [0.8.0] - 2026-06-10
+
+### Added
+
 - Added `Thresholds<T>` validated type to Schmitt trigger, guaranteeing `low <= high`
 - Added zero-window-size assertions (panic on `N = 0`) to `Max`, `Min`, `Median`, `Mean`, `MeanVariance`, `Hampel`, and `Convolve`
 - Added `Median::window_iter()` for iterating populated window values
@@ -36,14 +70,6 @@ Please make sure to add your changes to the appropriate categories:
 - Made `StateMut::state_mut()` safe (was `unsafe fn`)
 - Changed Schmitt trigger `Config.thresholds` type from `[T; 2]` to `Thresholds<T>`
 
-### Deprecated
-
-- n/a
-
-### Removed
-
-- n/a
-
 ### Fixed
 
 - Fixed Hampel filter: replaced incorrect min/max-based MAD with full-window median absolute deviation computation
@@ -54,18 +80,6 @@ Please make sure to add your changes to the appropriate categories:
 - Fixed `TimeInvariant` supertrait: now extends `ContinuousTime` instead of `DiscreteTime`
 - Fixed `ShiftInvariant` supertrait: now extends `DiscreteTime` instead of `ContinuousTime`
 - Fixed `Max`/`Min` timestamp recovery on `usize::MAX` overflow
-
-### Performance
-
-- n/a
-
-### Security
-
-- n/a
-
-### Other
-
-- n/a
 
 ## [0.7.0] - 2026-01-18
 
