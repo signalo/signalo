@@ -13,6 +13,10 @@
 //!
 //! This implementation uses the Direct Form II Transposed topology, which reduces
 //! sensitivity to coefficient quantization and avoids overflow in intermediate calculations.
+//!
+//! A filter is stable if and only if all poles lie strictly inside the unit circle, i.e.,
+//! the roots of `z^2 + a1*z + a2 = 0` have magnitude less than 1. Hand-crafted coefficients
+//! that violate this condition will produce diverging (unstable) output.
 
 use num_traits::Num;
 
@@ -54,9 +58,21 @@ pub struct Config<T> {
     pub a2: T,
 }
 
+impl<T> From<[T; 5]> for Config<T> {
+    fn from([b0, b1, b2, a1, a2]: [T; 5]) -> Self {
+        Self { b0, b1, b2, a1, a2 }
+    }
+}
+
+impl<T> From<Config<T>> for [T; 5] {
+    fn from(c: Config<T>) -> Self {
+        [c.b0, c.b1, c.b2, c.a1, c.a2]
+    }
+}
+
 impl<T> Default for Config<T>
 where
-    T: Clone + Num,
+    T: Num,
 {
     fn default() -> Self {
         Self {
@@ -82,7 +98,7 @@ pub struct State<T> {
 
 impl<T> Default for State<T>
 where
-    T: Clone + Num,
+    T: Num,
 {
     fn default() -> Self {
         Self {
@@ -138,7 +154,7 @@ impl<T> ConfigRef for Biquad<T> {
 
 impl<T> ConfigClone for Biquad<T>
 where
-    Config<T>: Clone,
+    T: Clone,
 {
     fn config(&self) -> Self::Config {
         self.config.clone()

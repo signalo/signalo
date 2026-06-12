@@ -33,6 +33,20 @@ pub struct Config<T, const N: usize> {
     pub sections: [BiquadConfig<T>; N],
 }
 
+impl<T, const N: usize> From<[[T; 5]; N]> for Config<T, N> {
+    fn from(sections: [[T; 5]; N]) -> Self {
+        Self {
+            sections: sections.map(BiquadConfig::from),
+        }
+    }
+}
+
+impl<T, const N: usize> From<Config<T, N>> for [[T; 5]; N] {
+    fn from(c: Config<T, N>) -> Self {
+        c.sections.map(<[T; 5]>::from)
+    }
+}
+
 impl<T, const N: usize> Default for Config<T, N>
 where
     T: Clone + Num,
@@ -59,10 +73,7 @@ where
 {
     fn default() -> Self {
         Self {
-            sections: core::array::from_fn(|_| BiquadState {
-                s1: T::zero(),
-                s2: T::zero(),
-            }),
+            sections: core::array::from_fn(|_| BiquadState::default()),
         }
     }
 }
@@ -107,7 +118,7 @@ where
 
 impl<T, const N: usize> ConfigClone for BiquadCascade<T, N>
 where
-    Config<T, N>: Clone,
+    T: Clone,
 {
     fn config(&self) -> Self::Config {
         self.config.clone()
