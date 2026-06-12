@@ -18,6 +18,9 @@
 //! - `[3]` = a1 (feedback denominator)
 //! - `[4]` = a2 (feedback denominator)
 //!
+//! This layout matches the field order of [`super::Config`] and supports direct conversion via
+//! `Config::from([b0, b1, b2, a1, a2])`.
+//!
 //! These coefficients are used in the biquad difference equation:
 //! ```text
 //! y[n] = b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2]
@@ -43,7 +46,7 @@ use num_traits::Float;
 fn float_constants<T: Float>() -> (T, T, T) {
     let pi = T::from(core::f64::consts::PI).unwrap();
     let two = T::from(2.0).unwrap();
-    let sqrt2 = T::from(2.0_f64.sqrt()).unwrap();
+    let sqrt2 = T::from(2.0).unwrap().sqrt();
     (pi, two, sqrt2)
 }
 
@@ -202,7 +205,7 @@ impl Butterworth {
         );
         debug_assert!(q > T::zero(), "q must be positive");
 
-        let (pi, two, _sqrt2) = float_constants::<T>();
+        let (pi, two, _) = float_constants::<T>();
 
         let omega = two * pi * center / sample_rate;
         let sin_omega = omega.sin();
@@ -254,9 +257,9 @@ mod tests {
     #[test]
     #[cfg(feature = "std")]
     fn test_butterworth_highpass_nyquist_gain() {
-        // Butterworth highpass at Nyquist / 2 should have high frequency gain ≈ 1.0
+        // Butterworth highpass at Nyquist / 2 (i.e. sr / 4) should have high-frequency gain ≈ 1.0
         let sample_rate = 44100.0f64;
-        let freq = sample_rate / 4.0; // Nyquist / 2
+        let freq = sample_rate / 4.0; // Nyquist / 2 = sample_rate / 4
 
         let coeffs = Butterworth::highpass(sample_rate, freq);
         let [b0, b1, b2, a1, a2] = coeffs;
