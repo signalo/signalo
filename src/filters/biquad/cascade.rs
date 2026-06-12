@@ -225,21 +225,41 @@ mod tests {
     fn test_reset() {
         let config = Config {
             sections: [BiquadConfig {
-                b0: 1.0,
+                b0: 1.0_f64,
                 b1: 0.5,
-                b2: 0.0,
-                a1: 0.0,
-                a2: 0.0,
+                b2: 0.25,
+                a1: -0.3,
+                a2: 0.1,
             }],
         };
 
-        let mut filter = BiquadCascade::with_config(config);
-        let first_output = filter.filter(1.0);
+        let mut filter = BiquadCascade::with_config(config.clone());
 
-        let filter = filter.reset();
-        let mut filter = filter;
-        let after_reset = filter.filter(1.0);
-        assert_eq!(first_output, after_reset);
+        // Accumulate non-zero state
+        for _ in 0..50 {
+            filter.filter(1.0);
+        }
+
+        // State must be non-zero before reset
+        {
+            let st = filter.state_mut();
+            #[allow(clippy::float_cmp)]
+            let state_is_nonzero = st.sections[0].s1 != 0.0 || st.sections[0].s2 != 0.0;
+            assert!(state_is_nonzero);
+        }
+
+        let mut filter = filter.reset();
+
+        // State must be zero after reset
+        {
+            let st = filter.state_mut();
+            assert_eq!(st.sections[0].s1.to_bits(), 0.0_f64.to_bits());
+            assert_eq!(st.sections[0].s2.to_bits(), 0.0_f64.to_bits());
+        }
+
+        // First sample after reset matches a fresh filter
+        let mut fresh = BiquadCascade::with_config(config);
+        assert_nearly_eq!(filter.filter(1.0), fresh.filter(1.0), 1e-10);
     }
 
     #[test]
@@ -324,5 +344,42 @@ mod tests {
         let output: Vec<_> = input.iter().map(|&x| filter.filter(x)).collect();
 
         assert_nearly_eq!(output, input.to_vec(), 1e-6);
+    }
+
+    #[test]
+    fn test_two_stages_nonidentity() {
+        use super::super::Biquad;
+        use crate::traits::Filter;
+
+        // Two non-trivial stages: compare cascade output against two sequential Biquad filters
+        let cfg_a = BiquadConfig {
+            b0: 0.5_f64,
+            b1: 0.25,
+            b2: 0.0,
+            a1: -0.3,
+            a2: 0.0,
+        };
+        let cfg_b = BiquadConfig {
+            b0: 0.8_f64,
+            b1: 0.0,
+            b2: 0.1,
+            a1: 0.2,
+            a2: -0.05,
+        };
+
+        let mut cascade = BiquadCascade::with_config(Config {
+            sections: [cfg_a.clone(), cfg_b.clone()],
+        });
+
+        let mut biquad_a = Biquad::with_config(cfg_a);
+        let mut biquad_b = Biquad::with_config(cfg_b);
+
+        let input = [1.0, 0.0, -1.0, 0.5, 0.3, 0.0, 1.2, -0.7, 0.0, 0.1_f64];
+
+        for &x in &input {
+            let cascade_out = cascade.filter(x);
+            let sequential_out = biquad_b.filter(biquad_a.filter(x));
+            assert_nearly_eq!(cascade_out, sequential_out, 1e-12);
+        }
     }
 }
