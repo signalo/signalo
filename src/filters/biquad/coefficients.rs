@@ -52,8 +52,11 @@ fn float_constants<T: Float>() -> (T, T, T) {
 
 /// Butterworth filter coefficient calculator.
 ///
-/// Provides design equations for Butterworth lowpass, highpass, and bandpass
+/// Provides design equations for Butterworth lowpass, highpass, and cookbook bandpass
 /// biquad filter coefficients using standard DSP formulae.
+///
+/// All methods take `(sample_rate, frequency[, q])` in that order — sample rate first,
+/// then the characteristic frequency. This matches the convention of most DSP textbooks.
 ///
 /// # Requirements
 ///
