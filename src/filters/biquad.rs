@@ -237,4 +237,92 @@ mod tests {
 
         assert_nearly_eq!(output, input.to_vec(), 1e-6);
     }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_step_response_dc_gain() {
+        // DC gain = (b0 + b1 + b2) / (1 + a1 + a2)
+        // With b0=0.5, b1=0.25, b2=0.25, a1=0.0, a2=0.0 => DC gain = 1.0
+        let mut filter = Biquad::with_config(Config {
+            b0: 0.5_f64,
+            b1: 0.25,
+            b2: 0.25,
+            a1: 0.0,
+            a2: 0.0,
+        });
+
+        // Drive a step input long enough to reach steady state
+        let mut output = 0.0;
+
+        for _ in 0..1000 {
+            output = filter.filter(1.0);
+        }
+
+        let expected_dc_gain = (0.5 + 0.25 + 0.25) / (1.0 + 0.0 + 0.0);
+
+        assert_nearly_eq!(output, expected_dc_gain, 1e-6);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_impulse_response_matches_hand_computation() {
+        // Simple 1-pole IIR: b0=1, b1=0, b2=0, a1=-0.5, a2=0
+        // Impulse response: y[0]=1, y[1]=0.5, y[2]=0.25, ...
+        let mut filter = Biquad::with_config(Config {
+            b0: 1.0_f64,
+            b1: 0.0,
+            b2: 0.0,
+            a1: -0.5,
+            a2: 0.0,
+        });
+
+        let y0 = filter.filter(1.0);
+        let y1 = filter.filter(0.0);
+        let y2 = filter.filter(0.0);
+        let y3 = filter.filter(0.0);
+
+        assert_nearly_eq!(y0, 1.0, 1e-10);
+        assert_nearly_eq!(y1, 0.5, 1e-10);
+        assert_nearly_eq!(y2, 0.25, 1e-10);
+        assert_nearly_eq!(y3, 0.125, 1e-10);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_reset_clears_state() {
+        let config = Config {
+            b0: 1.0_f64,
+            b1: 0.5,
+            b2: 0.25,
+            a1: -0.3,
+            a2: 0.1,
+        };
+
+        let mut filter = Biquad::with_config(config.clone());
+
+        // Drive filter to accumulate non-zero state
+        for _ in 0..50 {
+            filter.filter(1.0);
+        }
+
+        // State should be non-zero now
+        {
+            let st = filter.state_mut();
+            #[allow(clippy::float_cmp)]
+            let state_is_nonzero = st.s1 != 0.0 || st.s2 != 0.0;
+            assert!(state_is_nonzero);
+        }
+
+        let mut filter = filter.reset();
+
+        {
+            let st = filter.state_mut();
+            assert_eq!(st.s1.to_bits(), 0.0_f64.to_bits());
+            assert_eq!(st.s2.to_bits(), 0.0_f64.to_bits());
+        }
+
+        // First output after reset should match a fresh filter
+        let mut fresh = Biquad::with_config(config);
+        assert_nearly_eq!(filter.filter(1.0), fresh.filter(1.0), 1e-10);
+    }
 }

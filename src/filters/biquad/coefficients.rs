@@ -70,6 +70,8 @@ impl Butterworth {
     /// Panics if `T` cannot represent the constants `PI`, `2.0`, or `√2`. This is infallible
     /// for standard `f32` and `f64` types.
     ///
+    /// In debug builds, panics if `sample_rate <= 0`, `freq <= 0`, or `freq >= sample_rate / 2`.
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -82,6 +84,13 @@ impl Butterworth {
     #[cfg(feature = "std")]
     #[allow(clippy::unwrap_used)]
     pub fn lowpass<T: Float>(sample_rate: T, freq: T) -> [T; 5] {
+        debug_assert!(sample_rate > T::zero(), "sample_rate must be positive");
+        debug_assert!(freq > T::zero(), "freq must be positive");
+        debug_assert!(
+            freq < sample_rate / T::from(2.0).unwrap(),
+            "freq must be below Nyquist (sample_rate / 2)"
+        );
+
         let (pi, two, sqrt2) = float_constants::<T>();
 
         let omega = two * pi * freq / sample_rate;
@@ -114,6 +123,8 @@ impl Butterworth {
     /// Panics if `T` cannot represent the constants `PI`, `2.0`, or `√2`. This is infallible
     /// for standard `f32` and `f64` types.
     ///
+    /// In debug builds, panics if `sample_rate <= 0`, `freq <= 0`, or `freq >= sample_rate / 2`.
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -126,6 +137,13 @@ impl Butterworth {
     #[cfg(feature = "std")]
     #[allow(clippy::unwrap_used)]
     pub fn highpass<T: Float>(sample_rate: T, freq: T) -> [T; 5] {
+        debug_assert!(sample_rate > T::zero(), "sample_rate must be positive");
+        debug_assert!(freq > T::zero(), "freq must be positive");
+        debug_assert!(
+            freq < sample_rate / T::from(2.0).unwrap(),
+            "freq must be below Nyquist (sample_rate / 2)"
+        );
+
         let (pi, two, sqrt2) = float_constants::<T>();
 
         let omega = two * pi * freq / sample_rate;
@@ -148,8 +166,8 @@ impl Butterworth {
         [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0]
     }
 
-    /// Compute Butterworth bandpass coefficients for a filter centered at `center` Hz with
-    /// quality factor `q`, given a `sample_rate` in Hz.
+    /// Compute bandpass coefficients for a filter centered at `center` Hz with quality factor `q`,
+    /// given a `sample_rate` in Hz.
     ///
     /// Implements the *constant 0 dB peak gain* variant from the Audio EQ Cookbook (`b0 = α`).
     /// For the constant skirt-gain variant (`b0 = Q·α`) use a different design.
@@ -160,6 +178,9 @@ impl Butterworth {
     ///
     /// Panics if `T` cannot represent the constants `PI` or `2.0`. This is infallible
     /// for standard `f32` and `f64` types.
+    ///
+    /// In debug builds, panics if `sample_rate <= 0`, `center <= 0`, `center >= sample_rate / 2`,
+    /// or `q <= 0`.
     ///
     /// # Examples
     ///
@@ -173,6 +194,14 @@ impl Butterworth {
     #[cfg(feature = "std")]
     #[allow(clippy::unwrap_used)]
     pub fn bandpass<T: Float>(sample_rate: T, center: T, q: T) -> [T; 5] {
+        debug_assert!(sample_rate > T::zero(), "sample_rate must be positive");
+        debug_assert!(center > T::zero(), "center must be positive");
+        debug_assert!(
+            center < sample_rate / T::from(2.0).unwrap(),
+            "center must be below Nyquist (sample_rate / 2)"
+        );
+        debug_assert!(q > T::zero(), "q must be positive");
+
         let (pi, two, _sqrt2) = float_constants::<T>();
 
         let omega = two * pi * center / sample_rate;
@@ -196,6 +225,9 @@ impl Butterworth {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "std")]
+    use std::vec::Vec;
+
     #[cfg(feature = "std")]
     use nearly_eq::assert_nearly_eq;
 
@@ -328,5 +360,151 @@ mod tests {
         let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
         assert_nearly_eq!(gain, 1.0_f64 / 2.0_f64.sqrt(), 1e-10);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_butterworth_lowpass_cutoff_gain_f32() {
+        let sample_rate = 44100.0f32;
+        let freq = 1000.0f32;
+        let [b0, b1, b2, a1, a2] = Butterworth::lowpass(sample_rate, freq);
+
+        let omega = 2.0f32 * std::f32::consts::PI * freq / sample_rate;
+        let (s, c) = omega.sin_cos();
+        let num_re = b0 + b1 * c + b2 * (c * c - s * s);
+        let num_im = -b1 * s + b2 * (-2.0 * s * c);
+        let den_re = 1.0 + a1 * c + a2 * (c * c - s * s);
+        let den_im = -a1 * s + a2 * (-2.0 * s * c);
+        let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
+
+        assert_nearly_eq!(gain, 1.0f32 / 2.0f32.sqrt(), 1e-4);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_butterworth_highpass_cutoff_gain_f32() {
+        let sample_rate = 44100.0f32;
+        let freq = 1000.0f32;
+        let [b0, b1, b2, a1, a2] = Butterworth::highpass(sample_rate, freq);
+
+        let omega = 2.0f32 * std::f32::consts::PI * freq / sample_rate;
+        let (s, c) = omega.sin_cos();
+        let num_re = b0 + b1 * c + b2 * (c * c - s * s);
+        let num_im = -b1 * s + b2 * (-2.0 * s * c);
+        let den_re = 1.0 + a1 * c + a2 * (c * c - s * s);
+        let den_im = -a1 * s + a2 * (-2.0 * s * c);
+        let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
+
+        assert_nearly_eq!(gain, 1.0f32 / 2.0f32.sqrt(), 1e-4);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_butterworth_bandpass_center_gain_f32() {
+        let sample_rate = 44100.0f32;
+        let center = 1000.0f32;
+        let q = 1.0f32;
+        let [b0, b1, b2, a1, a2] = Butterworth::bandpass(sample_rate, center, q);
+
+        let omega = 2.0f32 * std::f32::consts::PI * center / sample_rate;
+        let (s, c) = omega.sin_cos();
+        let num_re = b0 + b1 * c + b2 * (c * c - s * s);
+        let num_im = -b1 * s + b2 * (-2.0 * s * c);
+        let den_re = 1.0 + a1 * c + a2 * (c * c - s * s);
+        let den_im = -a1 * s + a2 * (-2.0 * s * c);
+        let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
+
+        // Constant 0 dB peak gain bandpass has gain = 1.0 at center frequency
+        assert_nearly_eq!(gain, 1.0f32, 1e-4);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_lowpass_impulse_response_3db_cutoff() {
+        use crate::filters::biquad::{Biquad, Config};
+        use crate::traits::{Filter, WithConfig};
+
+        let sample_rate = 44100.0f64;
+        let freq = 1000.0;
+        let coeffs = Butterworth::lowpass(sample_rate, freq);
+        let [b0, b1, b2, a1, a2] = coeffs;
+
+        let mut filter = Biquad::with_config(Config { b0, b1, b2, a1, a2 });
+
+        // Drive an impulse and accumulate the frequency response via DFT at cutoff
+        let n = 4096usize;
+        let mut response: Vec<f64> = Vec::with_capacity(n);
+        response.push(filter.filter(1.0));
+
+        for _ in 1..n {
+            response.push(filter.filter(0.0));
+        }
+
+        // Evaluate DFT at freq bin corresponding to cutoff
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss
+        )]
+        let (re, im) = {
+            let n_f = n as f64;
+            let k = (freq / sample_rate * n_f).round() as usize;
+            let k_f = k as f64;
+            response
+                .iter()
+                .enumerate()
+                .fold((0.0f64, 0.0f64), |(re, im), (i, &h)| {
+                    let angle = -2.0 * std::f64::consts::PI * k_f * (i as f64) / n_f;
+                    (re + h * angle.cos(), im + h * angle.sin())
+                })
+        };
+
+        let gain = re.hypot(im);
+
+        assert_nearly_eq!(gain, 1.0 / 2.0f64.sqrt(), 1e-3);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_highpass_impulse_response_3db_cutoff() {
+        use crate::filters::biquad::{Biquad, Config};
+        use crate::traits::{Filter, WithConfig};
+
+        let sample_rate = 44100.0f64;
+        let freq = 1000.0;
+        let coeffs = Butterworth::highpass(sample_rate, freq);
+        let [b0, b1, b2, a1, a2] = coeffs;
+
+        let mut filter = Biquad::with_config(Config { b0, b1, b2, a1, a2 });
+
+        let n = 4096usize;
+        let mut response: Vec<f64> = Vec::with_capacity(n);
+        response.push(filter.filter(1.0));
+
+        for _ in 1..n {
+            response.push(filter.filter(0.0));
+        }
+
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss
+        )]
+        let (re, im) = {
+            let n_f = n as f64;
+            let k = (freq / sample_rate * n_f).round() as usize;
+            let k_f = k as f64;
+            response
+                .iter()
+                .enumerate()
+                .fold((0.0f64, 0.0f64), |(re, im), (i, &h)| {
+                    let angle = -2.0 * std::f64::consts::PI * k_f * (i as f64) / n_f;
+                    (re + h * angle.cos(), im + h * angle.sin())
+                })
+        };
+
+        let gain = re.hypot(im);
+
+        assert_nearly_eq!(gain, 1.0 / 2.0f64.sqrt(), 1e-3);
     }
 }
