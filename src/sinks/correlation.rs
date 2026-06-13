@@ -185,7 +185,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -196,7 +196,7 @@ mod tests {
         let mut sink: Correlation<f32, 1> = Correlation::default();
         sink.sink((1.0, 1.0));
         let result = sink.finalize();
-        assert_nearly_eq!(result, Some(1.0));
+        assert_eq!(result, Some(1.0));
     }
 
     #[test]
@@ -209,7 +209,7 @@ mod tests {
         sink.sink((-1.0, 0.0));
         sink.sink((1.0, 0.0));
         let result = sink.finalize();
-        assert_nearly_eq!(result, Some(0.0), 0.0001);
+        assert_eq!(result, Some(0.0));
     }
 
     #[test]
@@ -222,7 +222,8 @@ mod tests {
         sink.sink((3.0, 3.0));
         sink.sink((4.0, 4.0));
         let result = sink.finalize();
-        assert_nearly_eq!(result, Some(29.0 / 3.0), 0.0001);
+        let val = result.unwrap();
+        assert_abs_diff_eq!(val, 29.0 / 3.0, epsilon = 0.0001);
     }
 
     #[test]
@@ -234,15 +235,14 @@ mod tests {
         let out2 = sink.filter((2.0, 2.0));
 
         // After first input: dot = 1*1 = 1, count = 1, out = 1.0
-        assert_nearly_eq!(out1, 1.0);
+        assert_abs_diff_eq!(out1, 1.0, epsilon = 1e-6);
         // After second input: dot = 1*1 + 2*2 = 5, count = 2, out = 2.5
-        assert_nearly_eq!(out2, 2.5);
+        assert_abs_diff_eq!(out2, 2.5, epsilon = 1e-6);
 
         let finalize_result = sink.finalize();
-        assert_nearly_eq!(finalize_result, Some(2.5), 0.0001);
+        assert_eq!(finalize_result, Some(2.5));
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_nan_propagation() {
         let mut sink: Correlation<f32, 4> = Correlation::default();
@@ -250,7 +250,6 @@ mod tests {
         assert!(result.is_nan());
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_large_values() {
         let mut sink: Correlation<f32, 2> = Correlation::default();
@@ -258,7 +257,6 @@ mod tests {
         assert!(result.is_finite());
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_inf_propagation() {
         let mut sink: Correlation<f32, 4> = Correlation::default();
@@ -327,6 +325,6 @@ mod tests {
             sink.sink((value, value));
         }
         let result = sink.finalize();
-        assert_nearly_eq!(result, Some(137.5));
+        assert_eq!(result, Some(137.5));
     }
 }

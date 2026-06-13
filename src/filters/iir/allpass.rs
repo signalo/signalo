@@ -157,10 +157,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -177,16 +177,15 @@ mod tests {
             .collect();
 
         // First output is 0 (no previous input)
-        assert_nearly_eq!(output[0], 0.0, 0.0001);
+        assert_abs_diff_eq!(output[0], 0.0, epsilon = 0.0001);
         // Subsequent outputs are previous inputs
-        assert_nearly_eq!(output[1], 1.0, 0.0001);
-        assert_nearly_eq!(output[2], 2.0, 0.0001);
-        assert_nearly_eq!(output[3], 3.0, 0.0001);
-        assert_nearly_eq!(output[4], 4.0, 0.0001);
+        assert_abs_diff_eq!(output[1], 1.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(output[2], 2.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(output[3], 3.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(output[4], 4.0, epsilon = 0.0001);
     }
 
     #[test]
-    #[cfg(feature = "std")]
     fn test_unit_magnitude_response() {
         // Verify |H(e^{jω})| ≈ 1 for several frequencies (the allpass property).
         // Drive with a pure sinusoid for 2000 samples; measure RMS of last 500 (steady state).
@@ -207,7 +206,7 @@ mod tests {
             let mut out_ss = 0.0_f32;
 
             for n in 0..n_total {
-                let x = (2.0 * std::f32::consts::PI * freq * n as f32).sin();
+                let x = (2.0 * core::f32::consts::PI * freq * n as f32).sin();
                 let y = filter.filter(x);
 
                 if n >= n_total - n_steady {
@@ -240,9 +239,9 @@ mod tests {
             .collect();
 
         // y[0] = c*(x[0] - y[-1]) + x[-1] = -0.5*(1 - 0) + 0 = -0.5
-        assert_nearly_eq!(output[0], -0.5, 0.0001);
+        assert_abs_diff_eq!(output[0], -0.5, epsilon = 0.0001);
         // y[1] = c*(x[1] - y[0]) + x[0] = -0.5*(0 - (-0.5)) + 1.0 = -0.25 + 1.0 = 0.75
-        assert_nearly_eq!(output[1], 0.75, 0.0001);
+        assert_abs_diff_eq!(output[1], 0.75, epsilon = 0.0001);
     }
 
     #[test]
@@ -256,8 +255,8 @@ mod tests {
 
         // Reset and verify state is cleared
         let mut reset_filter = filter.reset();
-        assert_nearly_eq!(reset_filter.state_mut().prev_input, 0.0, 0.0001);
-        assert_nearly_eq!(reset_filter.state_mut().prev_output, 0.0, 0.0001);
+        assert_abs_diff_eq!(reset_filter.state_mut().prev_input, 0.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(reset_filter.state_mut().prev_output, 0.0, epsilon = 0.0001);
     }
 
     #[test]
@@ -278,6 +277,6 @@ mod tests {
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0,
         ];
-        assert_nearly_eq!(output, expected.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-6);
     }
 }

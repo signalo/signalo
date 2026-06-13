@@ -167,7 +167,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -188,7 +188,7 @@ mod tests {
         sink.sink(1.0);
         sink.sink(1.0);
         let result = sink.finalize();
-        assert_nearly_eq!(result, Some(1.0));
+        assert_eq!(result, Some(1.0));
     }
 
     #[test]
@@ -199,10 +199,9 @@ mod tests {
         sink.sink(3.0);
         sink.sink(4.0);
         let result = sink.finalize();
-        assert_nearly_eq!(result, Some(12.5));
+        assert_eq!(result, Some(12.5));
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_nan_propagation() {
         let mut sink: Rms<f32, 4> = Rms::default();
@@ -210,7 +209,6 @@ mod tests {
         assert!(result.is_nan());
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_large_values() {
         let mut sink: Rms<f32, 2> = Rms::default();
@@ -220,7 +218,6 @@ mod tests {
         assert!(result.is_finite());
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_inf_propagation() {
         let mut sink: Rms<f32, 4> = Rms::default();
@@ -284,10 +281,10 @@ mod tests {
         let out3 = sink.filter(3.0);
         let out4 = sink.filter(4.0);
 
-        assert_nearly_eq!(out1, 1.0);
-        assert_nearly_eq!(out2, 2.5);
-        assert_nearly_eq!(out3, 6.5);
-        assert_nearly_eq!(out4, 12.5);
+        assert_abs_diff_eq!(out1, 1.0, epsilon = 1e-6);
+        assert_abs_diff_eq!(out2, 2.5, epsilon = 1e-6);
+        assert_abs_diff_eq!(out3, 6.5, epsilon = 1e-6);
+        assert_abs_diff_eq!(out4, 12.5, epsilon = 1e-6);
     }
 
     #[test]
@@ -302,6 +299,6 @@ mod tests {
             sink.sink(value);
         }
         let result = sink.finalize();
-        assert_nearly_eq!(result, Some(137.5));
+        assert_eq!(result, Some(137.5));
     }
 }

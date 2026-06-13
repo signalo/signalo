@@ -244,10 +244,10 @@ daubechies_impl_float!(f32, f64: 20 => [
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use crate::traits::Filter;
 
@@ -387,8 +387,8 @@ mod tests {
         let analysis = without_padding(padded_analysis, PADDING, PADDING);
         let (low, high) = split_analysis(&analysis);
 
-        assert_nearly_eq!(low, get_low_2(), 0.001);
-        assert_nearly_eq!(high, get_high_2(), 0.001);
+        assert_abs_diff_eq!(low.as_slice(), get_low_2().as_slice(), epsilon = 0.001);
+        assert_abs_diff_eq!(high.as_slice(), get_high_2().as_slice(), epsilon = 0.001);
     }
 
     #[test]
@@ -404,7 +404,11 @@ mod tests {
             .collect();
         let synthesis = without_padding(padded_synthesis, PADDING, PADDING);
 
-        assert_nearly_eq!(synthesis, get_synthesis_2(), 0.001);
+        assert_abs_diff_eq!(
+            synthesis.as_slice(),
+            get_synthesis_2().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -422,8 +426,8 @@ mod tests {
         let analysis = without_padding(padded_analysis, PADDING, PADDING);
         let (low, high) = split_analysis(&analysis);
 
-        assert_nearly_eq!(low, get_low_4(), 0.001);
-        assert_nearly_eq!(high, get_high_4(), 0.001);
+        assert_abs_diff_eq!(low.as_slice(), get_low_4().as_slice(), epsilon = 0.001);
+        assert_abs_diff_eq!(high.as_slice(), get_high_4().as_slice(), epsilon = 0.001);
     }
 
     #[test]
@@ -440,6 +444,10 @@ mod tests {
             .collect();
         let synthesis = without_padding(padded_synthesis, PADDING, PADDING);
 
-        assert_nearly_eq!(synthesis, get_synthesis_4(), 0.001);
+        assert_abs_diff_eq!(
+            synthesis.as_slice(),
+            get_synthesis_4().as_slice(),
+            epsilon = 0.001
+        );
     }
 }

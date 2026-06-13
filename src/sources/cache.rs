@@ -61,8 +61,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use nearly_eq::assert_nearly_eq;
-
     use super::*;
 
     #[derive(Default)]
@@ -83,12 +81,12 @@ mod tests {
     #[test]
     fn test() {
         let mut cache = Cache::from(Dummy::default());
-        assert_nearly_eq!(cache.cached(), None);
+        assert_eq!(cache.cached(), None);
 
         let expected = cache.source();
-        assert_nearly_eq!(cache.cached(), expected);
+        assert_eq!(cache.cached(), expected.as_ref());
 
         let expected = cache.source();
-        assert_nearly_eq!(cache.cached(), expected);
+        assert_eq!(cache.cached(), expected.as_ref());
     }
 }

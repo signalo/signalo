@@ -137,10 +137,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -189,7 +189,7 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input).low))
             .collect();
 
-        assert_nearly_eq!(output, get_low(), 0.001);
+        assert_abs_diff_eq!(output.as_slice(), get_low().as_slice(), epsilon = 0.001);
     }
 
     #[test]
@@ -209,6 +209,6 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input).high))
             .collect();
 
-        assert_nearly_eq!(output, get_high(), 0.001);
+        assert_abs_diff_eq!(output.as_slice(), get_high().as_slice(), epsilon = 0.001);
     }
 }

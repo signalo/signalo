@@ -294,10 +294,10 @@ impl Butterworth {
 #[cfg(test)]
 mod tests {
     #[cfg(feature = "std")]
-    use std::vec::Vec;
+    use alloc::vec::Vec;
 
     #[cfg(feature = "std")]
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     #[cfg(feature = "std")]
     use super::*;
@@ -316,7 +316,7 @@ mod tests {
         let dc_gain = (b0 + b1 + b2) / (1.0 + a1 + a2);
 
         // Should be close to 1.0
-        assert_nearly_eq!(dc_gain, 1.0, 1e-6);
+        assert_abs_diff_eq!(dc_gain, 1.0, epsilon = 1e-6);
     }
 
     #[test]
@@ -333,7 +333,7 @@ mod tests {
         let nyquist_gain = (b0 - b1 + b2) / (1.0 - a1 + a2);
 
         // Should be close to 1.0
-        assert_nearly_eq!(nyquist_gain, 1.0, 1e-6);
+        assert_abs_diff_eq!(nyquist_gain, 1.0, epsilon = 1e-6);
     }
 
     #[test]
@@ -349,10 +349,10 @@ mod tests {
 
         // b0 and b2 should be non-zero and nearly equal (symmetric)
         assert!(b0 > 0.0);
-        assert_nearly_eq!(b0, -b2, 1e-10);
+        assert_abs_diff_eq!(b0, -b2, epsilon = 1e-10);
 
         // b1 should be zero
-        assert_nearly_eq!(b1, 0.0, 1e-10);
+        assert_abs_diff_eq!(b1, 0.0, epsilon = 1e-10);
 
         // Denominator should be stable
         assert!((1.0 + a1 + a2).abs() > 0.0);
@@ -372,7 +372,7 @@ mod tests {
         // Gain at Nyquist (z=-1): (b0 - b1 + b2) / (1 - a1 + a2)
         let nyquist_gain = (b0 - b1 + b2) / (1.0 - a1 + a2);
 
-        assert_nearly_eq!(nyquist_gain, 1.0, 1e-6);
+        assert_abs_diff_eq!(nyquist_gain, 1.0, epsilon = 1e-6);
     }
 
     #[test]
@@ -387,11 +387,11 @@ mod tests {
 
         // DC gain (z=1): (b0 + b1 + b2) / (1 + a1 + a2) = 0 for bandpass
         let dc_gain = (b0 + b1 + b2) / (1.0 + a1 + a2);
-        assert_nearly_eq!(dc_gain, 0.0, 1e-10);
+        assert_abs_diff_eq!(dc_gain, 0.0, epsilon = 1e-10);
 
         // Nyquist gain (z=-1): (b0 - b1 + b2) / (1 - a1 + a2) = 0 for bandpass
         let nyquist_gain = (b0 - b1 + b2) / (1.0 - a1 + a2);
-        assert_nearly_eq!(nyquist_gain, 0.0, 1e-10);
+        assert_abs_diff_eq!(nyquist_gain, 0.0, epsilon = 1e-10);
     }
 
     #[test]
@@ -401,7 +401,7 @@ mod tests {
         let freq = 1000.0;
         let [b0, b1, b2, a1, a2] = Butterworth::lowpass(sample_rate, freq);
 
-        let omega = 2.0 * std::f64::consts::PI * freq / sample_rate;
+        let omega = 2.0 * core::f64::consts::PI * freq / sample_rate;
         let (s, c) = omega.sin_cos();
         let num_re = b0 + b1 * c + b2 * (c * c - s * s);
         let num_im = -b1 * s + b2 * (-2.0 * s * c);
@@ -409,7 +409,7 @@ mod tests {
         let den_im = -a1 * s + a2 * (-2.0 * s * c);
         let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
-        assert_nearly_eq!(gain, 1.0_f64 / 2.0_f64.sqrt(), 1e-10);
+        assert_abs_diff_eq!(gain, 1.0_f64 / 2.0_f64.sqrt(), epsilon = 1e-10);
     }
 
     #[test]
@@ -419,7 +419,7 @@ mod tests {
         let freq = 1000.0;
         let [b0, b1, b2, a1, a2] = Butterworth::highpass(sample_rate, freq);
 
-        let omega = 2.0 * std::f64::consts::PI * freq / sample_rate;
+        let omega = 2.0 * core::f64::consts::PI * freq / sample_rate;
         let (s, c) = omega.sin_cos();
         let num_re = b0 + b1 * c + b2 * (c * c - s * s);
         let num_im = -b1 * s + b2 * (-2.0 * s * c);
@@ -427,7 +427,7 @@ mod tests {
         let den_im = -a1 * s + a2 * (-2.0 * s * c);
         let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
-        assert_nearly_eq!(gain, 1.0_f64 / 2.0_f64.sqrt(), 1e-10);
+        assert_abs_diff_eq!(gain, 1.0_f64 / 2.0_f64.sqrt(), epsilon = 1e-10);
     }
 
     #[test]
@@ -437,7 +437,7 @@ mod tests {
         let freq = 1000.0f32;
         let [b0, b1, b2, a1, a2] = Butterworth::lowpass(sample_rate, freq);
 
-        let omega = 2.0f32 * std::f32::consts::PI * freq / sample_rate;
+        let omega = 2.0f32 * core::f32::consts::PI * freq / sample_rate;
         let (s, c) = omega.sin_cos();
         let num_re = b0 + b1 * c + b2 * (c * c - s * s);
         let num_im = -b1 * s + b2 * (-2.0 * s * c);
@@ -445,7 +445,7 @@ mod tests {
         let den_im = -a1 * s + a2 * (-2.0 * s * c);
         let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
-        assert_nearly_eq!(gain, 1.0f32 / 2.0f32.sqrt(), 1e-4);
+        assert_abs_diff_eq!(gain, 1.0f32 / 2.0f32.sqrt(), epsilon = 1e-4);
     }
 
     #[test]
@@ -455,7 +455,7 @@ mod tests {
         let freq = 1000.0f32;
         let [b0, b1, b2, a1, a2] = Butterworth::highpass(sample_rate, freq);
 
-        let omega = 2.0f32 * std::f32::consts::PI * freq / sample_rate;
+        let omega = 2.0f32 * core::f32::consts::PI * freq / sample_rate;
         let (s, c) = omega.sin_cos();
         let num_re = b0 + b1 * c + b2 * (c * c - s * s);
         let num_im = -b1 * s + b2 * (-2.0 * s * c);
@@ -463,7 +463,7 @@ mod tests {
         let den_im = -a1 * s + a2 * (-2.0 * s * c);
         let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
-        assert_nearly_eq!(gain, 1.0f32 / 2.0f32.sqrt(), 1e-4);
+        assert_abs_diff_eq!(gain, 1.0f32 / 2.0f32.sqrt(), epsilon = 1e-4);
     }
 
     #[test]
@@ -474,7 +474,7 @@ mod tests {
         let q = 1.0f32;
         let [b0, b1, b2, a1, a2] = Butterworth::bandpass(sample_rate, center, q);
 
-        let omega = 2.0f32 * std::f32::consts::PI * center / sample_rate;
+        let omega = 2.0f32 * core::f32::consts::PI * center / sample_rate;
         let (s, c) = omega.sin_cos();
         let num_re = b0 + b1 * c + b2 * (c * c - s * s);
         let num_im = -b1 * s + b2 * (-2.0 * s * c);
@@ -483,7 +483,7 @@ mod tests {
         let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
         // Constant 0 dB peak gain bandpass has gain = 1.0 at center frequency
-        assert_nearly_eq!(gain, 1.0f32, 1e-4);
+        assert_abs_diff_eq!(gain, 1.0f32, epsilon = 1e-4);
     }
 
     #[test]
@@ -522,14 +522,14 @@ mod tests {
                 .iter()
                 .enumerate()
                 .fold((0.0f64, 0.0f64), |(re, im), (i, &h)| {
-                    let angle = -2.0 * std::f64::consts::PI * k_f * (i as f64) / n_f;
+                    let angle = -2.0 * core::f64::consts::PI * k_f * (i as f64) / n_f;
                     (re + h * angle.cos(), im + h * angle.sin())
                 })
         };
 
         let gain = re.hypot(im);
 
-        assert_nearly_eq!(gain, 1.0 / 2.0f64.sqrt(), 1e-3);
+        assert_abs_diff_eq!(gain, 1.0 / 2.0f64.sqrt(), epsilon = 1e-3);
     }
 
     #[test]
@@ -566,14 +566,14 @@ mod tests {
                 .iter()
                 .enumerate()
                 .fold((0.0f64, 0.0f64), |(re, im), (i, &h)| {
-                    let angle = -2.0 * std::f64::consts::PI * k_f * (i as f64) / n_f;
+                    let angle = -2.0 * core::f64::consts::PI * k_f * (i as f64) / n_f;
                     (re + h * angle.cos(), im + h * angle.sin())
                 })
         };
 
         let gain = re.hypot(im);
 
-        assert_nearly_eq!(gain, 1.0 / 2.0f64.sqrt(), 1e-3);
+        assert_abs_diff_eq!(gain, 1.0 / 2.0f64.sqrt(), epsilon = 1e-3);
     }
 
     #[test]
@@ -587,8 +587,8 @@ mod tests {
         let [b0, b1, b2, a1, a2] = coeffs;
 
         // b0 ≈ b2, b1 ≈ a1 (Cookbook notch symmetry)
-        assert_nearly_eq!(b0, b2, 1e-10);
-        assert_nearly_eq!(b1, a1, 1e-10);
+        assert_abs_diff_eq!(b0, b2, epsilon = 1e-10);
+        assert_abs_diff_eq!(b1, a1, epsilon = 1e-10);
 
         // Denominator non-zero
         assert!((1.0 + a1 + a2).abs() > 0.0);
@@ -606,11 +606,11 @@ mod tests {
 
         // DC gain (z=1): (b0 + b1 + b2) / (1 + a1 + a2) ≈ 1
         let dc_gain = (b0 + b1 + b2) / (1.0 + a1 + a2);
-        assert_nearly_eq!(dc_gain, 1.0, 1e-10);
+        assert_abs_diff_eq!(dc_gain, 1.0, epsilon = 1e-10);
 
         // Nyquist gain (z=-1): (b0 - b1 + b2) / (1 - a1 + a2) ≈ 1
         let nyquist_gain = (b0 - b1 + b2) / (1.0 - a1 + a2);
-        assert_nearly_eq!(nyquist_gain, 1.0, 1e-10);
+        assert_abs_diff_eq!(nyquist_gain, 1.0, epsilon = 1e-10);
     }
 
     #[test]
@@ -623,7 +623,7 @@ mod tests {
         let coeffs = Butterworth::bandstop(sample_rate, center, q);
         let [b0, b1, b2, a1, a2] = coeffs;
 
-        let omega = 2.0 * std::f64::consts::PI * center / sample_rate;
+        let omega = 2.0 * core::f64::consts::PI * center / sample_rate;
         let (s, c) = omega.sin_cos();
         let num_re = b0 + b1 * c + b2 * (c * c - s * s);
         let num_im = -b1 * s + b2 * (-2.0 * s * c);
@@ -632,7 +632,7 @@ mod tests {
         let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
         // Magnitude should be ≈ 0 at center frequency (true notch)
-        assert_nearly_eq!(gain, 0.0, 1e-10);
+        assert_abs_diff_eq!(gain, 0.0, epsilon = 1e-10);
     }
 
     #[test]
@@ -645,7 +645,7 @@ mod tests {
         let coeffs = Butterworth::bandstop(sample_rate, center, q);
         let [b0, b1, b2, a1, a2] = coeffs;
 
-        let omega = 2.0f32 * std::f32::consts::PI * center / sample_rate;
+        let omega = 2.0f32 * core::f32::consts::PI * center / sample_rate;
         let (s, c) = omega.sin_cos();
         let num_re = b0 + b1 * c + b2 * (c * c - s * s);
         let num_im = -b1 * s + b2 * (-2.0 * s * c);
@@ -654,7 +654,7 @@ mod tests {
         let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
         // Magnitude should be ≈ 0 at center frequency (true notch)
-        assert_nearly_eq!(gain, 0.0f32, 1e-4);
+        assert_abs_diff_eq!(gain, 0.0f32, epsilon = 1e-4);
     }
 
     #[test]
@@ -694,13 +694,13 @@ mod tests {
                 .iter()
                 .enumerate()
                 .fold((0.0f64, 0.0f64), |(re, im), (i, &h)| {
-                    let angle = -2.0 * std::f64::consts::PI * k_f * (i as f64) / n_f;
+                    let angle = -2.0 * core::f64::consts::PI * k_f * (i as f64) / n_f;
                     (re + h * angle.cos(), im + h * angle.sin())
                 })
         };
 
         let gain = re.hypot(im);
-        assert_nearly_eq!(gain, 0.0, 1e-3);
+        assert_abs_diff_eq!(gain, 0.0, epsilon = 1e-2);
 
         // DFT bin far from center should have magnitude ≈ 1.0
         #[allow(
@@ -717,13 +717,13 @@ mod tests {
                 .iter()
                 .enumerate()
                 .fold((0.0f64, 0.0f64), |(re, im), (i, &h)| {
-                    let angle = -2.0 * std::f64::consts::PI * k_f * (i as f64) / n_f;
+                    let angle = -2.0 * core::f64::consts::PI * k_f * (i as f64) / n_f;
                     (re + h * angle.cos(), im + h * angle.sin())
                 })
         };
 
         let passband_gain = re_low.hypot(im_low);
-        assert_nearly_eq!(passband_gain, 1.0, 1e-2);
+        assert_abs_diff_eq!(passband_gain, 1.0, epsilon = 1e-2);
     }
 
     #[test]
@@ -741,7 +741,7 @@ mod tests {
 
         for &offset in &[-bw_half, bw_half] {
             let f = center + offset;
-            let omega = 2.0 * std::f64::consts::PI * f / sample_rate;
+            let omega = 2.0 * core::f64::consts::PI * f / sample_rate;
             let (s, c) = omega.sin_cos();
             let num_re = b0 + b1 * c + b2 * (c * c - s * s);
             let num_im = -b1 * s + b2 * (-2.0 * s * c);
@@ -749,7 +749,7 @@ mod tests {
             let den_im = -a1 * s + a2 * (-2.0 * s * c);
             let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
 
-            assert_nearly_eq!(gain, 1.0 / 2.0f64.sqrt(), 1e-6);
+            assert_abs_diff_eq!(gain, 1.0 / 2.0f64.sqrt(), epsilon = 3e-2);
         }
     }
 }

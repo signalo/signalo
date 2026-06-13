@@ -252,7 +252,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     #[test]
     fn test_chirp_terminates_after_num_samples() {
@@ -319,8 +319,8 @@ mod tests {
 
         // Delta = (0.3 - 0.1) / (10 - 1) = 0.022222...
         let delta = (0.3f32 - 0.1f32) / 9.0f32;
-        assert_nearly_eq!(chirp.state.current_phase_increment, 0.1, 0.0001);
-        assert_nearly_eq!(chirp.state.phase_increment_delta, delta, 0.0001);
+        assert_abs_diff_eq!(chirp.state.current_phase_increment, 0.1, epsilon = 0.0001);
+        assert_abs_diff_eq!(chirp.state.phase_increment_delta, delta, epsilon = 0.0001);
     }
 
     #[test]
@@ -348,13 +348,13 @@ mod tests {
             chirp.state.sample_index, 0,
             "Reset should reset sample index to 0"
         );
-        assert_nearly_eq!(chirp.state.phase, 0.0, 1e-5);
+        assert_abs_diff_eq!(chirp.state.phase, 0.0, epsilon = 1e-5);
     }
 
     #[test]
     fn test_chirp_sine_output() {
-        use std::f32::consts::PI;
-        use std::vec::Vec;
+        use alloc::vec::Vec;
+        use core::f32::consts::PI;
 
         let config = Config {
             phase_increment_start: PI / 2.0,
@@ -366,10 +366,10 @@ mod tests {
         let samples: Vec<f32> = (0..4).filter_map(|_| chirp.source()).collect();
 
         assert_eq!(samples.len(), 4);
-        assert_nearly_eq!(samples[0], 0.0, 0.01);
-        assert_nearly_eq!(samples[1], 1.0, 0.01);
-        assert_nearly_eq!(samples[2], 0.0, 0.01);
-        assert_nearly_eq!(samples[3], -1.0, 0.01);
+        assert_abs_diff_eq!(samples[0], 0.0, epsilon = 0.01);
+        assert_abs_diff_eq!(samples[1], 1.0, epsilon = 0.01);
+        assert_abs_diff_eq!(samples[2], 0.0, epsilon = 0.01);
+        assert_abs_diff_eq!(samples[3], -1.0, epsilon = 0.01);
     }
 
     #[test]
@@ -382,19 +382,19 @@ mod tests {
         let mut chirp = Chirp::with_config(config);
 
         let state = chirp.state_mut();
-        state.phase = std::f32::consts::PI / 2.0;
+        state.phase = core::f32::consts::PI / 2.0;
 
         let result = chirp.source();
         assert!(result.is_some());
         // With phase=PI/2, sin should give ~1.0
-        assert_nearly_eq!(result.unwrap(), 1.0, 0.01);
+        assert_abs_diff_eq!(result.unwrap(), 1.0, epsilon = 0.01);
     }
 
     #[test]
     fn test_chirp_default_config() {
         let chirp = Chirp::<f32>::default();
-        assert_nearly_eq!(chirp.config.phase_increment_start, 0.0, 1e-5);
-        assert_nearly_eq!(chirp.config.phase_increment_end, 1.0, 1e-5);
+        assert_abs_diff_eq!(chirp.config.phase_increment_start, 0.0, epsilon = 1e-5);
+        assert_abs_diff_eq!(chirp.config.phase_increment_end, 1.0, epsilon = 1e-5);
         assert_eq!(chirp.config.num_samples, 1000);
     }
 
@@ -407,7 +407,7 @@ mod tests {
         };
         let chirp = Chirp::with_config(config);
 
-        assert_nearly_eq!(chirp.state.phase, 0.0, 1e-5);
+        assert_abs_diff_eq!(chirp.state.phase, 0.0, epsilon = 1e-5);
         assert_eq!(
             chirp.state.sample_index, 0,
             "Initial sample index should be 0"
@@ -416,8 +416,8 @@ mod tests {
 
     #[test]
     fn test_chirp_f64() {
-        use std::f64::consts::PI;
-        use std::vec::Vec;
+        use alloc::vec::Vec;
+        use core::f64::consts::PI;
         // Verify Chirp works with f64 (not just f32)
         let config = Config {
             phase_increment_start: PI / 2.0,
@@ -427,9 +427,9 @@ mod tests {
         let mut chirp = Chirp::<f64>::with_config(config);
         let samples: Vec<f64> = (0..4).filter_map(|_| chirp.source()).collect();
         assert_eq!(samples.len(), 4);
-        assert_nearly_eq!(samples[0], 0.0, 0.01);
-        assert_nearly_eq!(samples[1], 1.0, 0.01);
-        assert_nearly_eq!(samples[2], 0.0, 0.01);
-        assert_nearly_eq!(samples[3], -1.0, 0.01);
+        assert_abs_diff_eq!(samples[0], 0.0, epsilon = 0.01);
+        assert_abs_diff_eq!(samples[1], 1.0, epsilon = 0.01);
+        assert_abs_diff_eq!(samples[2], 0.0, epsilon = 0.01);
+        assert_abs_diff_eq!(samples[3], -1.0, epsilon = 0.01);
     }
 }

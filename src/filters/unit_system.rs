@@ -161,11 +161,11 @@ impl_dimensioned!(UCUM);
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec;
+    use alloc::vec::Vec;
 
+    use approx::assert_abs_diff_eq;
     use dimensioned::unit_systems::si::Meter;
-    use nearly_eq::assert_nearly_eq;
 
     use super::*;
 
@@ -204,6 +204,6 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .map(|dimensioned| dimensioned.value_unsafe)
             .collect();
-        assert_nearly_eq!(output, expected);
+        assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-6);
     }
 }

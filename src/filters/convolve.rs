@@ -165,10 +165,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -208,7 +208,7 @@ mod tests {
             .iter()
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
-        assert_nearly_eq!(output, get_output(), 0.001);
+        assert_abs_diff_eq!(output.as_slice(), get_output().as_slice(), epsilon = 0.001);
     }
 
     #[test]
@@ -219,9 +219,9 @@ mod tests {
         });
         let config = filter.config_ref();
         // Sum is 12.0, so normalized coefficients should be [2/12, 4/12, 6/12] = [1/6, 1/3, 1/2]
-        assert_nearly_eq!(config.coefficients[0], 1.0 / 6.0, 0.0001);
-        assert_nearly_eq!(config.coefficients[1], 1.0 / 3.0, 0.0001);
-        assert_nearly_eq!(config.coefficients[2], 1.0 / 2.0, 0.0001);
+        assert_abs_diff_eq!(config.coefficients[0], 1.0 / 6.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(config.coefficients[1], 1.0 / 3.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(config.coefficients[2], 1.0 / 2.0, epsilon = 0.0001);
     }
 
     #[test]
@@ -232,9 +232,9 @@ mod tests {
         });
         let config = filter.config_ref();
         // Sum is 0.0, so coefficients should remain unchanged
-        assert_nearly_eq!(config.coefficients[0], 1.0, 0.0001);
-        assert_nearly_eq!(config.coefficients[1], -1.0, 0.0001);
-        assert_nearly_eq!(config.coefficients[2], 0.0, 0.0001);
+        assert_abs_diff_eq!(config.coefficients[0], 1.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(config.coefficients[1], -1.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(config.coefficients[2], 0.0, epsilon = 0.0001);
     }
 
     #[test]
@@ -244,9 +244,9 @@ mod tests {
         };
         let filter = Convolve::<f32, 3>::with_config(config.clone());
         let config_ref = filter.config_ref();
-        assert_nearly_eq!(config_ref.coefficients[0], 0.5, 0.0001);
-        assert_nearly_eq!(config_ref.coefficients[1], 0.25, 0.0001);
-        assert_nearly_eq!(config_ref.coefficients[2], 0.25, 0.0001);
+        assert_abs_diff_eq!(config_ref.coefficients[0], 0.5, epsilon = 0.0001);
+        assert_abs_diff_eq!(config_ref.coefficients[1], 0.25, epsilon = 0.0001);
+        assert_abs_diff_eq!(config_ref.coefficients[2], 0.25, epsilon = 0.0001);
     }
 
     #[test]
@@ -256,9 +256,9 @@ mod tests {
         };
         let filter = Convolve::<f32, 3>::with_config(config.clone());
         let cloned_config = filter.config();
-        assert_nearly_eq!(cloned_config.coefficients[0], 0.5, 0.0001);
-        assert_nearly_eq!(cloned_config.coefficients[1], 0.25, 0.0001);
-        assert_nearly_eq!(cloned_config.coefficients[2], 0.25, 0.0001);
+        assert_abs_diff_eq!(cloned_config.coefficients[0], 0.5, epsilon = 0.0001);
+        assert_abs_diff_eq!(cloned_config.coefficients[1], 0.25, epsilon = 0.0001);
+        assert_abs_diff_eq!(cloned_config.coefficients[2], 0.25, epsilon = 0.0001);
     }
 
     #[test]
@@ -279,7 +279,7 @@ mod tests {
         // Next filter call should use the modified state
         let output = filter.filter(5.0);
         // Output should be: 5.0 * 1.0 + 4.0 * 0.5 = 5.0 + 2.0 = 7.0
-        assert_nearly_eq!(output, 7.0, 0.0001);
+        assert_abs_diff_eq!(output, 7.0, epsilon = 0.0001);
     }
 
     #[test]
@@ -294,12 +294,12 @@ mod tests {
         filter.filter(4.0);
 
         let (guts_config, guts_state) = filter.into_guts();
-        assert_nearly_eq!(guts_config.coefficients[0], 1.0, 0.0001);
-        assert_nearly_eq!(guts_config.coefficients[1], 0.5, 0.0001);
+        assert_abs_diff_eq!(guts_config.coefficients[0], 1.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(guts_config.coefficients[1], 0.5, epsilon = 0.0001);
 
         let filter2 = Convolve::from_guts((guts_config, guts_state));
         let output = filter2.config_ref();
-        assert_nearly_eq!(output.coefficients[0], 1.0, 0.0001);
+        assert_abs_diff_eq!(output.coefficients[0], 1.0, epsilon = 0.0001);
     }
 
     #[test]
@@ -314,7 +314,7 @@ mod tests {
         filter.filter(2.0);
         filter.filter(3.0);
         let output = filter.filter(4.0);
-        assert_nearly_eq!(output, 9.0, 0.0001); // 2 + 3 + 4
+        assert_abs_diff_eq!(output, 9.0, epsilon = 0.0001); // 2 + 3 + 4
 
         // Reset the filter
         let mut reset_filter = filter.reset();
@@ -324,7 +324,7 @@ mod tests {
         reset_filter.filter(20.0);
         reset_filter.filter(30.0);
         let output = reset_filter.filter(40.0);
-        assert_nearly_eq!(output, 90.0, 0.0001); // 20 + 30 + 40
+        assert_abs_diff_eq!(output, 90.0, epsilon = 0.0001); // 20 + 30 + 40
     }
 
     #[test]
@@ -338,11 +338,11 @@ mod tests {
         // First input - buffer not full yet, loops until full
         let output1 = filter.filter(4.0);
         // All positions get 4.0, output = 4 * 4.0 * 0.25 = 4.0
-        assert_nearly_eq!(output1, 4.0, 0.0001);
+        assert_abs_diff_eq!(output1, 4.0, epsilon = 0.0001);
 
         // Second input - buffer now full
         let output2 = filter.filter(8.0);
         // Buffer: [4, 4, 4, 8], output = 4*0.25 + 4*0.25 + 4*0.25 + 8*0.25 = 5.0
-        assert_nearly_eq!(output2, 5.0, 0.0001);
+        assert_abs_diff_eq!(output2, 5.0, epsilon = 0.0001);
     }
 }

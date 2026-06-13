@@ -180,10 +180,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -207,11 +206,14 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, vec![0.5, 0.75, 0.875]);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            [0.5, 0.75, 0.875].as_slice(),
+            epsilon = 1e-6
+        );
     }
 
     #[test]
-    #[cfg(feature = "std")]
     fn test_lowpass_dc_gain() {
         // EMA with alpha=0.5: DC gain = (b0+b1)/(1+a1) = (0.5+0)/(1+(-0.5)) = 1.0
         // Drive with DC (constant 1.0) until steady state, then verify gain is 1.0.
@@ -236,7 +238,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "std")]
     fn test_lowpass_nyquist_gain() {
         // EMA with alpha=0.5: gain at Nyquist = (b0 - b1)/(1 - a1) = 0.5/(1+0.5) = 1/3
         // Drive with alternating ±1 until steady state.
@@ -287,6 +288,6 @@ mod tests {
             .iter()
             .scan(filter, |f, &x| Some(f.filter(x)))
             .collect();
-        assert_nearly_eq!(output, input.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), input.as_slice(), epsilon = 1e-6);
     }
 }

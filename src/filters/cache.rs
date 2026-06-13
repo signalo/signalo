@@ -164,7 +164,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use crate::traits::{
         Config as ConfigTrait, ConfigClone, ConfigRef, Reset, State as StateTrait, StateMut,
@@ -251,32 +251,32 @@ mod tests {
         let add_fourty_two = AddFourPointTwo;
 
         let mut cache = Cache::from(add_fourty_two);
-        assert_nearly_eq!(cache.cached(), None);
+        assert_eq!(cache.cached(), None);
 
         cache.filter(0.0);
-        assert_nearly_eq!(cache.cached(), Some(4.2));
+        assert_eq!(cache.cached(), Some(&4.2));
 
         cache.filter(1.0);
-        assert_nearly_eq!(cache.cached(), Some(5.2));
+        assert_eq!(cache.cached(), Some(&5.2));
     }
 
     #[test]
     fn test_default() {
         let mut cache: Cache<AddFourPointTwo, f32> = Cache::default();
-        assert_nearly_eq!(cache.cached(), None);
+        assert_eq!(cache.cached(), None);
 
         cache.filter(10.0);
-        assert_nearly_eq!(cache.cached(), Some(14.2));
+        assert_eq!(cache.cached(), Some(&14.2));
     }
 
     #[test]
     fn test_with_config() {
         let config = TestConfig { offset: 3.5 };
         let mut cache: Cache<ConfigurableAdd, f32> = Cache::with_config(config);
-        assert_nearly_eq!(cache.cached(), None);
+        assert_eq!(cache.cached(), None);
 
         cache.filter(2.0);
-        assert_nearly_eq!(cache.cached(), Some(5.5));
+        assert_eq!(cache.cached(), Some(&5.5));
     }
 
     #[test]
@@ -284,7 +284,7 @@ mod tests {
         let config = TestConfig { offset: 3.5 };
         let cache: Cache<ConfigurableAdd, f32> = Cache::with_config(config.clone());
         let config_ref = cache.config_ref();
-        assert_nearly_eq!(config_ref.offset, 3.5);
+        assert_abs_diff_eq!(config_ref.offset, 3.5, epsilon = 1e-6);
     }
 
     #[test]
@@ -292,7 +292,7 @@ mod tests {
         let config = TestConfig { offset: 3.5 };
         let cache: Cache<ConfigurableAdd, f32> = Cache::with_config(config.clone());
         let cloned_config = cache.config();
-        assert_nearly_eq!(cloned_config.offset, 3.5);
+        assert_abs_diff_eq!(cloned_config.offset, 3.5, epsilon = 1e-6);
     }
 
     #[test]
@@ -302,10 +302,10 @@ mod tests {
         cache.filter(5.0);
 
         let state = cache.state_mut();
-        assert_nearly_eq!(state.cached, Some(6.0));
+        assert_eq!(state.cached, Some(6.0));
         state.cached = Some(10.0);
 
-        assert_nearly_eq!(cache.cached(), Some(10.0));
+        assert_eq!(cache.cached(), Some(&10.0));
     }
 
     #[test]
@@ -317,10 +317,10 @@ mod tests {
         cache.filter(3.0);
 
         let guts = cache.into_guts();
-        assert_nearly_eq!(guts.cached, Some(5.0));
+        assert_eq!(guts.cached, Some(5.0));
 
         let cache2 = Cache::from_guts(guts);
-        assert_nearly_eq!(cache2.cached(), Some(5.0));
+        assert_eq!(cache2.cached(), Some(&5.0));
     }
 
     #[test]
@@ -328,14 +328,14 @@ mod tests {
         let add = ConfigurableAdd::with_config(TestConfig { offset: 1.5 });
         let mut cache: Cache<ConfigurableAdd, f32> = Cache::from(add);
         cache.filter(4.0);
-        assert_nearly_eq!(cache.cached(), Some(5.5));
+        assert_eq!(cache.cached(), Some(&5.5));
 
         let reset_cache = cache.reset();
-        assert_nearly_eq!(reset_cache.cached(), None);
+        assert_eq!(reset_cache.cached(), None);
 
         // After reset, filtering should still work
         let mut reset_cache = reset_cache;
         reset_cache.filter(10.0);
-        assert_nearly_eq!(reset_cache.cached(), Some(11.5));
+        assert_eq!(reset_cache.cached(), Some(&11.5));
     }
 }

@@ -98,10 +98,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -117,12 +116,14 @@ mod tests {
             .iter()
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
-        assert_nearly_eq!(
-            output,
-            vec![
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            [
                 0.0, 1.0, 6.0, -5.0, 3.0, 3.0, 8.0, -13.0, 16.0, -13.0, 8.0, -5.0, 0.0, 8.0, 0.0,
                 -13.0, 8.0, 8.0, 0.0, -13.0
             ]
+            .as_slice(),
+            epsilon = 1e-6
         );
     }
 }

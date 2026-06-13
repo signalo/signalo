@@ -122,7 +122,7 @@ where
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     #[allow(unused_imports)]
     use crate::traits::WithConfig;
@@ -150,10 +150,10 @@ mod tests {
         // phase 0.25: 1.0 * (0.5 - 1.0) = -0.5
         // phase 0.5: 1.0 * (1.0 - 1.0) = 0.0
         // phase 0.75: 1.0 * (1.5 - 1.0) = 0.5
-        assert_nearly_eq!(samples[0], -1.0f32, 1e-5);
-        assert_nearly_eq!(samples[1], -0.5f32, 1e-5);
-        assert_nearly_eq!(samples[2], 0.0f32, 1e-5);
-        assert_nearly_eq!(samples[3], 0.5f32, 1e-5);
+        assert_abs_diff_eq!(samples[0], -1.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[1], -0.5f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[2], 0.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[3], 0.5f32, epsilon = 1e-5);
     }
 
     #[cfg(any(feature = "std", feature = "alloc"))]
@@ -174,8 +174,8 @@ mod tests {
         // Verify first and last samples (just before wrap)
         // First: phase 0.0 → 2.0 * (0 - 1.0) = -2.0
         // Last (index 7): phase 0.875 → 2.0 * (1.75 - 1.0) = 1.5
-        assert_nearly_eq!(samples[0], -2.0f32, 1e-5);
-        assert_nearly_eq!(samples[7], 1.5f32, 1e-5);
+        assert_abs_diff_eq!(samples[0], -2.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[7], 1.5f32, epsilon = 1e-5);
 
         // Verify monotonic increase
         for i in 1..8 {
@@ -209,7 +209,7 @@ mod tests {
         }
         let first_step = steps[0];
         for step in &steps {
-            assert_nearly_eq!(*step, first_step, 1e-5);
+            assert_abs_diff_eq!(*step, first_step, epsilon = 1e-5);
         }
     }
 
@@ -224,9 +224,9 @@ mod tests {
         };
         let mut oscillator = SawtoothOscillator::<f64>::with_config(config);
         let samples: Vec<_> = (0..4).map(|_| oscillator.source().unwrap()).collect();
-        assert_nearly_eq!(samples[0], -1.0f64, 1e-10);
-        assert_nearly_eq!(samples[1], -0.5f64, 1e-10);
-        assert_nearly_eq!(samples[2], 0.0f64, 1e-10);
-        assert_nearly_eq!(samples[3], 0.5f64, 1e-10);
+        assert_abs_diff_eq!(samples[0], -1.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[1], -0.5f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[2], 0.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[3], 0.5f64, epsilon = 1e-10);
     }
 }

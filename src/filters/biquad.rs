@@ -220,13 +220,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "std")]
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
-    #[cfg(feature = "std")]
     use super::*;
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_identity_coefficients() {
         use alloc::vec::Vec;
@@ -251,10 +248,9 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, input.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), input.as_slice(), epsilon = 1e-6);
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_step_response_dc_gain() {
         // DC gain = (b0 + b1 + b2) / (1 + a1 + a2)
@@ -276,10 +272,9 @@ mod tests {
 
         let expected_dc_gain = (0.5 + 0.25 + 0.25) / (1.0 + 0.0 + 0.0);
 
-        assert_nearly_eq!(output, expected_dc_gain, 1e-6);
+        assert_abs_diff_eq!(output, expected_dc_gain, epsilon = 1e-6);
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_impulse_response_matches_hand_computation() {
         // Simple 1-pole IIR: b0=1, b1=0, b2=0, a1=-0.5, a2=0
@@ -297,13 +292,12 @@ mod tests {
         let y2 = filter.filter(0.0);
         let y3 = filter.filter(0.0);
 
-        assert_nearly_eq!(y0, 1.0, 1e-10);
-        assert_nearly_eq!(y1, 0.5, 1e-10);
-        assert_nearly_eq!(y2, 0.25, 1e-10);
-        assert_nearly_eq!(y3, 0.125, 1e-10);
+        assert_abs_diff_eq!(y0, 1.0, epsilon = 1e-10);
+        assert_abs_diff_eq!(y1, 0.5, epsilon = 1e-10);
+        assert_abs_diff_eq!(y2, 0.25, epsilon = 1e-10);
+        assert_abs_diff_eq!(y3, 0.125, epsilon = 1e-10);
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_reset_clears_state() {
         let config = Config {
@@ -339,6 +333,6 @@ mod tests {
 
         // First output after reset should match a fresh filter
         let mut fresh = Biquad::with_config(config);
-        assert_nearly_eq!(filter.filter(1.0), fresh.filter(1.0), 1e-10);
+        assert_abs_diff_eq!(filter.filter(1.0), fresh.filter(1.0), epsilon = 1e-10);
     }
 }
