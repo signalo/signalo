@@ -52,8 +52,8 @@ fn float_constants<T: Float>() -> (T, T, T) {
 
 /// Butterworth filter coefficient calculator.
 ///
-/// Provides design equations for Butterworth lowpass, highpass, and cookbook bandpass
-/// biquad filter coefficients using standard DSP formulae.
+/// Provides design equations for Butterworth lowpass, highpass, cookbook bandpass,
+/// and cookbook bandstop (notch) biquad filter coefficients using standard DSP formulae.
 ///
 /// All methods take `(sample_rate, frequency[, q])` in that order — sample rate first,
 /// then the characteristic frequency. This matches the convention of most DSP textbooks.
@@ -219,6 +219,68 @@ impl Butterworth {
         let b0 = alpha;
         let b1 = T::zero();
         let b2 = -alpha;
+
+        let one_plus_alpha = T::one() + alpha;
+        let a0 = one_plus_alpha;
+        let a1 = -two * cos_omega;
+        let a2 = T::one() - alpha;
+
+        [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0]
+    }
+
+    /// Compute bandstop (notch) coefficients for a filter centered at `center` Hz
+    /// with quality factor `q`, given a `sample_rate` in Hz.
+    ///
+    /// Implements the *notch* design from the Audio EQ Cookbook: a 2nd-order
+    /// IIR with a pair of complex-conjugate zeros lying exactly on the unit
+    /// circle at ±ω₀. DC and Nyquist gains are unity; the response is exactly
+    /// zero at `center`.
+    ///
+    /// For a strict 4th-order Butterworth band-reject response, cascade two
+    /// biquads via [`super::cascade::BiquadCascade`]; this single-biquad form
+    /// matches the convention used by [`Self::bandpass`].
+    ///
+    /// Returns `[b0, b1, b2, a1, a2]` normalized by `a0`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `T` cannot represent the constants `PI` or `2.0`. This is
+    /// infallible for standard `f32` and `f64` types.
+    ///
+    /// In debug builds, panics if `sample_rate <= 0`, `center <= 0`,
+    /// `center >= sample_rate / 2`, or `q <= 0`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")] {
+    /// # use signalo::filters::biquad::coefficients::Butterworth;
+    /// let coeffs = Butterworth::bandstop(44100.0, 1000.0, 1.0);
+    /// assert!(coeffs[0] > 0.0); // b0 should be positive
+    /// # }
+    /// ```
+    #[cfg(feature = "std")]
+    #[allow(clippy::unwrap_used)]
+    pub fn bandstop<T: Float>(sample_rate: T, center: T, q: T) -> [T; 5] {
+        debug_assert!(sample_rate > T::zero(), "sample_rate must be positive");
+        debug_assert!(center > T::zero(), "center must be positive");
+        debug_assert!(
+            center < sample_rate / T::from(2.0).unwrap(),
+            "center must be below Nyquist (sample_rate / 2)"
+        );
+        debug_assert!(q > T::zero(), "q must be positive");
+
+        let (pi, two, _) = float_constants::<T>();
+
+        let omega = two * pi * center / sample_rate;
+        let sin_omega = omega.sin();
+        let cos_omega = omega.cos();
+
+        let alpha = sin_omega / (two * q);
+
+        let b0 = T::one();
+        let b1 = -two * cos_omega;
+        let b2 = T::one();
 
         let one_plus_alpha = T::one() + alpha;
         let a0 = one_plus_alpha;
@@ -512,5 +574,182 @@ mod tests {
         let gain = re.hypot(im);
 
         assert_nearly_eq!(gain, 1.0 / 2.0f64.sqrt(), 1e-3);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_butterworth_bandstop_coefficients_symmetry() {
+        let sample_rate = 44100.0f64;
+        let center = 1000.0;
+        let q = 1.0;
+
+        let coeffs = Butterworth::bandstop(sample_rate, center, q);
+        let [b0, b1, b2, a1, a2] = coeffs;
+
+        // b0 ≈ b2, b1 ≈ a1 (Cookbook notch symmetry)
+        assert_nearly_eq!(b0, b2, 1e-10);
+        assert_nearly_eq!(b1, a1, 1e-10);
+
+        // Denominator non-zero
+        assert!((1.0 + a1 + a2).abs() > 0.0);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_butterworth_bandstop_dc_and_nyquist_gain() {
+        let sample_rate = 44100.0f64;
+        let center = 1000.0;
+        let q = 1.0;
+
+        let coeffs = Butterworth::bandstop(sample_rate, center, q);
+        let [b0, b1, b2, a1, a2] = coeffs;
+
+        // DC gain (z=1): (b0 + b1 + b2) / (1 + a1 + a2) ≈ 1
+        let dc_gain = (b0 + b1 + b2) / (1.0 + a1 + a2);
+        assert_nearly_eq!(dc_gain, 1.0, 1e-10);
+
+        // Nyquist gain (z=-1): (b0 - b1 + b2) / (1 - a1 + a2) ≈ 1
+        let nyquist_gain = (b0 - b1 + b2) / (1.0 - a1 + a2);
+        assert_nearly_eq!(nyquist_gain, 1.0, 1e-10);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_butterworth_bandstop_center_notch_f64() {
+        let sample_rate = 44100.0f64;
+        let center = 1000.0;
+        let q = 1.0;
+
+        let coeffs = Butterworth::bandstop(sample_rate, center, q);
+        let [b0, b1, b2, a1, a2] = coeffs;
+
+        let omega = 2.0 * std::f64::consts::PI * center / sample_rate;
+        let (s, c) = omega.sin_cos();
+        let num_re = b0 + b1 * c + b2 * (c * c - s * s);
+        let num_im = -b1 * s + b2 * (-2.0 * s * c);
+        let den_re = 1.0 + a1 * c + a2 * (c * c - s * s);
+        let den_im = -a1 * s + a2 * (-2.0 * s * c);
+        let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
+
+        // Magnitude should be ≈ 0 at center frequency (true notch)
+        assert_nearly_eq!(gain, 0.0, 1e-10);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_butterworth_bandstop_center_notch_f32() {
+        let sample_rate = 44100.0f32;
+        let center = 1000.0f32;
+        let q = 1.0f32;
+
+        let coeffs = Butterworth::bandstop(sample_rate, center, q);
+        let [b0, b1, b2, a1, a2] = coeffs;
+
+        let omega = 2.0f32 * std::f32::consts::PI * center / sample_rate;
+        let (s, c) = omega.sin_cos();
+        let num_re = b0 + b1 * c + b2 * (c * c - s * s);
+        let num_im = -b1 * s + b2 * (-2.0 * s * c);
+        let den_re = 1.0 + a1 * c + a2 * (c * c - s * s);
+        let den_im = -a1 * s + a2 * (-2.0 * s * c);
+        let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
+
+        // Magnitude should be ≈ 0 at center frequency (true notch)
+        assert_nearly_eq!(gain, 0.0f32, 1e-4);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_bandstop_impulse_response_notch_via_dft() {
+        use crate::filters::biquad::{Biquad, Config};
+        use crate::traits::{Filter, WithConfig};
+
+        let sample_rate = 44100.0f64;
+        let center = 1000.0;
+        let q = 1.0;
+
+        let coeffs = Butterworth::bandstop(sample_rate, center, q);
+        let [b0, b1, b2, a1, a2] = coeffs;
+
+        let mut filter = Biquad::with_config(Config { b0, b1, b2, a1, a2 });
+
+        let n = 4096usize;
+        let mut response: Vec<f64> = Vec::with_capacity(n);
+        response.push(filter.filter(1.0));
+
+        for _ in 1..n {
+            response.push(filter.filter(0.0));
+        }
+
+        // DFT bin at center should have magnitude ≈ 0
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss
+        )]
+        let (re, im) = {
+            let n_f = n as f64;
+            let k = (center / sample_rate * n_f).round() as usize;
+            let k_f = k as f64;
+            response
+                .iter()
+                .enumerate()
+                .fold((0.0f64, 0.0f64), |(re, im), (i, &h)| {
+                    let angle = -2.0 * std::f64::consts::PI * k_f * (i as f64) / n_f;
+                    (re + h * angle.cos(), im + h * angle.sin())
+                })
+        };
+
+        let gain = re.hypot(im);
+        assert_nearly_eq!(gain, 0.0, 1e-3);
+
+        // DFT bin far from center should have magnitude ≈ 1.0
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss
+        )]
+        let (re_low, im_low) = {
+            let n_f = n as f64;
+            let freq_low = center / 10.0;
+            let k = (freq_low / sample_rate * n_f).round() as usize;
+            let k_f = k as f64;
+            response
+                .iter()
+                .enumerate()
+                .fold((0.0f64, 0.0f64), |(re, im), (i, &h)| {
+                    let angle = -2.0 * std::f64::consts::PI * k_f * (i as f64) / n_f;
+                    (re + h * angle.cos(), im + h * angle.sin())
+                })
+        };
+
+        let passband_gain = re_low.hypot(im_low);
+        assert_nearly_eq!(passband_gain, 1.0, 1e-2);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_bandstop_3db_bandwidth() {
+        let sample_rate = 44100.0f64;
+        let center = 1000.0;
+        let q = 5.0;
+
+        let coeffs = Butterworth::bandstop(sample_rate, center, q);
+        let [b0, b1, b2, a1, a2] = coeffs;
+
+        // Test at f = center ± center/(2Q) — the ±3 dB edges
+        let bw_half = center / (2.0 * q);
+
+        for &offset in &[-bw_half, bw_half] {
+            let f = center + offset;
+            let omega = 2.0 * std::f64::consts::PI * f / sample_rate;
+            let (s, c) = omega.sin_cos();
+            let num_re = b0 + b1 * c + b2 * (c * c - s * s);
+            let num_im = -b1 * s + b2 * (-2.0 * s * c);
+            let den_re = 1.0 + a1 * c + a2 * (c * c - s * s);
+            let den_im = -a1 * s + a2 * (-2.0 * s * c);
+            let gain = num_re.hypot(num_im) / den_re.hypot(den_im);
+
+            assert_nearly_eq!(gain, 1.0 / 2.0f64.sqrt(), 1e-6);
+        }
     }
 }
