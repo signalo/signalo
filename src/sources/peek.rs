@@ -73,8 +73,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use nearly_eq::assert_nearly_eq;
-
     use super::*;
 
     #[derive(Default)]
@@ -96,11 +94,11 @@ mod tests {
     fn test() {
         let mut peek = Peek::from(Dummy::default());
 
-        assert_nearly_eq!(peek.peek(), Some(0.0));
-        assert_nearly_eq!(peek.peek(), Some(0.0));
+        assert_eq!(peek.peek(), Some(&0.0));
+        assert_eq!(peek.peek(), Some(&0.0));
 
-        assert_nearly_eq!(peek.source(), Some(0.0));
-        assert_nearly_eq!(peek.source(), Some(1.0));
-        assert_nearly_eq!(peek.source(), Some(2.0));
+        assert_eq!(peek.source(), Some(0.0));
+        assert_eq!(peek.source(), Some(1.0));
+        assert_eq!(peek.source(), Some(2.0));
     }
 }

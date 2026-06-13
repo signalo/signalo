@@ -185,13 +185,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec::Vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
-    #[cfg(feature = "std")]
     #[test]
     fn test_nan_propagation() {
         let config = Config {
@@ -229,7 +228,7 @@ mod tests {
 
         let output: Vec<_> = input.iter().map(|&x| filter.filter(x)).collect();
 
-        assert_nearly_eq!(output, input.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), input.as_slice(), epsilon = 1e-6);
     }
 
     #[test]
@@ -270,7 +269,7 @@ mod tests {
 
         // First sample after reset matches a fresh filter
         let mut fresh = BiquadCascade::with_config(config);
-        assert_nearly_eq!(filter.filter(1.0), fresh.filter(1.0), 1e-10);
+        assert_abs_diff_eq!(filter.filter(1.0), fresh.filter(1.0), epsilon = 1e-10);
     }
 
     #[test]
@@ -354,7 +353,7 @@ mod tests {
 
         let output: Vec<_> = input.iter().map(|&x| filter.filter(x)).collect();
 
-        assert_nearly_eq!(output, input.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), input.as_slice(), epsilon = 1e-6);
     }
 
     #[test]
@@ -390,7 +389,7 @@ mod tests {
         for &x in &input {
             let cascade_out = cascade.filter(x);
             let sequential_out = biquad_b.filter(biquad_a.filter(x));
-            assert_nearly_eq!(cascade_out, sequential_out, 1e-12);
+            assert_abs_diff_eq!(cascade_out, sequential_out, epsilon = 1e-12);
         }
     }
 }

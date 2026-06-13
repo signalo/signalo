@@ -160,10 +160,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -180,7 +180,7 @@ mod tests {
             .collect();
 
         // First output is 1.0 (the step edge)
-        assert_nearly_eq!(output[0], 1.0, 0.001);
+        assert_abs_diff_eq!(output[0], 1.0, epsilon = 0.001);
 
         // After 1000 samples with R=0.995, output decays to near zero
         // R^1000 ≈ 0.0066
@@ -217,8 +217,8 @@ mod tests {
 
         // Reset and verify state is cleared
         let mut reset_filter = filter.reset();
-        assert_nearly_eq!(reset_filter.state_mut().prev_input, 0.0, 0.0001);
-        assert_nearly_eq!(reset_filter.state_mut().prev_output, 0.0, 0.0001);
+        assert_abs_diff_eq!(reset_filter.state_mut().prev_input, 0.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(reset_filter.state_mut().prev_output, 0.0, epsilon = 0.0001);
     }
 
     #[test]
@@ -302,6 +302,6 @@ mod tests {
             0.0, 1.0, 6.0, -5.0, 3.0, 3.0, 8.0, -13.0, 16.0, -13.0, 8.0, -5.0, 0.0, 8.0, 0.0,
             -13.0, 8.0, 8.0, 0.0, -13.0,
         ];
-        assert_nearly_eq!(output, expected.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-6);
     }
 }

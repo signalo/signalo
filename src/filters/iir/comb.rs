@@ -233,9 +233,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec::Vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -254,7 +254,7 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, expected.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-6);
     }
 
     #[test]
@@ -272,7 +272,7 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, expected.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-6);
     }
 
     #[test]
@@ -290,7 +290,7 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, expected.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-6);
     }
 
     #[test]
@@ -307,7 +307,7 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, input.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), input.as_slice(), epsilon = 1e-6);
     }
 
     #[test]
@@ -368,7 +368,7 @@ mod tests {
             .iter()
             .scan(filter, |f, &x| Some(f.filter(x)))
             .collect();
-        assert_nearly_eq!(output, input.to_vec(), 1e-6);
+        assert_abs_diff_eq!(output.as_slice(), input.as_slice(), epsilon = 1e-6);
     }
 
     #[test]
@@ -385,11 +385,11 @@ mod tests {
             .collect();
 
         for i in (0..20).step_by(2) {
-            assert_nearly_eq!(outputs[i], 1.0, 1e-12);
+            assert_abs_diff_eq!(outputs[i], 1.0, epsilon = 1e-12);
         }
 
         for i in (1..20).step_by(2) {
-            assert_nearly_eq!(outputs[i], 0.0, 1e-12);
+            assert_abs_diff_eq!(outputs[i], 0.0, epsilon = 1e-12);
         }
     }
 }

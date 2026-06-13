@@ -136,7 +136,7 @@ where
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     #[allow(unused_imports)]
     use crate::traits::WithConfig;
@@ -167,10 +167,10 @@ mod tests {
         // phase 0.25: |0.25 - 0.5| = 0.25 → 1.0 - 4*0.25 = 1 - 1 = 0 (zero crossing while rising)
         // phase 0.5: |0.5 - 0.5| = 0.0 → 1.0 - 4*0 = 1 (peak)
         // phase 0.75: |0.75 - 0.5| = 0.25 → 1.0 - 4*0.25 = 1 - 1 = 0 (zero crossing while falling)
-        assert_nearly_eq!(samples[0], -1.0f32, 1e-5);
-        assert_nearly_eq!(samples[1], 0.0f32, 1e-5);
-        assert_nearly_eq!(samples[2], 1.0f32, 1e-5);
-        assert_nearly_eq!(samples[3], 0.0f32, 1e-5);
+        assert_abs_diff_eq!(samples[0], -1.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[1], 0.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[2], 1.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[3], 0.0f32, epsilon = 1e-5);
     }
 
     #[cfg(any(feature = "std", feature = "alloc"))]
@@ -196,7 +196,7 @@ mod tests {
         // At phase 0.25: |0.25 - 0.5| = 0.25 → 2 * (1 - 4*0.25) = 2 * 0 = 0
         // At phase 0.375: |0.375 - 0.5| = 0.125 → 2 * (1 - 4*0.125) = 2 * 0.5 = 1.0
         // At phase 0.5: |0.5 - 0.5| = 0 → 2 * (1 - 0) = 2.0
-        assert_nearly_eq!(samples[4], 2.0f32, 1e-5); // phase 0.5
+        assert_abs_diff_eq!(samples[4], 2.0f32, epsilon = 1e-5); // phase 0.5
     }
 
     #[cfg(any(feature = "std", feature = "alloc"))]
@@ -218,7 +218,7 @@ mod tests {
         // Triangle wave should be symmetric around phase=0.5
         // sample[i] at phase 0.1*i
         // sample[5] is at phase 0.5 (peak)
-        assert_nearly_eq!(samples[5], 1.0f32, 1e-5); // peak
+        assert_abs_diff_eq!(samples[5], 1.0f32, epsilon = 1e-5); // peak
 
         // Verify all outputs are within [-amplitude, amplitude]
         for sample in &samples {
@@ -239,9 +239,9 @@ mod tests {
         };
         let mut oscillator = TriangleOscillator::<f64>::with_config(config);
         let samples: Vec<_> = (0..4).map(|_| oscillator.source().unwrap()).collect();
-        assert_nearly_eq!(samples[0], -1.0f64, 1e-10);
-        assert_nearly_eq!(samples[1], 0.0f64, 1e-10);
-        assert_nearly_eq!(samples[2], 1.0f64, 1e-10);
-        assert_nearly_eq!(samples[3], 0.0f64, 1e-10);
+        assert_abs_diff_eq!(samples[0], -1.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[1], 0.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[2], 1.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[3], 0.0f64, epsilon = 1e-10);
     }
 }

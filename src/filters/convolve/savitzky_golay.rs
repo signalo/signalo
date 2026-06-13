@@ -84,10 +84,10 @@ savitzky_golay_impl_float!(13 => [
 mod tests {
     #![allow(clippy::unreadable_literal)]
 
-    use std::vec;
-    use std::vec::Vec;
+    use alloc::vec;
+    use alloc::vec::Vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use crate::traits::Filter;
 
@@ -298,7 +298,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_1(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_1().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -310,7 +314,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_2(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_2().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -322,7 +330,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_3(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_3().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -334,7 +346,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_4(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_4().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -346,7 +362,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_5(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_5().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -358,7 +378,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_6(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_6().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -370,7 +394,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_7(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_7().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -382,7 +410,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_8(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_8().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -394,7 +426,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_9(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_9().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -406,7 +442,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_10(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_10().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -418,7 +458,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_11(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_11().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -430,7 +474,11 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_12(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_12().as_slice(),
+            epsilon = 0.001
+        );
     }
 
     #[test]
@@ -442,6 +490,10 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input)))
             .collect();
 
-        assert_nearly_eq!(output, get_output_13(), 0.001);
+        assert_abs_diff_eq!(
+            output.as_slice(),
+            get_output_13().as_slice(),
+            epsilon = 0.001
+        );
     }
 }

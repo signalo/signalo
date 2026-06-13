@@ -99,9 +99,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
+    use alloc::vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -125,10 +125,10 @@ mod tests {
             variance,
         }) = sink.finalize()
         {
-            assert_nearly_eq!(min, 0.0);
-            assert_nearly_eq!(max, 180.0);
-            assert_nearly_eq!(mean, 26.56);
-            assert_nearly_eq!(variance, 1347.68);
+            assert_abs_diff_eq!(min, 0.0, epsilon = 1e-6);
+            assert_abs_diff_eq!(max, 180.0, epsilon = 1e-6);
+            assert_abs_diff_eq!(mean, 26.56, epsilon = 1e-6);
+            assert_abs_diff_eq!(variance, 1347.68, epsilon = 1e-6);
         } else {
             panic!("Expected Some(…), found None.");
         }

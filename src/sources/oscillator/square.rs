@@ -131,7 +131,7 @@ where
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     #[allow(unused_imports)]
     use crate::traits::WithConfig;
@@ -157,10 +157,10 @@ mod tests {
         // First half period: amplitude, second half: -amplitude
         // With increment 0.5: phase goes [0, 0.5, 0, 0.5, ...]
         // Output: [+1, -1, +1, -1]
-        assert_nearly_eq!(samples[0], 1.0f32, 1e-5);
-        assert_nearly_eq!(samples[1], -1.0f32, 1e-5);
-        assert_nearly_eq!(samples[2], 1.0f32, 1e-5);
-        assert_nearly_eq!(samples[3], -1.0f32, 1e-5);
+        assert_abs_diff_eq!(samples[0], 1.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[1], -1.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[2], 1.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[3], -1.0f32, epsilon = 1e-5);
     }
 
     #[cfg(any(feature = "std", feature = "alloc"))]
@@ -183,7 +183,7 @@ mod tests {
         // output: [+2, +2, -2, -2, +2, +2, -2, -2]
         for i in 0..8 {
             let expected = if i % 4 < 2 { 2.0f32 } else { -2.0f32 };
-            assert_nearly_eq!(samples[i], expected, 1e-5);
+            assert_abs_diff_eq!(samples[i], expected, epsilon = 1e-5);
         }
     }
 
@@ -221,9 +221,9 @@ mod tests {
         };
         let mut oscillator = SquareOscillator::<f64>::with_config(config);
         let samples: Vec<_> = (0..4).map(|_| oscillator.source().unwrap()).collect();
-        assert_nearly_eq!(samples[0], 1.0f64, 1e-10);
-        assert_nearly_eq!(samples[1], -1.0f64, 1e-10);
-        assert_nearly_eq!(samples[2], 1.0f64, 1e-10);
-        assert_nearly_eq!(samples[3], -1.0f64, 1e-10);
+        assert_abs_diff_eq!(samples[0], 1.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[1], -1.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[2], 1.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[3], -1.0f64, epsilon = 1e-10);
     }
 }

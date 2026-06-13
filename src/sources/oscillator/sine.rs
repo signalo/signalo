@@ -161,7 +161,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
     use crate::traits::WithConfig;
@@ -185,17 +185,17 @@ mod tests {
         let samples: Vec<_> = (0..4).map(|_| oscillator.source().unwrap()).collect();
 
         // Expected: [0, 1, 0, -1] for sine at π/2 steps
-        assert_nearly_eq!(samples[0], 0.0f32, 1e-5);
-        assert_nearly_eq!(samples[1], 1.0f32, 1e-5);
-        assert_nearly_eq!(samples[2], 0.0f32, 1e-5);
-        assert_nearly_eq!(samples[3], -1.0f32, 1e-5);
+        assert_abs_diff_eq!(samples[0], 0.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[1], 1.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[2], 0.0f32, epsilon = 1e-5);
+        assert_abs_diff_eq!(samples[3], -1.0f32, epsilon = 1e-5);
     }
 
     #[test]
     fn test_stability_long_sequence() {
         // Test that amplitude doesn't grow after many samples
         // Phase delta for 100 Hz at 1000 Hz sample rate = 2π/10 ≈ 0.628
-        let phase_delta = 2.0 * std::f32::consts::PI / 10.0;
+        let phase_delta = 2.0 * core::f32::consts::PI / 10.0;
         let config = Config {
             cos_delta: phase_delta.cos(),
             sin_delta: phase_delta.sin(),
@@ -223,9 +223,9 @@ mod tests {
         };
         let mut oscillator = SineOscillator::<f64>::with_config(config);
         let samples: Vec<_> = (0..4).map(|_| oscillator.source().unwrap()).collect();
-        assert_nearly_eq!(samples[0], 0.0f64, 1e-10);
-        assert_nearly_eq!(samples[1], 1.0f64, 1e-10);
-        assert_nearly_eq!(samples[2], 0.0f64, 1e-10);
-        assert_nearly_eq!(samples[3], -1.0f64, 1e-10);
+        assert_abs_diff_eq!(samples[0], 0.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[1], 1.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[2], 0.0f64, epsilon = 1e-10);
+        assert_abs_diff_eq!(samples[3], -1.0f64, epsilon = 1e-10);
     }
 }

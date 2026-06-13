@@ -80,9 +80,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
+    use alloc::vec;
 
-    use nearly_eq::assert_nearly_eq;
+    use approx::assert_abs_diff_eq;
 
     use super::*;
 
@@ -90,7 +90,7 @@ mod tests {
     fn empty() {
         let sink: Mean<f32> = Mean::default();
         let mean = sink.finalize();
-        assert_nearly_eq!(mean, None);
+        assert_eq!(mean, None);
     }
 
     #[test]
@@ -107,6 +107,6 @@ mod tests {
             sink.sink(input);
         }
         let mean = sink.finalize();
-        assert_nearly_eq!(mean, Some(26.56));
+        assert_abs_diff_eq!(mean.unwrap(), 26.56, epsilon = 1e-6);
     }
 }
