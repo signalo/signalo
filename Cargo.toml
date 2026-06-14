@@ -22,7 +22,7 @@ approx = { version = "0.5.1", default-features = false }
 droptest = "0.2.1"
 
 [features]
-default = []
+default = ["std"]
 alloc = []
 std = [
     "alloc",
