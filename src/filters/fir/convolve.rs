@@ -49,36 +49,53 @@ pub struct State<T, const N: usize> {
 ///
 /// - **Time per sample:** O(N); dot product of N taps with N coefficients.
 /// - **Space:** O(N); circular tap buffer of N elements plus N coefficient array.
+///
+/// # Cold-start behaviour
+///
+/// On construction, the tap buffer is pre-filled with `N` zeros. The first
+/// `N − 1` outputs therefore reflect implicit zero-padding `x[n] = 0` for
+/// `n < 0`, as verified by `cold_start_is_zero_padded_partial_convolution`.
+/// Discard the warm-up window if zero-padding bias is unacceptable
+/// for your application.
 #[derive(Clone, Debug)]
 pub struct Convolve<T, const N: usize> {
     config: Config<T, N>,
     state: State<T, N>,
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 impl<T, const N: usize> Convolve<T, N>
 where
-    T: Clone + Num + core::cmp::PartialOrd,
+    T: num_traits::Float,
 {
     /// Creates a new `Convolve` filter with given `coefficients`, normalizing
     /// them to unity DC gain.
     ///
+    /// This constructor is float-only. For integer types, use
+    /// [`with_config`](Self::with_config) directly with manually pre-scaled
+    /// coefficients.
+    ///
     /// # Behaviour
     ///
-    /// If the sum of coefficients is positive, each coefficient is divided by
-    /// the sum so that Σ h\[k\] = 1 (unity DC gain). If the sum is zero or
-    /// negative, normalization is skipped and the original coefficients are
-    /// used as-is. The `sum > 0` guard (rather than `sum.abs() > 0`) avoids
-    /// sign flips of derivative kernels and other filters where negative sums
-    /// carry semantic meaning. See `test_normalized_negative_sum` for the
-    /// pinned behaviour.
-    pub fn normalized(mut config: Config<T, N>) -> Self {
-        let mut sum = T::zero();
-        for coeff in &config.coefficients {
-            sum = sum + coeff.clone();
-        }
-        if sum > T::zero() {
+    /// If `sum == 0` (exact), normalisation is skipped — this is the documented
+    /// DC-blocker escape hatch. Otherwise the sum must be finite and its
+    /// magnitude must be at or above `T::min_positive_value().sqrt()`; smaller
+    /// denominators (near-zero) panic.
+    pub fn normalized(mut config: Config<T, N>) -> Self
+    where
+        T: core::fmt::Debug,
+    {
+        let sum = config
+            .coefficients
+            .iter()
+            .copied()
+            .fold(T::zero(), |a, b| a + b);
+        if !sum.is_zero() {
+            // Exact zero is treated as an explicit DC-blocker request; near-zero is treated as numerical error and rejected by safe_normalise_divisor.
+            let denom =
+                crate::math::safe_normalise_divisor(sum, "Convolve::normalized: coefficient sum");
             for coeff in &mut config.coefficients {
-                *coeff = coeff.clone() / sum.clone();
+                *coeff = *coeff / denom;
             }
         }
         Self::with_config(config)
@@ -172,8 +189,8 @@ where
         self.state.taps.push_back(input);
 
         let state_iter = self.state.taps.iter();
-        // coefficients are stored h[0]..h[N-1] where h[0] pairs with newest tap.
-        // taps.iter() yields oldest→newest; rev() pairs newest tap with h[0].
+        // See "Coefficient ordering" in the struct-level documentation.
+        // coeff_iter.rev(): state iterates oldest->newest; reversing pairs h[N-1] with oldest, h[0] with newest. See struct-level "Coefficient ordering".
         let coeff_iter = self.config.coefficients.iter().rev();
 
         state_iter
@@ -259,15 +276,26 @@ mod tests {
     }
 
     #[test]
+    fn test_normalized_zero_sum_exact() {
+        // Coefficients [1, -1] sum to exactly zero; should round-trip unchanged.
+        let filter = Convolve::<f32, 2>::normalized(Config {
+            coefficients: [1.0, -1.0],
+        });
+        let config = filter.config_ref();
+        assert_abs_diff_eq!(config.coefficients[0], 1.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(config.coefficients[1], -1.0, epsilon = 0.0001);
+    }
+
+    #[test]
     fn test_normalized_negative_sum() {
-        // Test normalizing coefficients with a negative sum (sum < 0)
+        // Negative-sum coefficients are divided through correctly to unity gain.
         let filter = Convolve::<f32, 2>::normalized(Config {
             coefficients: [-1.0, 0.5],
         });
         let config = filter.config_ref();
-        // Sum is -0.5 (< 0), so coefficients should remain unchanged
-        assert_abs_diff_eq!(config.coefficients[0], -1.0, epsilon = 0.0001);
-        assert_abs_diff_eq!(config.coefficients[1], 0.5, epsilon = 0.0001);
+        // Sum is -0.5, so normalized: [-1.0 / -0.5, 0.5 / -0.5] = [2.0, -1.0]
+        assert_abs_diff_eq!(config.coefficients[0], 2.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(config.coefficients[1], -1.0, epsilon = 0.0001);
     }
 
     #[test]
@@ -376,5 +404,110 @@ mod tests {
         // taps=[0,0,0,4.0] → push(8.0) → taps=[0,0,4.0,8.0] → sum=3.0
         let output2 = filter.filter(8.0);
         assert_abs_diff_eq!(output2, 3.0, epsilon = 0.0001);
+    }
+
+    #[test]
+    fn coefficient_ordering() {
+        // Asymmetric 3-tap coefficients to verify the pairing convention.
+        // coeff[0] pairs with the newest tap, coeff[N-1] with the oldest tap.
+        // coeff = [3, 2, 1], impulse = [1, 0, 0, ...] → impulse response:
+        //   taps pre-filled with zeros: [0,0,0]
+        //   filter(1): taps = [0,0,1]  →  output = 0*1 + 0*2 + 1*3 = 3 = h[0]
+        //   filter(0): taps = [0,1,0]  →  output = 0*1 + 1*2 + 0*3 = 2 = h[1]
+        //   filter(0): taps = [1,0,0]  →  output = 1*1 + 0*2 + 0*3 = 1 = h[2]
+        //   filter(0): taps = [0,0,0]  →  output = 0
+        let mut filter = Convolve::<f32, 3>::with_config(Config {
+            coefficients: [3.0, 2.0, 1.0],
+        });
+        assert_abs_diff_eq!(filter.filter(1.0), 3.0, epsilon = 1e-10);
+        assert_abs_diff_eq!(filter.filter(0.0), 2.0, epsilon = 1e-10);
+        assert_abs_diff_eq!(filter.filter(0.0), 1.0, epsilon = 1e-10);
+        assert_abs_diff_eq!(filter.filter(0.0), 0.0, epsilon = 1e-10);
+        assert_abs_diff_eq!(filter.filter(0.0), 0.0, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn cold_start_is_zero_padded_partial_convolution() {
+        let h = [0.5_f32, -0.25, 0.125];
+        let mut filter = Convolve::<f32, 3>::with_config(Config { coefficients: h });
+        assert!((filter.filter(4.0) - 0.5 * 4.0).abs() < 1e-7);
+        assert!((filter.filter(8.0) - (0.5 * 8.0 + -0.25 * 4.0)).abs() < 1e-7);
+        assert!((filter.filter(2.0) - (0.5 * 2.0 + -0.25 * 8.0 + 0.125 * 4.0)).abs() < 1e-7);
+    }
+
+    #[test]
+    fn impulse_response_equals_coefficients_n9() {
+        let h = [0.1_f32, -0.2, 0.3, -0.4, 0.5, -0.6, 0.7, -0.8, 0.9];
+        let mut f = Convolve::<f32, 9>::with_config(Config { coefficients: h });
+        let mut response = [0.0_f32; 9];
+        response[0] = f.filter(1.0);
+        for k in 1..9 {
+            response[k] = f.filter(0.0);
+        }
+        for k in 0..9 {
+            assert!(
+                (response[k] - h[k]).abs() < 1e-7,
+                "k={k}: got {} expected {}",
+                response[k],
+                h[k]
+            );
+        }
+    }
+
+    #[test]
+    fn impulse_response() {
+        // Verify the canonical FIR convolution contract y[n] = Σ h[k]·x[n−k]
+        // with zero-padding (x[n] = 0 for n < 0).
+        // The impulse response must reproduce h[0], h[1], …, h[N−1] exactly.
+        let h = [0.1, 0.2, 0.3, 0.4, 0.5_f32];
+        let mut filter = Convolve::<f32, 5>::with_config(Config { coefficients: h });
+        let response: Vec<f32> = [1.0_f32]
+            .into_iter()
+            .chain(core::iter::repeat(0.0).take(h.len()))
+            .map(|x| filter.filter(x))
+            .collect();
+        assert_abs_diff_eq!(response[0], h[0], epsilon = 1e-7);
+        assert_abs_diff_eq!(response[1], h[1], epsilon = 1e-7);
+        assert_abs_diff_eq!(response[2], h[2], epsilon = 1e-7);
+        assert_abs_diff_eq!(response[3], h[3], epsilon = 1e-7);
+        assert_abs_diff_eq!(response[4], h[4], epsilon = 1e-7);
+        // After N+1 samples the buffer is fully zero again
+        assert_abs_diff_eq!(response[5], 0.0, epsilon = 1e-7);
+    }
+
+    #[test]
+    fn integer_convolution() {
+        // Integer convolution must work without overflow surprises.
+        // 2-tap moving sum: output(n) = x[n] + x[n-1]
+        let mut filter = Convolve::<i32, 2>::with_config(Config {
+            coefficients: [1, 1],
+        });
+        // taps=[0,0], push(4): taps=[0,4], output = 0*1 + 4*1 = 4
+        assert_eq!(filter.filter(4), 4);
+        // taps=[0,4], push(6): taps=[4,6], output = 4*1 + 6*1 = 10
+        assert_eq!(filter.filter(6), 10);
+        // taps=[4,6], push(8): taps=[6,8], output = 6*1 + 8*1 = 14
+        assert_eq!(filter.filter(8), 14);
+        // Reset and check cold-start zero-padding
+        let mut filter2 = filter.reset();
+        assert_eq!(filter2.filter(1), 1);
+        assert_eq!(filter2.filter(2), 3);
+    }
+
+    #[test]
+    #[should_panic(expected = "denominator magnitude")]
+    fn tiny_sum_rejected() {
+        let _ = Convolve::<f32, 3>::normalized(Config {
+            coefficients: [1.0, -1.0, f32::from_bits(1)],
+        });
+    }
+
+    #[test]
+    fn zero_sum_passes_through() {
+        let f = Convolve::<f32, 3>::normalized(Config {
+            coefficients: [1.0, -1.0, 0.0],
+        });
+        let c = f.config_ref().coefficients;
+        assert_eq!([c[0], c[1], c[2]], [1.0, -1.0, 0.0]);
     }
 }
