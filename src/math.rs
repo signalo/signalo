@@ -17,8 +17,13 @@ use num_traits::Float;
 ///
 /// The series converges quickly for all reasonable `x`. Iteration
 /// stops when the relative contribution of the current term drops
-/// below `T::epsilon()`, with a safety cap of 64 iterations
-/// (sufficient for β up to ≈ 20, giving I₀(20) ≈ 4.4 × 10⁸).
+/// below `T::epsilon()`, with a safety cap of 64 iterations.
+///
+/// # Limits
+///
+/// The series iteration is capped at 64 terms, which is sufficient for
+/// `|x| ≤ 20`. For larger arguments, the function will `debug_assert!`
+/// (panic in debug builds) with a message indicating the limit.
 ///
 /// # Panics
 ///
@@ -26,7 +31,7 @@ use num_traits::Float;
 /// (impossible for any `Float`-implementing type).
 #[cfg(any(feature = "libm", feature = "std"))]
 #[allow(clippy::unwrap_used)]
-pub fn bessel_i0<T: Float>(x: T) -> T {
+pub fn bessel_i0<T: Float + core::fmt::Debug>(x: T) -> T {
     let eps = T::epsilon();
     let mut sum = T::one();
     let mut term = T::one();
@@ -38,8 +43,54 @@ pub fn bessel_i0<T: Float>(x: T) -> T {
         sum = sum + term;
         m += 1;
         if term / sum < eps {
-            break;
+            return sum;
         }
     }
+    debug_assert!(
+        term / sum < eps,
+        "bessel_i0: series did not converge for x = {x:?}; |x| <= 20 is supported",
+    );
     sum
+}
+
+/// Asserts `den` is finite and `|den| ≥ T::min_positive_value().sqrt()`,
+/// then returns it unchanged.
+///
+/// `min_positive_value().sqrt()` gives an aggressive but safe lower bound:
+/// dividing any value whose magnitude is `≤ T::max_value()` by `den` will
+/// stay finite. For `f32` the threshold is ≈ 1.08e−19, for `f64` ≈ 1.49e−154.
+///
+/// # Panics
+///
+/// Panics if `den` is not finite or `|den|` is below the safe floor.
+#[cfg(any(feature = "libm", feature = "std"))]
+#[must_use]
+pub fn safe_normalise_divisor<T: Float + core::fmt::Debug>(den: T, msg: &'static str) -> T {
+    assert!(
+        den.is_finite(),
+        "{msg}: denominator must be finite (got {den:?})"
+    );
+    let floor = T::min_positive_value().sqrt();
+    let den_abs = den.abs();
+    assert!(
+        den_abs >= floor,
+        "{msg}: denominator magnitude {den_abs:?} below safe floor {floor:?}",
+    );
+    den
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "floor")]
+    fn safe_normalise_divisor_rejects_subnormal() {
+        let _ = safe_normalise_divisor(f32::from_bits(1), "test");
+    }
+
+    #[test]
+    fn safe_normalise_divisor_accepts_one() {
+        assert_eq!(safe_normalise_divisor(1.0_f32, "test"), 1.0);
+    }
 }

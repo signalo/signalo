@@ -36,6 +36,7 @@ Please make sure to add your changes to the appropriate categories:
 - Renamed `Cache` wrapper filter to `Last`
 - Renamed `UnitSystem` to `Uom` and moved to `util::uom`
 - Renamed `observe` module to `estimate`
+- `Convolve::normalized()` now normalizes all non-zero coefficient sums (was `sum > 0` only), with `debug_assert!` guards against non-finite sums
 
 ### Deprecated
 
