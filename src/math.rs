@@ -4,7 +4,7 @@
 
 //! Mathematical utility functions for DSP operations.
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "libm", feature = "std"))]
 use num_traits::Float;
 
 /// Modified Bessel function of the first kind, order 0.
@@ -24,7 +24,7 @@ use num_traits::Float;
 ///
 /// Panics if `T::from` conversions from standard f64 literals fail
 /// (impossible for any `Float`-implementing type).
-#[cfg(feature = "std")]
+#[cfg(any(feature = "libm", feature = "std"))]
 #[allow(clippy::unwrap_used)]
 pub fn bessel_i0<T: Float>(x: T) -> T {
     let eps = T::epsilon();

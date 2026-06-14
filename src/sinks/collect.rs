@@ -4,9 +4,9 @@
 
 //! Collection sinks.
 
-#![cfg(feature = "std")]
+#![cfg(feature = "alloc")]
 
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 use crate::traits::{Filter, Finalize, Sink};
 
