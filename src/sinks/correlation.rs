@@ -270,7 +270,7 @@ mod tests {
         sink.sink((1.0, 1.0));
         sink.sink((2.0, 2.0));
         let sink = sink.reset();
-        let mut sink = sink;
+        let sink = sink;
         assert_eq!(sink.finalize(), None);
     }
 
@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn test_integer_type() {
         let mut sink: Correlation<i32, 2> = Correlation::default();
-        let out1 = sink.filter((1, 2));
+        let _out1 = sink.filter((1, 2));
         let out2 = sink.filter((3, 4));
         // dot = 1*2 + 3*4 = 14, count = 2, result = 7
         assert_eq!(out2, 7);
@@ -295,12 +295,10 @@ mod tests {
     #[test]
     fn test_state_mut() {
         let mut sink: Correlation<f32, 4> = Correlation::default();
-        unsafe {
-            let state = sink.state_mut();
-            state.buffer_x.push_back(1.0);
-            state.buffer_y.push_back(1.0);
-            state.len = 1;
-        }
+        let state = sink.state_mut();
+        state.buffer_x.push_back(1.0);
+        state.buffer_y.push_back(1.0);
+        state.len = 1;
         let result = sink.filter((2.0, 2.0));
         assert_eq!(result, (1.0 * 1.0 + 2.0 * 2.0) / 2.0);
     }
