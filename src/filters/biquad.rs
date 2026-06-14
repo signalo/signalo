@@ -37,6 +37,7 @@ pub mod cascade;
 
 /// Coefficient factory traits for computing biquad filter coefficients from standard DSP design
 /// equations (low-pass, high-pass, band-pass, notch, peaking, etc.).
+#[cfg(any(feature = "libm", feature = "std"))]
 pub mod coefficients;
 
 /// The biquad filter's configuration.
