@@ -456,7 +456,7 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "libm", feature = "std"))]
     #[test]
     fn coefficients_sum_to_one() {
         // Savitzky-Golay smoothers must have unity DC gain: Σ h[k] = 1.
@@ -489,7 +489,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "libm", feature = "std"))]
     #[test]
     fn coefficients_match_scipy_reference_n5() {
         // scipy.signal.savgol_coeffs(5, 2, pos=0, use='dot')
@@ -503,7 +503,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "libm", feature = "std"))]
     #[test]
     fn coefficients_match_scipy_reference_n7() {
         // scipy.signal.savgol_coeffs(7, 2, pos=0, use='dot')
@@ -524,7 +524,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "libm", feature = "std"))]
     #[test]
     fn coefficients_match_scipy_reference_n9() {
         // scipy.signal.savgol_coeffs(9, 4, pos=0, use='dot')

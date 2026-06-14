@@ -17,7 +17,7 @@ pub mod sine;
 ///
 /// Generates a finite-duration source that sweeps frequency linearly from a start
 /// frequency to an end frequency over a specified number of samples.
-#[cfg(feature = "std")]
+#[cfg(any(feature = "libm", feature = "std"))]
 pub mod chirp;
 
 /// Square wave oscillator with configurable duty cycle.

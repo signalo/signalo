@@ -34,7 +34,7 @@ pub struct Config<T> {
     pub(crate) sin_delta: T,
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "libm", feature = "std"))]
 impl<T> Config<T>
 where
     T: num_traits::float::Float,
@@ -121,7 +121,7 @@ where
         self.state.cos = cos_new;
         self.state.renorm_counter += 1;
 
-        #[cfg(feature = "std")]
+        #[cfg(any(feature = "libm", feature = "std"))]
         self.renormalize();
     }
 
@@ -131,7 +131,7 @@ where
     /// Over long sequences, `sin² + cos²` drifts away from 1.0. This corrects the
     /// drift every 256 samples using a first-order Taylor approximation for
     /// `1/sqrt(x)` around x=1, avoiding the need for hardware `sqrt()`.
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "libm", feature = "std"))]
     fn renormalize(&mut self) {
         if self.state.renorm_counter >= 256 {
             self.state.renorm_counter = 0;
