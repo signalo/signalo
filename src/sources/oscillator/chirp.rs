@@ -49,8 +49,12 @@ where
     /// `frequency_start` and `frequency_end` define the sweep range, `sample_rate`
     /// is the sample rate in Hz, and `num_samples` is the total number of samples
     /// in the chirp.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `T` cannot represent `2π`. This is infallible for standard `f32` and `f64` types.
     pub fn new(frequency_start: T, frequency_end: T, sample_rate: T, num_samples: usize) -> Self {
-        let two_pi = T::from(6.283185307179586).expect("2π is representable");
+        let two_pi = T::from(core::f64::consts::TAU).expect("2π is representable");
         Self {
             phase_increment_start: two_pi * frequency_start / sample_rate,
             phase_increment_end: two_pi * frequency_end / sample_rate,
@@ -81,9 +85,9 @@ pub struct State<T> {
     pub(crate) phase: T,
     /// Current sample index (increments from 0 to num_samples-1)
     pub(crate) sample_index: usize,
-    /// Current phase increment (starts at phase_increment_start)
+    /// Current phase increment (starts at `phase_increment_start`)
     pub(crate) current_phase_increment: T,
-    /// Phase increment delta per sample: (end - start) / (num_samples - 1)
+    /// Phase increment delta per sample: (end - start) / (`num_samples` - 1)
     pub(crate) phase_increment_delta: T,
 }
 

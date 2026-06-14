@@ -175,7 +175,7 @@ pub trait ResetMut: Reset {
     /// to avoid returning control while `self` is in a potentially invalid state.
     #[cfg(feature = "std")]
     fn reset_mut_or_abort(&mut self) {
-        replace_with::replace_with_or_abort(self, |owned_self| owned_self.reset())
+        replace_with::replace_with_or_abort(self, Reset::reset);
     }
 
     /// Resets the internal state.
@@ -205,6 +205,6 @@ pub trait ResetMut: Reset {
         // SAFETY: the caller guarantees that `panic = "abort"` is set in
         // every active Cargo profile, so unwinding cannot occur. Without
         // this guarantee `replace_with_or_abort_unchecked` causes UB on panic.
-        replace_with::replace_with_or_abort_unchecked(self, |owned_self| owned_self.reset())
+        replace_with::replace_with_or_abort_unchecked(self, Reset::reset)
     }
 }

@@ -44,9 +44,9 @@ use num_traits::Float;
 /// Shared constants for biquad coefficient calculations.
 #[cfg(feature = "std")]
 fn float_constants<T: Float>() -> (T, T, T) {
-    let pi = T::from(core::f64::consts::PI).unwrap();
-    let two = T::from(2.0).unwrap();
-    let sqrt2 = T::from(2.0).unwrap().sqrt();
+    let pi = T::from(core::f64::consts::PI).expect("π is representable");
+    let two = T::from(2.0).expect("2 is representable");
+    let sqrt2 = T::from(2.0).expect("2 is representable").sqrt();
     (pi, two, sqrt2)
 }
 

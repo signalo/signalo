@@ -43,8 +43,12 @@ where
     ///
     /// Pre-computes `cos(2π · freq / sample_rate)` and `sin(2π · freq / sample_rate)`.
     /// Requires the `std` feature (trigonometric functions).
+    ///
+    /// # Panics
+    ///
+    /// Panics if `T` cannot represent `2π`. This is infallible for standard `f32` and `f64` types.
     pub fn new(frequency: T, sample_rate: T) -> Self {
-        let two_pi = T::from(6.283185307179586).expect("2π is representable");
+        let two_pi = T::from(core::f64::consts::TAU).expect("2π is representable");
         let delta = two_pi * frequency / sample_rate;
         Self {
             cos_delta: delta.cos(),
