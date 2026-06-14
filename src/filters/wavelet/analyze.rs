@@ -33,7 +33,7 @@ pub struct Config<T, const N: usize> {
 pub struct State<T, const N: usize> {
     /// Low-pass convolution.
     pub low_pass: Convolve<T, N>,
-    /// Low-pass convolution.
+    /// High-pass convolution.
     pub high_pass: Convolve<T, N>,
 }
 
@@ -57,7 +57,10 @@ impl<T, const N: usize> StateTrait for Analyze<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, const N: usize> WithConfig for Analyze<T, N> {
+impl<T, const N: usize> WithConfig for Analyze<T, N>
+where
+    T: Num,
+{
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
@@ -112,6 +115,7 @@ impl<T, const N: usize> IntoGuts for Analyze<T, N> {
 
 impl<T, const N: usize> Reset for Analyze<T, N>
 where
+    T: Num,
     Self: ConfigClone<Config = Config<T, N>> + WithConfig<Output = Self>,
 {
     fn reset(self) -> Self {

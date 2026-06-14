@@ -58,6 +58,9 @@ extern crate std;
 #[cfg(any(test, feature = "alloc"))]
 extern crate alloc;
 
+/// Mathematical utility functions for DSP operations.
+pub mod math;
+
 /// Core trait definitions for the signal processing framework.
 ///
 /// Defines the fundamental traits: [`traits::Source`], [`traits::Filter`], [`traits::Sink`],
