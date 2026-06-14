@@ -37,11 +37,9 @@
 //! - **Audio EQ Cookbook** by Robert Bristow-Johnson — Standard reference for biquad
 //!   coefficient formulae used in audio signal processing.
 
-#[cfg(any(feature = "libm", feature = "std"))]
 use num_traits::Float;
 
 /// Shared constants for biquad coefficient calculations.
-#[cfg(any(feature = "libm", feature = "std"))]
 fn float_constants<T: Float>() -> (T, T, T) {
     let pi = T::from(core::f64::consts::PI).expect("π is representable");
     let two = T::from(2.0).expect("2 is representable");
@@ -80,13 +78,10 @@ impl Butterworth {
     /// # Examples
     ///
     /// ```rust
-    /// # #[cfg(any(feature = "libm", feature = "std"))] {
     /// # use signalo::filters::biquad::coefficients::Butterworth;
     /// let coeffs = Butterworth::lowpass(44100.0, 1000.0);
     /// assert!(coeffs[0] > 0.0); // b0 should be positive
-    /// # }
     /// ```
-    #[cfg(any(feature = "libm", feature = "std"))]
     #[allow(clippy::unwrap_used)]
     pub fn lowpass<T: Float>(sample_rate: T, freq: T) -> [T; 5] {
         debug_assert!(sample_rate > T::zero(), "sample_rate must be positive");
@@ -133,13 +128,10 @@ impl Butterworth {
     /// # Examples
     ///
     /// ```rust
-    /// # #[cfg(any(feature = "libm", feature = "std"))] {
     /// # use signalo::filters::biquad::coefficients::Butterworth;
     /// let coeffs = Butterworth::highpass(44100.0, 1000.0);
     /// assert!(coeffs[0] > 0.0); // b0 should be positive
-    /// # }
     /// ```
-    #[cfg(any(feature = "libm", feature = "std"))]
     #[allow(clippy::unwrap_used)]
     pub fn highpass<T: Float>(sample_rate: T, freq: T) -> [T; 5] {
         debug_assert!(sample_rate > T::zero(), "sample_rate must be positive");
@@ -190,13 +182,10 @@ impl Butterworth {
     /// # Examples
     ///
     /// ```rust
-    /// # #[cfg(any(feature = "libm", feature = "std"))] {
     /// # use signalo::filters::biquad::coefficients::Butterworth;
     /// let coeffs = Butterworth::bandpass(44100.0, 1000.0, 1.0);
     /// assert!(coeffs[0] > 0.0); // b0 should be positive
-    /// # }
     /// ```
-    #[cfg(any(feature = "libm", feature = "std"))]
     #[allow(clippy::unwrap_used)]
     pub fn bandpass<T: Float>(sample_rate: T, center: T, q: T) -> [T; 5] {
         debug_assert!(sample_rate > T::zero(), "sample_rate must be positive");
@@ -252,13 +241,10 @@ impl Butterworth {
     /// # Examples
     ///
     /// ```rust
-    /// # #[cfg(any(feature = "libm", feature = "std"))] {
     /// # use signalo::filters::biquad::coefficients::Butterworth;
     /// let coeffs = Butterworth::bandstop(44100.0, 1000.0, 1.0);
     /// assert!(coeffs[0] > 0.0); // b0 should be positive
-    /// # }
     /// ```
-    #[cfg(any(feature = "libm", feature = "std"))]
     #[allow(clippy::unwrap_used)]
     pub fn bandstop<T: Float>(sample_rate: T, center: T, q: T) -> [T; 5] {
         debug_assert!(sample_rate > T::zero(), "sample_rate must be positive");
@@ -295,14 +281,11 @@ mod tests {
     #[cfg(any(test, feature = "alloc"))]
     use alloc::vec::Vec;
 
-    #[cfg(any(feature = "libm", feature = "std"))]
     use approx::assert_abs_diff_eq;
 
-    #[cfg(any(feature = "libm", feature = "std"))]
     use super::*;
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_lowpass_dc_gain() {
         // Butterworth lowpass at Nyquist/4 should have DC gain ≈ 1.0
         let sample_rate = 44100.0f64;
@@ -319,7 +302,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_highpass_nyquist_gain() {
         // Butterworth highpass at Nyquist / 2 (i.e. sr / 4) should have high-frequency gain ≈ 1.0
         let sample_rate = 44100.0f64;
@@ -336,7 +318,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_bandpass_coefficients_non_zero() {
         // Bandpass coefficients should be reasonable values
         let sample_rate = 44100.0f64;
@@ -358,7 +339,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_highpass_nyquist_gain_nonzero_omega() {
         // Pick a frequency where cos(omega) != 0 so denominator
         // formula matters (unlike the existing test at sr/4).
@@ -375,7 +355,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_bandpass_dc_and_nyquist_gain() {
         let sample_rate = 44100.0f64;
         let center = 1000.0;
@@ -394,7 +373,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_lowpass_cutoff_gain() {
         let sample_rate = 44100.0f64;
         let freq = 1000.0;
@@ -412,7 +390,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_highpass_cutoff_gain() {
         let sample_rate = 44100.0f64;
         let freq = 1000.0;
@@ -430,7 +407,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_lowpass_cutoff_gain_f32() {
         let sample_rate = 44100.0f32;
         let freq = 1000.0f32;
@@ -448,7 +424,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_highpass_cutoff_gain_f32() {
         let sample_rate = 44100.0f32;
         let freq = 1000.0f32;
@@ -466,7 +441,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_bandpass_center_gain_f32() {
         let sample_rate = 44100.0f32;
         let center = 1000.0f32;
@@ -486,7 +460,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_lowpass_impulse_response_3db_cutoff() {
         use crate::filters::biquad::{Biquad, Config};
         use crate::traits::{Filter, WithConfig};
@@ -532,7 +505,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_highpass_impulse_response_3db_cutoff() {
         use crate::filters::biquad::{Biquad, Config};
         use crate::traits::{Filter, WithConfig};
@@ -576,7 +548,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_bandstop_coefficients_symmetry() {
         let sample_rate = 44100.0f64;
         let center = 1000.0;
@@ -594,7 +565,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_bandstop_dc_and_nyquist_gain() {
         let sample_rate = 44100.0f64;
         let center = 1000.0;
@@ -613,7 +583,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_bandstop_center_notch_f64() {
         let sample_rate = 44100.0f64;
         let center = 1000.0;
@@ -635,7 +604,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_butterworth_bandstop_center_notch_f32() {
         let sample_rate = 44100.0f32;
         let center = 1000.0f32;
@@ -657,7 +625,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_bandstop_impulse_response_notch_via_dft() {
         use crate::filters::biquad::{Biquad, Config};
         use crate::traits::{Filter, WithConfig};
@@ -726,7 +693,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "libm", feature = "std"))]
     fn test_bandstop_3db_bandwidth() {
         let sample_rate = 44100.0f64;
         let center = 1000.0;
