@@ -16,10 +16,12 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
-/// Savitzky-Golay polynomial smoothing filter.
+/// Causal Savitzky-Golay polynomial smoothing filters.
 ///
-/// Smooths signals by fitting local polynomial patches, preserving signal features like edges
-/// and peaks while reducing noise. Provides excellent results for spectral data and derivatives.
+/// Each filter fits a polynomial to the N most recent samples and evaluates
+/// it at the current (rightmost) sample — a one-sided, zero-latency design
+/// suitable for real-time use. Coefficients are pre-computed for polynomial
+/// orders 1–13 using least-squares regression.
 pub mod savitzky_golay;
 
 /// The convolution filter's configuration.
@@ -38,10 +40,17 @@ pub struct State<T, const N: usize> {
 
 /// A convolution filter.
 ///
+/// # Coefficient ordering
+///
+/// Coefficients `h[k]` pair with taps `x[n−k]` so that `h[0]` multiplies the
+/// newest sample and `h[N−1]` the oldest. The dot product computes
+/// `y[n] = Σ_{k=0}^{N−1} h[k]·x[n−k]` using zero-padding for negative
+/// time indices. This convention is verified by the `coefficient_ordering`
+/// test.
+///
 /// # Complexity
 ///
 /// - **Time per sample:** O(N) — dot product of N taps with N coefficients.
-///   The first call pads the buffer by repeating the input N times, also O(N).
 /// - **Space:** O(N) — circular tap buffer of N elements plus N coefficient array.
 #[derive(Clone, Debug)]
 pub struct Convolve<T, const N: usize> {
@@ -51,15 +60,26 @@ pub struct Convolve<T, const N: usize> {
 
 impl<T, const N: usize> Convolve<T, N>
 where
-    T: Clone + PartialOrd + Num,
+    T: Clone + Num + core::cmp::PartialOrd,
 {
-    /// Creates a new `Convolve` filter with given `coefficients`, normalizing them.
+    /// Creates a new `Convolve` filter with given `coefficients`, normalizing
+    /// them to unity DC gain.
+    ///
+    /// # Behaviour
+    ///
+    /// If the sum of coefficients is positive, each coefficient is divided by
+    /// the sum so that Σ h[k] = 1 (unity DC gain). If the sum is zero or
+    /// negative, normalization is skipped and the original coefficients are
+    /// used as-is. The `sum > 0` guard (rather than `sum.abs() > 0`) avoids
+    /// sign flips of derivative kernels and other filters where negative sums
+    /// carry semantic meaning. See `test_normalized_negative_sum` for the
+    /// pinned behaviour.
     pub fn normalized(mut config: Config<T, N>) -> Self {
         let mut sum = T::zero();
         for coeff in &config.coefficients {
             sum = sum + coeff.clone();
         }
-        if !sum.is_zero() {
+        if sum > T::zero() {
             for coeff in &mut config.coefficients {
                 *coeff = coeff.clone() / sum.clone();
             }
@@ -76,13 +96,19 @@ impl<T, const N: usize> StateTrait for Convolve<T, N> {
     type State = State<T, N>;
 }
 
-impl<T, const N: usize> WithConfig for Convolve<T, N> {
+impl<T, const N: usize> WithConfig for Convolve<T, N>
+where
+    T: Num,
+{
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "Convolve: window size N must be > 0");
         let state = {
-            let taps = CircularBuffer::default();
+            let mut taps = CircularBuffer::new();
+            for _ in 0..N {
+                let _ = taps.push_back(T::zero());
+            }
             State { taps }
         };
         Self { config, state }
@@ -127,7 +153,10 @@ impl<T, const N: usize> IntoGuts for Convolve<T, N> {
     }
 }
 
-impl<T, const N: usize> Reset for Convolve<T, N> {
+impl<T, const N: usize> Reset for Convolve<T, N>
+where
+    T: Num,
+{
     fn reset(self) -> Self {
         Self::with_config(self.config)
     }
@@ -143,16 +172,11 @@ where
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        // Note: push_back may return None until the circular buffer is full.
-        // Once full, it returns Some with the evicted old value.
-        // This loop is guaranteed to terminate when the buffer is full.
-        loop {
-            if self.state.taps.push_back(input.clone()).is_some() {
-                break;
-            }
-        }
+        self.state.taps.push_back(input);
 
         let state_iter = self.state.taps.iter();
+        // coefficients are stored h[0]..h[N-1] where h[0] pairs with newest tap.
+        // taps.iter() yields oldest→newest; rev() pairs newest tap with h[0].
         let coeff_iter = self.config.coefficients.iter().rev();
 
         state_iter
@@ -235,6 +259,18 @@ mod tests {
         assert_abs_diff_eq!(config.coefficients[0], 1.0, epsilon = 0.0001);
         assert_abs_diff_eq!(config.coefficients[1], -1.0, epsilon = 0.0001);
         assert_abs_diff_eq!(config.coefficients[2], 0.0, epsilon = 0.0001);
+    }
+
+    #[test]
+    fn test_normalized_negative_sum() {
+        // Test normalizing coefficients with a negative sum (sum < 0)
+        let filter = Convolve::<f32, 2>::normalized(Config {
+            coefficients: [-1.0, 0.5],
+        });
+        let config = filter.config_ref();
+        // Sum is -0.5 (< 0), so coefficients should remain unchanged
+        assert_abs_diff_eq!(config.coefficients[0], -1.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(config.coefficients[1], 0.5, epsilon = 0.0001);
     }
 
     #[test]
@@ -329,20 +365,19 @@ mod tests {
 
     #[test]
     fn test_filter_buffer_filling() {
-        // Test the loop that fills the circular buffer initially
+        // With zero-padded cold-start (tap buffer pre-filled with zeros),
+        // the first N outputs are partial convolutions.
         let config = Config {
             coefficients: [0.25, 0.25, 0.25, 0.25],
         };
         let mut filter = Convolve::<f32, 4>::with_config(config);
 
-        // First input - buffer not full yet, loops until full
+        // taps=[0,0,0,0] → push(4.0) → taps=[0,0,0,4.0] → sum=1.0
         let output1 = filter.filter(4.0);
-        // All positions get 4.0, output = 4 * 4.0 * 0.25 = 4.0
-        assert_abs_diff_eq!(output1, 4.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(output1, 1.0, epsilon = 0.0001);
 
-        // Second input - buffer now full
+        // taps=[0,0,0,4.0] → push(8.0) → taps=[0,0,4.0,8.0] → sum=3.0
         let output2 = filter.filter(8.0);
-        // Buffer: [4, 4, 4, 8], output = 4*0.25 + 4*0.25 + 4*0.25 + 8*0.25 = 5.0
-        assert_abs_diff_eq!(output2, 5.0, epsilon = 0.0001);
+        assert_abs_diff_eq!(output2, 3.0, epsilon = 0.0001);
     }
 }

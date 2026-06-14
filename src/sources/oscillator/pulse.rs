@@ -265,7 +265,7 @@ mod tests {
         use alloc::vec::Vec;
         // Verify PulseOscillator works with f64 (not just f32)
         let config = Config {
-            phase_increment: 0.25f64,
+            phase_increment: 0.5f64,
             amplitude: 1.0f64,
             duty_cycle: 0.5f64,
         };
