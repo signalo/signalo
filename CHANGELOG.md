@@ -26,6 +26,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Envelope` filter with asymmetric attack and release
 - Added "libm" feature for `#![no_std]` float support
 - Added FIR window functions: `Blackman`, `BlackmanHarris`, `FlatTop`, `Hamming`, `Hann`, `Kaiser`, `Rectangular`, and `Triangular`
+- Added FIR filter implementations: differentiator (Fornberg), Lagrange fractional-delay, moving-sum, and windowed-sinc (lowpass, highpass, bandpass, bandstop)
 
 ### Changed
 
