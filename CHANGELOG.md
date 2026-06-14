@@ -27,7 +27,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Changed
 
-- n/a
+- Made "std" a default-enabled crate feature
 
 ### Deprecated
 

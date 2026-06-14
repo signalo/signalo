@@ -30,6 +30,17 @@ Types implementing `Finalize` usually also implement either `Filter<T>` or `Sink
 Signalo provides the **basic building-blocks** for **low-level real-time filtering pipelines**,
 which can be **assembled via composition** either manually or through the use of pipes.
 
+## Features
+
+This crate can be used without the standard library (`#![no_std]`) by disabling the default std feature. Use this in `Cargo.toml`:
+
+```toml
+[dependencies.signalo]
+version = <VERSION>
+default-features = false
+# features = ["libm"] # <- Uncomment if you wish to use float math functions without `std`
+```
+
 ## Versioning
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/signalo/signalo/tags).
