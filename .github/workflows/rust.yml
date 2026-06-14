@@ -56,8 +56,10 @@ jobs:
         with:
           toolchain: stable
           components: rust-src
-      - name: Run `cargo test`
+      - name: Run `cargo test` [std]
         run: cargo test
+      - name: Run `cargo test` [libm]
+        run: cargo test --no-default-features --features "libm"
 
   fmt:
     name: Rustfmt
