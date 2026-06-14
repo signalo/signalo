@@ -16,6 +16,11 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
+pub mod differentiator;
+pub mod lagrange;
+pub mod moving_sum;
+pub mod windowed_sinc;
+
 /// The convolution filter's configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T, const N: usize> {
