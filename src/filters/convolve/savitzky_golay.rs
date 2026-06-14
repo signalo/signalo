@@ -98,7 +98,7 @@ mod tests {
 
     use approx::assert_abs_diff_eq;
 
-    use crate::traits::Filter;
+    use crate::traits::{ConfigRef, Filter};
 
     use super::*;
 
