@@ -24,6 +24,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Allpass`, `Comb`, `DcBlocker`, and `FirstOrder` IIR filters
 - Added `ZeroCrossing` signal filter
 - Added `Envelope` filter with asymmetric attack and release
+- Added "libm" feature for `#![no_std]` float support
 
 ### Changed
 
