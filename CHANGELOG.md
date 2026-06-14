@@ -25,6 +25,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `ZeroCrossing` signal filter
 - Added `Envelope` filter with asymmetric attack and release
 - Added "libm" feature for `#![no_std]` float support
+- Added FIR window functions: `Blackman`, `BlackmanHarris`, `FlatTop`, `Hamming`, `Hann`, `Kaiser`, `Rectangular`, and `Triangular`
 
 ### Changed
 

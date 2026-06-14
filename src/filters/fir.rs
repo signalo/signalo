@@ -46,3 +46,4 @@ pub mod differentiate;
 pub mod mean;
 pub mod mean_variance;
 pub mod savitzky_golay;
+pub mod window;
