@@ -234,7 +234,7 @@ mod tests {
         sink.sink(2.0);
         sink.sink(3.0);
         let sink = sink.reset();
-        let mut sink = sink;
+        let sink = sink;
         assert_eq!(sink.finalize(), None);
     }
 
@@ -259,11 +259,9 @@ mod tests {
     #[test]
     fn test_state_mut() {
         let mut sink: Rms<f32, 4> = Rms::default();
-        unsafe {
-            let state = sink.state_mut();
-            state.sum_sq = 10.0;
-            state.len = 1;
-        }
+        let state = sink.state_mut();
+        state.sum_sq = 10.0;
+        state.len = 1;
         let result = sink.filter(5.0);
         assert_eq!(result, (10.0 + 25.0) / 2.0);
     }
