@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Signal consumer/accumulator implementations.
+//! Composable signal consumer/accumulator sinks.
+//!
+//! All sinks implement the [`Sink<T>`](crate::traits::Sink) trait
+//! and can be chained together in pipelines.
 
 pub use crate::traits;
 
