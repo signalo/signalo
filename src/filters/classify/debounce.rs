@@ -40,8 +40,8 @@ pub struct State {
 ///
 /// # Complexity
 ///
-/// - **Time per sample:** O(1) — one equality comparison and a counter increment.
-/// - **Space:** O(1) — stores a single `usize` counter.
+/// - **Time per sample:** O(1); one equality comparison and a counter increment.
+/// - **Space:** O(1); stores a single `usize` counter.
 #[derive(Clone, Debug)]
 pub struct Debounce<T, U> {
     /// The filter's configuration.

@@ -56,8 +56,8 @@ pub struct State<T> {
 ///
 /// # Complexity
 ///
-/// - **Time per sample:** O(1) — one `partial_cmp` and an array index.
-/// - **Space:** O(1) — stores one `Option<T>`.
+/// - **Time per sample:** O(1); one `partial_cmp` and an array index.
+/// - **Space:** O(1); stores one `Option<T>`.
 #[derive(Clone, Debug)]
 pub struct Slopes<T, U> {
     config: Config<U>,
