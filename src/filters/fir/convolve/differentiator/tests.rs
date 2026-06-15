@@ -8,228 +8,134 @@ use alloc::vec::Vec;
 use approx::assert_abs_diff_eq;
 
 use crate::traits::{ConfigRef, Filter};
+use crate::util::test_fixtures::collatz;
 
 use super::*;
 
-fn collatz() -> Vec<f32> {
-    vec![
-        0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 13.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0,
-        20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 180.0, 108.0, 18.0, 106.0, 5.0,
-        26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0, 16.0, 16.0, 104.0,
-        11.0, 24.0, 24.0,
-    ]
-}
-
 // MARK: Coefficient identity tests
 
-#[test]
-fn coefficients_n3() {
-    let filter = Convolve::<f32, 3>::central_difference();
-    let c = filter.config_ref().coefficients;
-
-    // 1e-6 accounts for f32 division rounding.
-    assert_abs_diff_eq!(c[0], 0.5, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[1], 0.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[2], -0.5, epsilon = 1e-6);
+macro_rules! coefficients_test {
+    ($name:ident, $n:literal, $expected:expr) => {
+        #[test]
+        fn $name() {
+            let filter = Convolve::<f32, $n>::central_difference();
+            let c = filter.config_ref().coefficients;
+            // 1e-6 accounts for f32 division rounding.
+            let expected: [f32; $n] = $expected;
+            for (a, e) in c.iter().zip(expected.iter()) {
+                assert_abs_diff_eq!(a, e, epsilon = 1e-6);
+            }
+        }
+    };
 }
 
-#[test]
-fn coefficients_n5() {
-    let filter = Convolve::<f32, 5>::central_difference();
-    let c = filter.config_ref().coefficients;
-
-    // 1e-6 accounts for f32 division rounding.
-    assert_abs_diff_eq!(c[0], -1.0 / 12.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[1], 8.0 / 12.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[2], 0.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[3], -8.0 / 12.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[4], 1.0 / 12.0, epsilon = 1e-6);
-}
-
-#[test]
-fn coefficients_n7() {
-    let filter = Convolve::<f32, 7>::central_difference();
-    let c = filter.config_ref().coefficients;
-
-    // 1e-6 accounts for f32 division rounding.
-    assert_abs_diff_eq!(c[0], 1.0 / 60.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[1], -9.0 / 60.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[2], 45.0 / 60.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[3], 0.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[4], -45.0 / 60.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[5], 9.0 / 60.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[6], -1.0 / 60.0, epsilon = 1e-6);
-}
-
-#[test]
-fn coefficients_n9() {
-    let filter = Convolve::<f32, 9>::central_difference();
-    let c = filter.config_ref().coefficients;
-
-    // 1e-6 accounts for f32 division rounding.
-    assert_abs_diff_eq!(c[0], -3.0 / 840.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[1], 32.0 / 840.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[2], -168.0 / 840.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[3], 672.0 / 840.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[4], 0.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[5], -672.0 / 840.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[6], 168.0 / 840.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[7], -32.0 / 840.0, epsilon = 1e-6);
-    assert_abs_diff_eq!(c[8], 3.0 / 840.0, epsilon = 1e-6);
-}
+coefficients_test!(coefficients_n3, 3, [0.5, 0.0, -0.5]);
+coefficients_test!(
+    coefficients_n5,
+    5,
+    [-1.0 / 12.0, 8.0 / 12.0, 0.0, -8.0 / 12.0, 1.0 / 12.0]
+);
+coefficients_test!(
+    coefficients_n7,
+    7,
+    [
+        1.0 / 60.0,
+        -9.0 / 60.0,
+        45.0 / 60.0,
+        0.0,
+        -45.0 / 60.0,
+        9.0 / 60.0,
+        -1.0 / 60.0
+    ]
+);
+coefficients_test!(
+    coefficients_n9,
+    9,
+    [
+        -3.0 / 840.0,
+        32.0 / 840.0,
+        -168.0 / 840.0,
+        672.0 / 840.0,
+        0.0,
+        -672.0 / 840.0,
+        168.0 / 840.0,
+        -32.0 / 840.0,
+        3.0 / 840.0
+    ]
+);
 
 // MARK: DC rejection tests
 
-#[test]
-fn dc_rejection_n3() {
-    let filter = Convolve::<f32, 3>::central_difference();
-    let coeffs = filter.config_ref().coefficients;
-    let sum: f32 = coeffs.iter().sum();
-
-    // 1e-6 accounts for f32 dot-product rounding.
-    assert_abs_diff_eq!(sum, 0.0, epsilon = 1e-6);
+macro_rules! dc_rejection_test {
+    ($name:ident, $n:literal) => {
+        #[test]
+        fn $name() {
+            let filter = Convolve::<f32, $n>::central_difference();
+            let coeffs = filter.config_ref().coefficients;
+            let sum: f32 = coeffs.iter().sum();
+            // 1e-6 accounts for f32 dot-product rounding.
+            assert_abs_diff_eq!(sum, 0.0, epsilon = 1e-6);
+        }
+    };
 }
 
-#[test]
-fn dc_rejection_n5() {
-    let filter = Convolve::<f32, 5>::central_difference();
-    let coeffs = filter.config_ref().coefficients;
-    let sum: f32 = coeffs.iter().sum();
-
-    // 1e-6 accounts for f32 dot-product rounding.
-    assert_abs_diff_eq!(sum, 0.0, epsilon = 1e-6);
-}
-
-#[test]
-fn dc_rejection_n7() {
-    let filter = Convolve::<f32, 7>::central_difference();
-    let coeffs = filter.config_ref().coefficients;
-    let sum: f32 = coeffs.iter().sum();
-
-    // 1e-6 accounts for f32 dot-product rounding.
-    assert_abs_diff_eq!(sum, 0.0, epsilon = 1e-6);
-}
-
-#[test]
-fn dc_rejection_n9() {
-    let filter = Convolve::<f32, 9>::central_difference();
-    let coeffs = filter.config_ref().coefficients;
-    let sum: f32 = coeffs.iter().sum();
-
-    // 1e-6 accounts for f32 dot-product rounding.
-    assert_abs_diff_eq!(sum, 0.0, epsilon = 1e-6);
-}
+dc_rejection_test!(dc_rejection_n3, 3);
+dc_rejection_test!(dc_rejection_n5, 5);
+dc_rejection_test!(dc_rejection_n7, 7);
+dc_rejection_test!(dc_rejection_n9, 9);
 
 // MARK: Ramp response tests (output → 1 after warm-up)
 
-#[test]
-fn ramp_response_n3() {
-    let mut filter = Convolve::<f32, 3>::central_difference();
+macro_rules! ramp_response_test {
+    ($name:ident, $n:literal) => {
+        #[test]
+        fn $name() {
+            let mut filter = Convolve::<f32, $n>::central_difference();
+            let warm_up = $n - 1;
 
-    for n in 0..=10 {
-        let out = filter.filter(n as f32);
-        // After warm-up (N samples fed), output should be 1.
-        if n >= 2 {
-            // 1e-6 accounts for f32 dot-product rounding.
-            assert_abs_diff_eq!(out, 1.0, epsilon = 1e-6);
+            for n in 0..=(warm_up + 8) {
+                let out = filter.filter(n as f32);
+                if n >= warm_up {
+                    // 1e-5 accounts for f32 dot-product rounding.
+                    assert_abs_diff_eq!(out, 1.0, epsilon = 1e-5);
+                }
+            }
         }
-    }
+    };
 }
 
-#[test]
-fn ramp_response_n5() {
-    let mut filter = Convolve::<f32, 5>::central_difference();
-
-    for n in 0..=12 {
-        let out = filter.filter(n as f32);
-        if n >= 4 {
-            assert_abs_diff_eq!(out, 1.0, epsilon = 1e-6);
-        }
-    }
-}
-
-#[test]
-fn ramp_response_n7() {
-    let mut filter = Convolve::<f32, 7>::central_difference();
-
-    for n in 0..=14 {
-        let out = filter.filter(n as f32);
-        if n >= 6 {
-            assert_abs_diff_eq!(out, 1.0, epsilon = 1e-5);
-        }
-    }
-}
-
-#[test]
-fn ramp_response_n9() {
-    let mut filter = Convolve::<f32, 9>::central_difference();
-
-    for n in 0..=16 {
-        let out = filter.filter(n as f32);
-        if n >= 8 {
-            assert_abs_diff_eq!(out, 1.0, epsilon = 1e-5);
-        }
-    }
-}
+ramp_response_test!(ramp_response_n3, 3);
+ramp_response_test!(ramp_response_n5, 5);
+ramp_response_test!(ramp_response_n7, 7);
+ramp_response_test!(ramp_response_n9, 9);
 
 // MARK: Quadratic input tests
 
-#[test]
-fn quadratic_input_n3() {
-    // f(x) = x², f'(x) = 2x. N=3 centre tap at M=1, so output = 2*(n-1).
-    let mut filter = Convolve::<f32, 3>::central_difference();
+macro_rules! quadratic_input_test {
+    ($name:ident, $n:literal) => {
+        #[test]
+        fn $name() {
+            // f(x) = x², f'(x) = 2x. Centre tap at M = (N-1)/2, output = 2*(n-M).
+            let mut filter = Convolve::<f32, $n>::central_difference();
+            let m = ($n - 1) / 2;
+            let warm_up = $n - 1;
 
-    for n in 0..=10 {
-        let out = filter.filter((n * n) as f32);
-        if n >= 2 {
-            let expected = 2.0 * (n as f32 - 1.0);
-            // 1e-5 accounts for accumulated f32 dot-product and squaring error.
-            assert_abs_diff_eq!(out, expected, epsilon = 1e-5);
+            for n in 0..=(warm_up + 8) {
+                let out = filter.filter((n * n) as f32);
+                if n >= warm_up {
+                    let expected = 2.0 * (n as f32 - m as f32);
+                    // 1e-5 accounts for accumulated f32 dot-product and squaring error.
+                    assert_abs_diff_eq!(out, expected, epsilon = 1e-5);
+                }
+            }
         }
-    }
+    };
 }
 
-#[test]
-fn quadratic_input_n5() {
-    // N=5 centre tap at M=2, output = 2*(n-2).
-    let mut filter = Convolve::<f32, 5>::central_difference();
-
-    for n in 0..=12 {
-        let out = filter.filter((n * n) as f32);
-        if n >= 4 {
-            let expected = 2.0 * (n as f32 - 2.0);
-            assert_abs_diff_eq!(out, expected, epsilon = 1e-5);
-        }
-    }
-}
-
-#[test]
-fn quadratic_input_n7() {
-    // N=7 centre tap at M=3, output = 2*(n-3).
-    let mut filter = Convolve::<f32, 7>::central_difference();
-
-    for n in 0..=14 {
-        let out = filter.filter((n * n) as f32);
-        if n >= 6 {
-            let expected = 2.0 * (n as f32 - 3.0);
-            assert_abs_diff_eq!(out, expected, epsilon = 1e-5);
-        }
-    }
-}
-
-#[test]
-fn quadratic_input_n9() {
-    // N=9 centre tap at M=4, output = 2*(n-4).
-    let mut filter = Convolve::<f32, 9>::central_difference();
-
-    for n in 0..=16 {
-        let out = filter.filter((n * n) as f32);
-        if n >= 8 {
-            let expected = 2.0 * (n as f32 - 4.0);
-            assert_abs_diff_eq!(out, expected, epsilon = 1e-5);
-        }
-    }
-}
+quadratic_input_test!(quadratic_input_n3, 3);
+quadratic_input_test!(quadratic_input_n5, 5);
+quadratic_input_test!(quadratic_input_n7, 7);
+quadratic_input_test!(quadratic_input_n9, 9);
 
 // MARK: Group delay test
 
@@ -291,57 +197,27 @@ fn f64_coefficients_match_f32() {
 
 // MARK: Runtime constructor tests
 
-#[test]
-fn runtime_matches_table_n3() {
-    let table = <Convolve<f32, 3> as FirDifferentiator>::central_difference();
-    let runtime = Convolve::<f32, 3>::central_difference_runtime();
+macro_rules! runtime_matches_table_test {
+    ($name:ident, $n:literal) => {
+        #[test]
+        fn $name() {
+            let table = <Convolve<f32, $n> as FirDifferentiator>::central_difference();
+            let runtime = Convolve::<f32, $n>::central_difference_runtime();
 
-    let ct = table.config_ref().coefficients;
-    let cr = runtime.config_ref().coefficients;
+            let ct = table.config_ref().coefficients;
+            let cr = runtime.config_ref().coefficients;
 
-    for (a, b) in ct.iter().zip(cr.iter()) {
-        assert_abs_diff_eq!(a, b, epsilon = 1e-6);
-    }
+            for (a, b) in ct.iter().zip(cr.iter()) {
+                assert_abs_diff_eq!(a, b, epsilon = 1e-6);
+            }
+        }
+    };
 }
 
-#[test]
-fn runtime_matches_table_n5() {
-    let table = <Convolve<f32, 5> as FirDifferentiator>::central_difference();
-    let runtime = Convolve::<f32, 5>::central_difference_runtime();
-
-    let ct = table.config_ref().coefficients;
-    let cr = runtime.config_ref().coefficients;
-
-    for (a, b) in ct.iter().zip(cr.iter()) {
-        assert_abs_diff_eq!(a, b, epsilon = 1e-6);
-    }
-}
-
-#[test]
-fn runtime_matches_table_n7() {
-    let table = <Convolve<f32, 7> as FirDifferentiator>::central_difference();
-    let runtime = Convolve::<f32, 7>::central_difference_runtime();
-
-    let ct = table.config_ref().coefficients;
-    let cr = runtime.config_ref().coefficients;
-
-    for (a, b) in ct.iter().zip(cr.iter()) {
-        assert_abs_diff_eq!(a, b, epsilon = 1e-6);
-    }
-}
-
-#[test]
-fn runtime_matches_table_n9() {
-    let table = <Convolve<f32, 9> as FirDifferentiator>::central_difference();
-    let runtime = Convolve::<f32, 9>::central_difference_runtime();
-
-    let ct = table.config_ref().coefficients;
-    let cr = runtime.config_ref().coefficients;
-
-    for (a, b) in ct.iter().zip(cr.iter()) {
-        assert_abs_diff_eq!(a, b, epsilon = 1e-6);
-    }
-}
+runtime_matches_table_test!(runtime_matches_table_n3, 3);
+runtime_matches_table_test!(runtime_matches_table_n5, 5);
+runtime_matches_table_test!(runtime_matches_table_n7, 7);
+runtime_matches_table_test!(runtime_matches_table_n9, 9);
 
 #[test]
 fn runtime_n11_f64_dc_rejection() {

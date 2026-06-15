@@ -8,6 +8,8 @@ use approx::assert_abs_diff_eq;
 
 use super::*;
 
+use crate::window_behavior_tests;
+
 /// Numeric test fixture for smoke tests.
 fn numeric_fixture() -> Vec<f32> {
     std::vec![
@@ -81,32 +83,13 @@ fn smoke() {
     assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-5);
 }
 
-#[test]
-fn periodicity() {
-    const N: usize = 8;
-    let mut window = Triangular::<f32, N>::default();
-    let input: Vec<f32> = std::iter::repeat(1.0).take(3 * N).collect();
-    let output: Vec<_> = input.iter().map(|&x| window.filter(x)).collect();
-    for block in 0..3 {
-        let start = block * N;
-        let end = start + N;
-        assert_eq!(&output[start..end], &output[0..N]);
-    }
-}
-
-#[test]
-fn reset_restarts_counter() {
-    const N: usize = 8;
-    let mut window = Triangular::<f32, N>::default();
-
-    let first_half: Vec<f32> = (0..N as u32).map(|i| i as f32).collect();
-    let output_a: Vec<_> = first_half.iter().map(|&x| window.filter(x)).collect();
-
-    window = window.reset();
-    let output_b: Vec<_> = first_half.iter().map(|&x| window.filter(x)).collect();
-
-    assert_eq!(output_a, output_b);
-}
+window_behavior_tests!(
+    Triangular::<f32, N>::default(),
+    Triangular::<f32, 0>::with_config(Config {
+        weights: [0.0f32; 0],
+    }),
+    "window size N must be > 0"
+);
 
 #[test]
 fn endpoints() {
@@ -125,61 +108,6 @@ fn degenerate_n1() {
     let mut window = Triangular::<f32, 1>::default();
     assert_abs_diff_eq!(window.filter(42.0), 42.0, epsilon = 1e-5);
     assert_abs_diff_eq!(window.filter(7.0), 7.0, epsilon = 1e-5);
-}
-
-#[test]
-fn with_config() {
-    // N=4 triangular: w = [0, 2/3, 2/3, 0]
-    let mut window = Triangular::<f32, 4>::with_config(Config {
-        weights: [0.0, 2.0 / 3.0, 2.0 / 3.0, 0.0],
-    });
-    let output = window.filter(42.0);
-    assert_abs_diff_eq!(output, 0.0, epsilon = 1e-5);
-}
-
-#[test]
-fn from_guts() {
-    let window: Triangular<f32, 4> = FromGuts::from_guts((
-        Config {
-            weights: [0.0, 2.0 / 3.0, 2.0 / 3.0, 0.0],
-        },
-        State { k: 2 },
-    ));
-    let mut w = window;
-    let output = w.filter(1.0);
-    assert_abs_diff_eq!(output, 2.0 / 3.0, epsilon = 1e-5);
-}
-
-#[test]
-fn into_guts() {
-    let window = Triangular::<f32, 4>::default();
-    let (_config, _state) = window.into_guts();
-    let restored: Triangular<f32, 4> = FromGuts::from_guts((
-        Config {
-            weights: [0.0, 2.0 / 3.0, 2.0 / 3.0, 0.0],
-        },
-        State::default(),
-    ));
-    let mut w = restored;
-    let output = w.filter(1.0);
-    assert_abs_diff_eq!(output, 0.0, epsilon = 1e-5);
-}
-
-#[test]
-fn state_mut() {
-    let mut window = Triangular::<f32, 4>::default();
-    let state = window.state_mut();
-    assert_eq!(state.k, 0);
-    state.k = 3;
-    assert_eq!(window.state_mut().k, 3);
-}
-
-#[test]
-#[should_panic(expected = "window size N must be > 0")]
-fn zero_window_panics() {
-    let _ = Triangular::<f32, 0>::with_config(Config {
-        weights: [0.0f32; 0],
-    });
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]

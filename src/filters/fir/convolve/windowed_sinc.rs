@@ -76,7 +76,7 @@ pub(crate) mod kernel;
 pub(crate) use helpers::*;
 
 #[cfg(any(feature = "libm", feature = "std"))]
-use kernel::{
+use self::kernel::{
     default_kaiser_window, sinc_bandpass, sinc_bandstop, sinc_highpass, sinc_lowpass,
 };
 

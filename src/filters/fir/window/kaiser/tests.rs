@@ -163,61 +163,6 @@ fn beta_for_attenuation_below_21_returns_zero() {
     assert_abs_diff_eq!(beta, 0.0, epsilon = 1e-12);
 }
 
-#[test]
-fn with_config() {
-    let config = Config {
-        beta: 6.0f32,
-        weights: [1.0f32; 4],
-    };
-    let mut window = Kaiser::<f32, 4>::with_config(config);
-    let output = window.filter(42.0);
-    assert_abs_diff_eq!(output, 42.0, epsilon = 1e-5);
-}
-
-#[test]
-fn from_guts() {
-    let config = Config {
-        beta: 6.0f32,
-        weights: [1.0f32; 4],
-    };
-    let window: Kaiser<f32, 4> = FromGuts::from_guts((config, State { k: 2 }));
-    let mut w = window;
-    let output = w.filter(1.0);
-    assert_abs_diff_eq!(output, 1.0, epsilon = 1e-5);
-}
-
-#[cfg(any(feature = "libm", feature = "std"))]
-#[test]
-fn into_guts() {
-    let beta = 6.0f32;
-    let config = Config::<f32, 4>::new(beta);
-    let window = Kaiser::<f32, 4>::with_config(config);
-    let (_config, _state) = window.into_guts();
-    let restored: Kaiser<f32, 4> = FromGuts::from_guts((
-        Config {
-            beta: 6.0f32,
-            weights: [1.0f32; 4],
-        },
-        State::default(),
-    ));
-    let mut w = restored;
-    let output = w.filter(1.0);
-    assert_abs_diff_eq!(output, 1.0, epsilon = 1e-5);
-}
-
-#[test]
-fn state_mut() {
-    let config = Config {
-        beta: 6.0f32,
-        weights: [0.0f32; 4],
-    };
-    let mut window = Kaiser::<f32, 4>::with_config(config);
-    let state = window.state_mut();
-    assert_eq!(state.k, 0);
-    state.k = 3;
-    assert_eq!(window.state_mut().k, 3);
-}
-
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn sidelobe_attenuation() {

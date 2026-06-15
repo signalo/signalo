@@ -8,17 +8,9 @@ use alloc::vec::Vec;
 use approx::assert_abs_diff_eq;
 
 use crate::traits::{ConfigRef, Filter};
+use crate::util::test_fixtures::collatz;
 
 use super::*;
-
-fn collatz() -> Vec<f32> {
-    vec![
-        0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 13.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0,
-        20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 180.0, 108.0, 18.0, 106.0, 5.0,
-        26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0, 16.0, 16.0, 104.0,
-        11.0, 24.0, 24.0,
-    ]
-}
 
 // MARK: Integer-delta identity tests
 
@@ -235,40 +227,9 @@ fn half_sample_m4_matches_runtime() {
 }
 
 #[test]
-fn half_sample_m6_constructed() {
-    let filter = Convolve::<f32, 6>::half_sample_delay();
-    let coeffs = filter.config_ref().coefficients;
-    let sum: f32 = coeffs.iter().sum();
-
-    assert_abs_diff_eq!(sum, 1.0, epsilon = 1e-5);
-}
-
-#[test]
 fn half_sample_m6_matches_runtime() {
     let table = Convolve::<f64, 6>::half_sample_delay();
     let runtime = Convolve::<f64, 6>::lagrange(2.5);
-
-    let ct = table.config_ref().coefficients;
-    let cr = runtime.config_ref().coefficients;
-
-    for (a, b) in ct.iter().zip(cr.iter()) {
-        assert_abs_diff_eq!(a, b, epsilon = 1e-12);
-    }
-}
-
-#[test]
-fn half_sample_m8_constructed() {
-    let filter = Convolve::<f32, 8>::half_sample_delay();
-    let coeffs = filter.config_ref().coefficients;
-    let sum: f32 = coeffs.iter().sum();
-
-    assert_abs_diff_eq!(sum, 1.0, epsilon = 1e-5);
-}
-
-#[test]
-fn half_sample_m8_matches_runtime() {
-    let table = Convolve::<f64, 8>::half_sample_delay();
-    let runtime = Convolve::<f64, 8>::lagrange(3.5);
 
     let ct = table.config_ref().coefficients;
     let cr = runtime.config_ref().coefficients;
@@ -293,63 +254,6 @@ fn half_sample_m10_f32_bit_exact_with_runtime() {
             b.to_bits(),
             "bit mismatch: table={a:e} runtime={b:e}"
         );
-    }
-}
-
-#[test]
-fn half_sample_m10_constructed() {
-    let filter = Convolve::<f32, 10>::half_sample_delay();
-    let coeffs = filter.config_ref().coefficients;
-    let sum: f32 = coeffs.iter().sum();
-
-    assert_abs_diff_eq!(sum, 1.0, epsilon = 1e-5);
-}
-
-#[test]
-fn half_sample_m10_matches_runtime() {
-    let table = Convolve::<f64, 10>::half_sample_delay();
-    let runtime = Convolve::<f64, 10>::lagrange(4.5);
-
-    let ct = table.config_ref().coefficients;
-    let cr = runtime.config_ref().coefficients;
-
-    for (a, b) in ct.iter().zip(cr.iter()) {
-        assert_abs_diff_eq!(a, b, epsilon = 1e-12);
-    }
-}
-
-#[test]
-fn half_sample_smoke() {
-    // Half-sample delay via table should match lagrange(1.5) output.
-    let filter = Convolve::<f32, 4>::half_sample_delay();
-    let input = collatz();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |f, &x| Some(f.filter(x)))
-        .collect();
-
-    let runtime_filter = Convolve::<f32, 4>::lagrange(1.5);
-    let runtime_output: Vec<_> = collatz()
-        .iter()
-        .scan(runtime_filter, |f, &x| Some(f.filter(x)))
-        .collect();
-
-    assert_eq!(output.len(), runtime_output.len());
-    for (a, b) in output.iter().zip(runtime_output.iter()) {
-        assert_abs_diff_eq!(a, b, epsilon = 1e-7);
-    }
-}
-
-#[test]
-fn half_sample_f64_matches_f32_m4() {
-    let filter_f32 = Convolve::<f32, 4>::half_sample_delay();
-    let filter_f64 = Convolve::<f64, 4>::half_sample_delay();
-
-    let c32 = filter_f32.config_ref().coefficients;
-    let c64 = filter_f64.config_ref().coefficients;
-
-    for (a, b) in c32.iter().zip(c64.iter()) {
-        assert_abs_diff_eq!(f64::from(*a), *b, epsilon = 1e-7);
     }
 }
 

@@ -33,3 +33,46 @@ pub mod hann;
 pub mod kaiser;
 pub mod rectangular;
 pub mod triangular;
+
+/// Generate shared behavior tests for window types.
+///
+/// `$with_config` — expression creating the window for `N=8` (used in
+/// `periodicity` and `reset_restarts_counter`).
+/// `$zero_window_expr` — expression creating the window for `N=0`
+/// (used in `zero_window_panics`).
+/// `$panic_prefix` — substring matched in the panic message.
+#[cfg(test)]
+#[macro_export]
+macro_rules! window_behavior_tests {
+    ($with_config:expr, $zero_window_expr:expr, $panic_prefix:literal) => {
+        #[test]
+        fn periodicity() {
+            const N: usize = 8;
+            let mut window = $with_config;
+            let input: Vec<f32> = std::iter::repeat(1.0).take(3 * N).collect();
+            let output: Vec<_> = input.iter().map(|&x| window.filter(x)).collect();
+            for block in 0..3 {
+                let start = block * N;
+                let end = start + N;
+                assert_eq!(&output[start..end], &output[0..N]);
+            }
+        }
+
+        #[test]
+        fn reset_restarts_counter() {
+            const N: usize = 8;
+            let mut window = $with_config;
+            let first_half: Vec<f32> = (0..N as u32).map(|i| i as f32).collect();
+            let output_a: Vec<_> = first_half.iter().map(|&x| window.filter(x)).collect();
+            window = window.reset();
+            let output_b: Vec<_> = first_half.iter().map(|&x| window.filter(x)).collect();
+            assert_eq!(output_a, output_b);
+        }
+
+        #[test]
+        #[should_panic(expected = $panic_prefix)]
+        fn zero_window_panics() {
+            let _ = $zero_window_expr;
+        }
+    };
+}

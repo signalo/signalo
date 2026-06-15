@@ -254,9 +254,12 @@ mod tests {
     #[test]
     fn variance_constant_signal_zero() {
         let mut filter: MeanVariance<f32, 5> = MeanVariance::default();
-        for _ in 0..10 {
+        for _ in 0..5 {
+            filter.filter(42.0);
+        }
+        for _ in 0..5 {
             let out = filter.filter(42.0);
-            assert_abs_diff_eq!(out.variance, 0.0, epsilon = 0.001);
+            assert_abs_diff_eq!(out.variance, 0.0, epsilon = 1e-6);
         }
     }
 }

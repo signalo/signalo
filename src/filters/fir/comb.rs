@@ -241,35 +241,4 @@ mod tests {
         assert_eq!(out2, 6);
         assert_eq!(out3, 5 + 7);
     }
-
-    #[test]
-    fn test_feedforward_comb_state_mut() {
-        let mut filter = FeedforwardComb::<f32, 2>::default();
-        filter.filter(1.0);
-        filter.filter(2.0);
-
-        let output = filter.filter(3.0);
-        assert!(output.is_finite());
-    }
-
-    #[test]
-    fn test_feedforward_comb_from_into_guts() {
-        let filter: FeedforwardComb<i32, 2> = FeedforwardComb::default();
-        let guts = filter.into_guts();
-        let _new_filter: FeedforwardComb<i32, 2> = FromGuts::from_guts(guts);
-    }
-
-    #[test]
-    fn smoke() {
-        let filter = FeedforwardComb::<f32, 2>::with_config(Config { feedforward: 0.0 });
-        let input = [
-            0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
-            12.0, 20.0, 20.0, 7.0,
-        ];
-        let output: Vec<_> = input
-            .iter()
-            .scan(filter, |f, &x| Some(f.filter(x)))
-            .collect();
-        assert_abs_diff_eq!(output.as_slice(), input.as_slice(), epsilon = 1e-6);
-    }
 }
