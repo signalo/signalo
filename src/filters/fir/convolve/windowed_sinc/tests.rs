@@ -16,11 +16,7 @@ where
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
-fn feed_sine<T: Float, const N: usize>(
-    filter: &mut Convolve<T, N>,
-    freq: T,
-    n: usize,
-) -> Vec<T> {
+fn feed_sine<T: Float, const N: usize>(filter: &mut Convolve<T, N>, freq: T, n: usize) -> Vec<T> {
     let two_pi = T::from(2.0 * core::f64::consts::PI).unwrap();
     let mut outputs = Vec::with_capacity(n);
     for i in 0..n {
@@ -94,20 +90,6 @@ mod lowpass {
         let actual = filter.config_ref().coefficients;
         for (a, b) in actual.iter().zip(reference.iter()) {
             assert_abs_diff_eq!(a, b, epsilon = 1e-15);
-        }
-    }
-
-    #[test]
-    fn determinism() {
-        let a = HannSinc::<Convolve<f64, 33>>::lowpass(FC);
-        let b = HannSinc::<Convolve<f64, 33>>::lowpass(FC);
-        for (ca, cb) in a
-            .config_ref()
-            .coefficients
-            .iter()
-            .zip(b.config_ref().coefficients.iter())
-        {
-            assert_abs_diff_eq!(ca, cb, epsilon = 1e-15);
         }
     }
 
@@ -250,6 +232,20 @@ mod highpass {
             }
         }
     }
+
+    #[test]
+    fn hz_convenience() {
+        let a = HannSinc::<Convolve<f64, 9>>::highpass(FC);
+        let b = HannSinc::<Convolve<f64, 9>>::highpass_hz(1.0, FC);
+        for (ca, cb) in a
+            .config_ref()
+            .coefficients
+            .iter()
+            .zip(b.config_ref().coefficients.iter())
+        {
+            assert_abs_diff_eq!(ca, cb, epsilon = 1e-15);
+        }
+    }
 }
 
 // MARK: - Bandpass tests
@@ -289,8 +285,7 @@ mod bandpass {
                 let f = F_LO + (F_HI - F_LO) * (i as f64) / 50.0;
                 let outputs = feed_sine(&mut filter, f, 200);
                 let steady = &outputs[33..];
-                let mean_sq: f64 =
-                    steady.iter().map(|x| x * x).sum::<f64>() / steady.len() as f64;
+                let mean_sq: f64 = steady.iter().map(|x| x * x).sum::<f64>() / steady.len() as f64;
                 let amplitude = mean_sq.sqrt() * (2.0_f64).sqrt();
                 if amplitude > max_g {
                     max_g = amplitude;
@@ -328,6 +323,20 @@ mod bandpass {
             acc + hk * (two_pi * f_c * (k as f64 - m)).cos()
         });
         assert_abs_diff_eq!(a_norm, 1.0, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn hz_convenience() {
+        let a = HannSinc::<Convolve<f64, 9>>::bandpass(F_LO, F_HI);
+        let b = HannSinc::<Convolve<f64, 9>>::bandpass_hz(1.0, F_LO, F_HI);
+        for (ca, cb) in a
+            .config_ref()
+            .coefficients
+            .iter()
+            .zip(b.config_ref().coefficients.iter())
+        {
+            assert_abs_diff_eq!(ca, cb, epsilon = 1e-15);
+        }
     }
 }
 

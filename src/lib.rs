@@ -64,6 +64,9 @@ pub mod traits;
 
 pub mod filters;
 
+#[cfg(test)]
+pub mod util;
+
 pub mod pipes;
 
 pub mod sources;

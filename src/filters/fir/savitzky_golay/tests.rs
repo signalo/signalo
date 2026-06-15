@@ -12,34 +12,7 @@ use approx::assert_abs_diff_eq;
 use crate::traits::{ConfigRef, Filter};
 
 use super::*;
-
-fn get_input() -> Vec<f32> {
-    // Numeric test fixture (not a true Collatz subsequence).
-    vec![
-        0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 13.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0,
-        20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 180.0, 108.0, 18.0, 106.0, 5.0,
-        26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0, 16.0, 16.0, 104.0,
-        11.0, 24.0, 24.0,
-    ]
-}
-
-fn get_output_1() -> Vec<f32> {
-    vec![
-        0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 13.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0,
-        20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 180.0, 108.0, 18.0, 106.0, 5.0,
-        26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0, 16.0, 16.0, 104.0,
-        11.0, 24.0, 24.0,
-    ]
-}
-
-fn get_output_2() -> Vec<f32> {
-    vec![
-        0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 13.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0,
-        20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 180.0, 108.0, 18.0, 106.0, 5.0,
-        26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0, 16.0, 16.0, 104.0,
-        11.0, 24.0, 24.0,
-    ]
-}
+use crate::util::test_fixtures::collatz as get_input;
 
 fn get_output_3() -> Vec<f32> {
     vec![
@@ -157,213 +130,31 @@ fn get_output_13() -> Vec<f32> {
     ]
 }
 
-#[test]
-fn savitzky_golay_1() {
-    let filter: Convolve<f32, 1> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_1().as_slice(),
-        epsilon = 0.001
-    );
+macro_rules! sg_golden {
+    ($name:ident, $n:literal, $expected:expr) => {
+        #[test]
+        fn $name() {
+            let filter: Convolve<f32, $n> = Convolve::savitzky_golay();
+            let out: Vec<_> = get_input()
+                .iter()
+                .scan(filter, |f, &x| Some(f.filter(x)))
+                .collect();
+            assert_abs_diff_eq!(out.as_slice(), $expected.as_slice(), epsilon = 0.001);
+        }
+    };
 }
 
-#[test]
-fn savitzky_golay_2() {
-    let filter: Convolve<f32, 2> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_2().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_3() {
-    let filter: Convolve<f32, 3> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_3().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_4() {
-    let filter: Convolve<f32, 4> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_4().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_5() {
-    let filter: Convolve<f32, 5> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_5().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_6() {
-    let filter: Convolve<f32, 6> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_6().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_7() {
-    let filter: Convolve<f32, 7> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_7().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_8() {
-    let filter: Convolve<f32, 8> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_8().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_9() {
-    let filter: Convolve<f32, 9> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_9().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_10() {
-    let filter: Convolve<f32, 10> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_10().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_11() {
-    let filter: Convolve<f32, 11> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_11().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_12() {
-    let filter: Convolve<f32, 12> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_12().as_slice(),
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn savitzky_golay_13() {
-    let filter: Convolve<f32, 13> = Convolve::savitzky_golay();
-    let input = get_input();
-    let output: Vec<_> = input
-        .iter()
-        .scan(filter, |filter, &input| Some(filter.filter(input)))
-        .collect();
-
-    assert_abs_diff_eq!(
-        output.as_slice(),
-        get_output_13().as_slice(),
-        epsilon = 0.001
-    );
-}
+sg_golden!(sg_n3, 3, get_output_3());
+sg_golden!(sg_n4, 4, get_output_4());
+sg_golden!(sg_n5, 5, get_output_5());
+sg_golden!(sg_n6, 6, get_output_6());
+sg_golden!(sg_n7, 7, get_output_7());
+sg_golden!(sg_n8, 8, get_output_8());
+sg_golden!(sg_n9, 9, get_output_9());
+sg_golden!(sg_n10, 10, get_output_10());
+sg_golden!(sg_n11, 11, get_output_11());
+sg_golden!(sg_n12, 12, get_output_12());
+sg_golden!(sg_n13, 13, get_output_13());
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]

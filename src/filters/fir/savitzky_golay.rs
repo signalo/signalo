@@ -3,6 +3,10 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 //! Savitzky-Golay filters.
+//!
+//! For N=1, the Savitzky-Golay filter reduces to the identity. For N=2,
+//! the rightmost-sample prediction of a linear fit through 2 points is also
+//! the identity (x\[n\] is recovered exactly).
 
 #![allow(clippy::wildcard_imports)]
 
