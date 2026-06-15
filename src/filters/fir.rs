@@ -22,9 +22,9 @@
 //!
 //! - **Convolve** is the general-purpose workhorse: supply any coefficient kernel
 //!   and it performs convolution. Use when no specialized filter fits.
-//! - **FeedforwardComb** adds a delayed copy of the input (feedforward). Unlike the IIR
+//! - **`FeedforwardComb`** adds a delayed copy of the input (feedforward). Unlike the IIR
 //!   `comb` filter, it has no feedback resonance; output is a finite-length echo.
-//! - **Mean** and **mean_variance** are sliding-window statistics, useful for basic
+//! - **Mean** and **`mean_variance`** are sliding-window statistics, useful for basic
 //!   smoothing, noise estimation, and signal quality monitoring.
 //! - **Differentiate** computes a running estimate of the first derivative, useful for
 //!   edge detection, velocity estimation, and trend analysis.

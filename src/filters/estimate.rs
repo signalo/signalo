@@ -22,7 +22,7 @@
 //!   based on the evolving state and measurement uncertainty. Use when you can
 //!   characterize sensor noise and system dynamics quantitatively, and you need
 //!   statistically optimal estimates.
-//! - **AlphaBeta** (also known as the `α`-`β` filter or `g`-`h` filter) uses fixed
+//! - **`AlphaBeta`** (also known as the `α`-`β` filter or `g`-`h` filter) uses fixed
 //!   gains instead of computing the optimal Kalman gain. It tracks position and velocity
 //!   with two tuning parameters. Much simpler to implement and tune than a full Kalman
 //!   filter, and sufficient for many tracking and smoothing applications where the

@@ -39,7 +39,7 @@
 //!   feature extraction in sensor streams (heartbeat peaks, vibration maxima).
 //! - **Slopes** classifies segments as rising, falling, or flat based on sustained
 //!   trends. Built on the Schmitt trigger for hysteresis in the derivative domain.
-//! - **ZeroCrossing** detects when a signal changes sign (positive to negative or vice
+//! - **`ZeroCrossing`** detects when a signal changes sign (positive to negative or vice
 //!   versa). Useful in AC signal analysis, phase detection, and frequency counting.
 //!
 //! # See also
