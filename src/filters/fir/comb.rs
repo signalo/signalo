@@ -106,7 +106,7 @@ where
             assert!(
                 D >= 1,
                 "FeedforwardComb<T, D>: delay length D must be at least 1"
-            )
+            );
         };
         let state = {
             let input_delay = CircularBuffer::default();

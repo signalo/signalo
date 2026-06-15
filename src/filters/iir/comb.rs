@@ -126,7 +126,7 @@ where
             assert!(
                 D >= 1,
                 "FeedbackComb<T, D>: delay length D must be at least 1"
-            )
+            );
         };
         let state = {
             let output_delay = core::array::from_fn(|_| T::zero());
