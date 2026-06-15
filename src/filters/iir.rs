@@ -40,50 +40,18 @@
 //! `biquad` over `first_order` when you need factored EQ-cookbook coefficients or greater
 //! than first-order roll-off.
 
-/// First-order IIR filter for low-pass, high-pass, and general filtering.
-///
-/// Implements the standard first-order IIR difference equation:
-/// `y[n] = b0*x[n] + b1*x[n-1] - a1*y[n-1]`
 pub mod first_order;
 
-/// Biquad (second-order IIR) filters using Direct Form II Transposed topology.
-///
-/// Provides a core building block for designing more complex digital filters with
-/// arbitrary frequency response characteristics. Can be cascaded for higher-order responses.
 pub mod biquad;
 
-/// Envelope follower filter with asymmetric attack and release.
-///
-/// Tracks the peak amplitude of a signal with fast attack and slow release characteristics,
-/// useful for dynamic range compression, peak detection, and amplitude modulation.
 pub mod envelope;
 
-/// Exponential (recursive) mean and mean-variance filters.
-///
-/// Implements exponential moving average (EMA) and exponential moving variance filters.
 pub mod exp;
 
-/// Allpass filter for phase manipulation without magnitude modification.
-///
-/// An allpass filter has constant magnitude response across all frequencies.
-/// It passes all frequency components with equal gain while altering only the phase response.
-/// Transfer function: `H(z) = (c + z^-1) / (1 + c*z^-1)` where `c` is the allpass coefficient.
 pub mod allpass;
 
-/// Feedback comb filter.
-///
-/// A feedback comb filter uses delayed versions of the output to create
-/// a resonant filtering effect. Stability requires `|feedback| < 1`.
 pub mod comb;
 
-/// Numerical integration (cumulative sum) filter.
-///
-/// Computes the discrete integral or cumulative sum of input signals, useful for slope
-/// extraction, position tracking, and accumulation operations.
 pub mod integrate;
 
-/// DC blocker (high-pass) filter for removing constant DC bias from signals.
-///
-/// Implements a high-pass filter with very low cutoff frequency using the equation:
-/// `y[n] = x[n] - x[n-1] + R * y[n-1]`
 pub mod dc_blocker;

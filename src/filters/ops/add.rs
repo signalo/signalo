@@ -2,7 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Arithmetic addition filters.
+//! Addition filter for combining signals element-wise.
+//!
+//! Adds a constant value to each input signal sample.
 
 use core::ops::Add as StdAdd;
 

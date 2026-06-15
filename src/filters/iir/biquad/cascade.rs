@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Biquad cascade filter implementation.
+//! Cascaded biquad filters for higher-order IIR implementations.
 //!
+//! Combines multiple biquad stages in series to achieve higher-order filter responses
+//! while maintaining stability and reducing computational complexity of direct higher-order implementations.
 //! A cascade of N biquad filters applied sequentially. Each stage is a second-order IIR filter.
 //! Stages are applied in index order: `sections[0]` receives the input first,
 //! its output feeds `sections[1]`, and so on through `sections[N-1]`.

@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Differentiation filters.
+//! Numerical integration (cumulative sum) filter.
+//!
+//! Computes the discrete integral or cumulative sum of input signals, useful for slope
+//! extraction, position tracking, and accumulation operations.
 
 use core::ops::Add;
 

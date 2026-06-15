@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Value mean & variance sinks.
+//! Sink computing comprehensive descriptive statistics.
+//!
+//! Computes multiple statistics (min, max, mean, variance, etc.) simultaneously from input
+//! values, providing complete statistical characterization.
 
 use num_traits::Num;
 

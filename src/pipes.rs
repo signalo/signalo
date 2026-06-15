@@ -3,19 +3,13 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 //! Pipeline composition utilities.
+//!
+//! Provides adapters and macros for connecting Sources, Filters, and Sinks in composable chains.
 
 pub use crate::traits;
 
-/// Adapter joining two trait implementations in series.
-///
-/// Implements composition of Source→Filter, Filter→Filter, Filter→Sink, and other trait
-/// combinations, enabling sequential pipeline building through the `Pipe::new()` constructor.
 pub mod pipe;
 
-/// Single-trait wrapper enabling BitOr operator chaining for trait implementations.
-///
-/// Wraps a single Filter, Source, or Sink implementation in a lightweight adapter that
-/// supports the `|` operator for ergonomic pipeline composition.
 pub mod unit_pipe;
 
 /// Convenience macros for assembling filter pipes.

@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Kalman filters.
+//! Kalman filter for optimal recursive estimation of noisy signals.
+//!
+//! Implements the discrete Kalman filter for state-space estimation, providing optimal
+//! linear filtering in the presence of process and measurement noise.
 
 use num_traits::{Num, One, Zero};
 

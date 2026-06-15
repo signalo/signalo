@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Caching wrapper sinks.
+//! Cache source that stores and repeats the most recent generated value.
+//!
+//! Wraps another source and caches its last output, allowing repeated access without
+//! requesting new values from the underlying source.
 
 use crate::traits::Source;
 

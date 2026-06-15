@@ -3,6 +3,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 //! Peak hold sinks.
+//!
+//! Tracks the maximum absolute value of a signal, with optional decay when no larger signal arrives.
 
 use num_traits::{Num, Signed};
 

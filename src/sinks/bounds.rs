@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Bound sinks.
+//! Sink computing min/max bounds of an input signal.
+//!
+//! Tracks both the minimum and maximum values seen across all inputs,
+//! useful for signal range analysis and normalization.
 
 use crate::traits::{Filter, Finalize, Sink};
 

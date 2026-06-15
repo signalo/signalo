@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Coefficient factory traits for biquad filter design.
-//!
+//! Coefficient factory traits for computing biquad filter coefficients from standard DSP design
+//! equations (low-pass, high-pass, band-pass, notch, peaking, etc.).
 //! This module provides traits and implementations for computing biquad filter coefficients
 //! using standard DSP design equations. Coefficient calculators are implemented as zero-size
 //! types that produce pure functions, allowing filter designers to compute coefficients at

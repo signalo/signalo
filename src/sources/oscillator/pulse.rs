@@ -4,6 +4,8 @@
 
 //! Pulse wave oscillator with configurable duty cycle.
 //!
+//! Generates pulse wave output with a configurable duty cycle, allowing asymmetric
+//! waveforms where the positive portion of the period can be varied from 0% to 100%.
 //! This module provides a pulse wave oscillator using phase accumulation.
 //! The oscillator outputs the configured amplitude when the phase is within the
 //! duty cycle and the negated amplitude otherwise.

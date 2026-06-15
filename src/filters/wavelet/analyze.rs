@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Wavelet analysis (i.e. decomposition) filters.
+//! Wavelet analysis (decomposition) filter.
+//!
+//! Decomposes signals into low-frequency (approximation) and high-frequency (detail) components
+//! using wavelet transforms for multi-resolution analysis.
 
 use num_traits::Num;
 

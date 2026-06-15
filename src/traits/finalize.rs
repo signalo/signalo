@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Sources of a digital signal.
+//! Trait for extracting results from pipelines.
+//!
+//! Finalizers consume the pipeline and produce a final output value, typically used to
+//! extract accumulated results (sums, means, collected values, etc.) from sinks or filters.
 
 /// A sink retrieves the current signal value each time it is called, performing arbitrary actions
 /// with it, such as writing values to a file or passing them to an audio-device.

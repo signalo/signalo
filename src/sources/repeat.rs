@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Value repeating sources.
+//! Repetition source repeating a value N times.
+//!
+//! Generates a fixed number of copies of a single value, useful for pulse generation and
+//! discrete signal construction.
 
 use crate::traits::Source;
 

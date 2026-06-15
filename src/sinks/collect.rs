@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Collection sinks.
+//! Sink collecting all values into a vector.
+//!
+//! Accumulates all input values into a heap-allocated vector, useful for buffering signals
+//! and later analysis. Requires the `std` or `alloc` feature.
 
 #![cfg(feature = "alloc")]
 

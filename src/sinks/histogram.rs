@@ -3,6 +3,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 //! Histogram sinks for signal distribution analysis.
+//!
+//! Divides a signal's range into equally-sized bins and counts how many samples fall into each bin,
+//! providing a distribution histogram. Out-of-bounds values are clamped to edge bins.
 
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},

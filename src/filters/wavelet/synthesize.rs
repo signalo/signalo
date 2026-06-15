@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Wavelet synthesis (i.e. reconstruction) filters.
+//! Wavelet synthesis (reconstruction) filter.
+//!
+//! Reconstructs signals from low-frequency and high-frequency components, inverse operation
+//! of analysis enabling signal recovery and manipulation in wavelet domain.
 
 use num_traits::Num;
 

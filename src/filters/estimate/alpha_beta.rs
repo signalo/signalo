@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Alpha-Beta filters.
+//! Alpha-Beta filter for tracking signals with constant or linearly changing values.
+//!
+//! A simplified observer providing first-order adaptive estimation with separate gains
+//! for position and velocity tracking. Computationally lighter than Kalman filters.
 
 use num_traits::{Num, Zero};
 

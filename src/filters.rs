@@ -3,29 +3,24 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 //! Filter implementations for signal transformation.
+//!
+//! Contains a variety of filter types including moving averages, median filters, differentiation,
+//! integration, convolution, and state observers (Kalman, Alpha-Beta).
 
 pub use crate::traits;
 
-/// Classification filters mapping signals to discrete states.
 pub mod classify;
 
-/// State estimation filters (Kalman, Alpha-Beta).
 pub mod estimate;
 
-/// Finite Impulse Response (FIR) filters.
 pub mod fir;
 
-/// Infinite Impulse Response (IIR) filters with feedback.
 pub mod iir;
 
-/// Arithmetic operation filters for signal manipulation.
 pub mod ops;
 
-/// Rank-order and order-statistic filters.
 pub mod rank;
 
-/// Utility and wrapper filters.
 pub mod util;
 
-/// Wavelet analysis and synthesis filters.
 pub mod wavelet;

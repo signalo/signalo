@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Envelope follower filters.
+//! Envelope follower filter with asymmetric attack and release.
+//!
+//! Tracks the peak amplitude of a signal with fast attack and slow release characteristics,
+//! useful for dynamic range compression, peak detection, and amplitude modulation.
 
 use num_traits::{Num, Signed};
 

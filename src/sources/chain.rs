@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Chain sources.
+//! Sequential chaining of two sources in series.
+//!
+//! Combines two sources such that the second source begins generating values after the first
+//! source is exhausted, useful for concatenating signal sequences.
 
 use crate::traits::Source;
 

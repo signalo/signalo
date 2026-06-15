@@ -4,6 +4,8 @@
 
 //! Unit step signal source.
 //!
+//! Generates an infinite stream of a constant amplitude value, representing the discrete-time
+//! unit step function (Heaviside function). Useful for step response analysis and system testing.
 //! Generates an infinite stream of a constant value, representing the discrete-time
 //! unit step function. This is the DSP primitive for step responses and system testing.
 

@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Schmitt trigger filters.
+//! Schmitt trigger hysteresis filter.
+//!
+//! Implements hysteresis with separate threshold values for rising and falling edges,
+//! preventing oscillation around a single threshold and improving noise immunity.
 
 use core::cmp::PartialOrd;
 

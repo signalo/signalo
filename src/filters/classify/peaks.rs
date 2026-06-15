@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Peak detection filters.
+//! Peak detection filter.
+//!
+//! Identifies local maximum values in signals, useful for finding peaks in waveforms,
+//! detecting events, and ridge extraction.
 
 #![allow(clippy::wildcard_imports)]
 

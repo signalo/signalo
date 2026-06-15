@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Zero-crossing detection filters.
+//! Zero-crossing detection filter.
+//!
+//! Detects when signals cross zero, with optional hysteresis to suppress spurious crossings
+//! near the zero threshold.
 
 use num_traits::Signed;
 

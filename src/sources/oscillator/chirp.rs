@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Chirp (frequency sweep) oscillators.
+//! Chirp (frequency sweep) source for frequency analysis.
 //!
+//! Generates a finite-duration source that sweeps frequency linearly from a start
+//! frequency to an end frequency over a specified number of samples.
 //! This module provides a finite-duration source that sweeps frequency linearly from
 //! a starting frequency to an ending frequency over a specified number of samples.
 //! The phase is advanced each sample using phase increment values that are linearly

@@ -58,36 +58,16 @@ extern crate std;
 #[cfg(any(test, feature = "alloc"))]
 extern crate alloc;
 
-/// Mathematical utility functions for DSP operations.
 pub mod math;
 
-/// Core trait definitions for the signal processing framework.
-///
-/// Defines the fundamental traits: [`traits::Source`], [`traits::Filter`], [`traits::Sink`],
-/// [`traits::Finalize`], and auxiliary traits for configuration, state, and reset operations.
 pub mod traits;
 
-/// Filter implementations for signal transformation.
-///
-/// Contains a variety of filter types including moving averages, median filters, differentiation,
-/// integration, convolution, and state observers (Kalman, Alpha-Beta).
 pub mod filters;
 
-/// Pipeline composition utilities for assembling filters into sequences.
-///
-/// Provides adapters and macros for connecting Sources, Filters, and Sinks in composable chains.
 pub mod pipes;
 
-/// Signal generator implementations.
-///
-/// Contains waveform generators, iterator adapters, constants, ramps, and higher-order sources
-/// for building complex signal pipelines.
 pub mod sources;
 
-/// Signal consumer/accumulator implementations.
-///
-/// Contains statistics computations, collectors, integration, and reduction operations for
-/// extracting results from signal pipelines.
 pub mod sinks;
 
 // Re-export core traits at crate root for convenience

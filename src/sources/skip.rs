@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Skipping sources.
+//! Skip source that discards first N values from inner source.
+//!
+//! Ignores a specified number of values from the underlying source before beginning generation,
+//! useful for seeking and alignment in signal streams.
 
 use crate::traits::Source;
 

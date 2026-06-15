@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Value mean sinks.
+//! Sink computing arithmetic mean of input values.
+//!
+//! Calculates the average of all input samples, useful for signal level estimation and
+//! statistical analysis.
 
 use num_traits::Num;
 

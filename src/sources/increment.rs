@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Monotonically incrementing sources.
+//! Linear increment/ramp generator with configurable step.
+//!
+//! Generates linearly increasing or decreasing values with each call, useful for creating
+//! ramps, sweeps, and testing linear behavior.
 
 use core::ops::AddAssign;
 

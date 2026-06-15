@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! DC blocker filter (high-pass filter).
+//! DC blocker (high-pass) filter for removing constant DC bias from signals.
 //!
+//! Implements a high-pass filter with very low cutoff frequency using the equation:
+//! `y[n] = x[n] - x[n-1] + R * y[n-1]`
 //! The DC blocker is a first-order high-pass filter that removes DC bias (constant offset)
 //! from a signal while preserving AC components (time-varying signals).
 //!
