@@ -218,7 +218,7 @@ mod tests {
         }
 
         let result = percentile.finalize();
-        assert_eq!(result.is_some(), true, "Expected Some for non-empty input");
+        assert!(result.is_some(), "Expected Some for non-empty input");
         if let Some(median) = result {
             // With 4 samples distributed as [1,1,1,1], median at 50th percentile
             // Cumulative: [1, 2, 3, 4]. Target is 4*0.5=2.0
@@ -227,8 +227,7 @@ mod tests {
             // Interpolated = 1.0 + 1.0 * 1.0 = 2.0
             assert!(
                 (median - 2.0).abs() < 0.1,
-                "Median should be ≈ 2.0, got {}",
-                median
+                "Median should be ≈ 2.0, got {median}"
             );
         }
     }
@@ -260,7 +259,7 @@ mod tests {
         }
 
         let result = percentile.finalize();
-        assert_eq!(result.is_some(), true);
+        assert!(result.is_some());
         if let Some(median) = result {
             assert!((median - 2.0).abs() < 0.1, "f64 median should be ≈ 2.0");
         }
@@ -282,13 +281,13 @@ mod tests {
         }
 
         let result = percentile.finalize();
-        assert_eq!(result.is_some(), true);
+        assert!(result.is_some());
         if let Some(q25) = result {
             // Cumulative: [1, 2, 3, 4]. Target is 4*0.25=1.0
             // At i=0: cumulative=1, meets target → bin_index=0
             // Bin 0 range: [0.0, 1.0), fraction = (1.0-0)/1 = 1.0
             // Interpolated = 0.0 + 1.0 * 1.0 = 1.0
-            assert!((q25 - 1.0).abs() < 0.1, "Q25 should be ≈ 1.0, got {}", q25);
+            assert!((q25 - 1.0).abs() < 0.1, "Q25 should be ≈ 1.0, got {q25}");
         }
     }
 }

@@ -247,7 +247,7 @@ mod tests {
             .scan(filter, |filter, &input| Some(filter.filter(input).variance))
             .collect();
         for var in output {
-            assert!(var >= -1e-6, "variance should be >= 0, was {}", var);
+            assert!(var >= -1e-6, "variance should be >= 0, was {var}");
         }
     }
 

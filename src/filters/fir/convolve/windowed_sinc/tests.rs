@@ -76,7 +76,7 @@ mod lowpass {
         let steady = &outputs[33..];
         let mean_sq: f64 = steady.iter().map(|x| x * x).sum::<f64>() / steady.len() as f64;
         let rms = mean_sq.sqrt();
-        assert!(rms < 1e-2, "stopband RMS gain {} >= 1e-2", rms);
+        assert!(rms < 1e-2, "stopband RMS gain {rms} >= 1e-2");
     }
 
     #[test]
@@ -145,7 +145,7 @@ mod highpass {
         let coeffs = filter.config_ref().coefficients;
 
         let h0 = gain_at_freq(&coeffs, 0.0);
-        assert!(h0.abs() < 1e-3, "H_hp(0) = {}, expected ~0", h0);
+        assert!(h0.abs() < 1e-3, "H_hp(0) = {h0}, expected ~0");
 
         let alt_sum: f64 =
             coeffs.iter().enumerate().fold(
@@ -271,8 +271,7 @@ mod bandpass {
         let amplitude = rms * (2.0_f64).sqrt();
         assert!(
             (amplitude - 1.0).abs() < 0.01,
-            "midband amplitude gain {} not ~1",
-            amplitude
+            "midband amplitude gain {amplitude} not ~1"
         );
     }
 
@@ -282,7 +281,7 @@ mod bandpass {
             let mut max_g = 0.0_f64;
             for i in 0..=50 {
                 let mut filter = HannSinc::<Convolve<f64, 33>>::bandpass(F_LO, F_HI);
-                let f = F_LO + (F_HI - F_LO) * (i as f64) / 50.0;
+                let f = F_LO + (F_HI - F_LO) * f64::from(i) / 50.0;
                 let outputs = feed_sine(&mut filter, f, 200);
                 let steady = &outputs[33..];
                 let mean_sq: f64 = steady.iter().map(|x| x * x).sum::<f64>() / steady.len() as f64;
@@ -295,8 +294,7 @@ mod bandpass {
         };
         assert!(
             max_gain <= 1.0 + 0.015,
-            "passband peak gain {} exceeds 1.0",
-            max_gain
+            "passband peak gain {max_gain} exceeds 1.0"
         );
     }
 
@@ -317,7 +315,7 @@ mod bandpass {
         let a_raw: f64 = h_raw.iter().enumerate().fold(0.0, |acc, (k, &hk)| {
             acc + hk * (two_pi * f_c * (k as f64 - m)).cos()
         });
-        assert!(a_raw < 0.0, "expected negative raw A(f_c), got {}", a_raw);
+        assert!(a_raw < 0.0, "expected negative raw A(f_c), got {a_raw}");
 
         let a_norm: f64 = h_norm.iter().enumerate().fold(0.0, |acc, (k, &hk)| {
             acc + hk * (two_pi * f_c * (k as f64 - m)).cos()
@@ -379,7 +377,7 @@ mod bandstop {
         let steady = &outputs[33..];
         let mean_sq: f64 = steady.iter().map(|x| x * x).sum::<f64>() / steady.len() as f64;
         let rms = mean_sq.sqrt();
-        assert!(rms < 0.01, "notch RMS gain {} >= 0.01", rms);
+        assert!(rms < 0.01, "notch RMS gain {rms} >= 0.01");
     }
 }
 

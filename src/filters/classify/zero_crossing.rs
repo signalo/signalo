@@ -156,12 +156,12 @@ mod tests {
             .collect();
 
         // Expected: [false (first), false (no crossing), true (crossing), false, true, false]
-        assert_eq!(outputs[0], false); // First sample
-        assert_eq!(outputs[1], false); // -1.0 to -0.5, same sign
-        assert_eq!(outputs[2], true); // -0.5 to 0.5, crossing
-        assert_eq!(outputs[3], false); // 0.5 to 1.0, same sign
-        assert_eq!(outputs[4], true); // 1.0 to -1.0, crossing
-        assert_eq!(outputs[5], false); // -1.0 to -2.0, same sign
+        assert!(!outputs[0]); // First sample
+        assert!(!outputs[1]); // -1.0 to -0.5, same sign
+        assert!(outputs[2]); // -0.5 to 0.5, crossing
+        assert!(!outputs[3]); // 0.5 to 1.0, same sign
+        assert!(outputs[4]); // 1.0 to -1.0, crossing
+        assert!(!outputs[5]); // -1.0 to -2.0, same sign
     }
 
     #[test]
@@ -174,10 +174,10 @@ mod tests {
             .collect();
 
         // Expected: [false (first), false (0.2 < 0.3), false (−0.2 < 0.3), true (1.0 > 0.3)]
-        assert_eq!(outputs[0], false); // First sample
-        assert_eq!(outputs[1], false); // -1.0 to 0.2: crosses, but |0.2| < 0.3
-        assert_eq!(outputs[2], false); // 0.2 to -0.2: crosses, but |-0.2| < 0.3
-        assert_eq!(outputs[3], true); // -0.2 to 1.0: crosses and |1.0| > 0.3
+        assert!(!outputs[0]); // First sample
+        assert!(!outputs[1]); // -1.0 to 0.2: crosses, but |0.2| < 0.3
+        assert!(!outputs[2]); // 0.2 to -0.2: crosses, but |-0.2| < 0.3
+        assert!(outputs[3]); // -0.2 to 1.0: crosses and |1.0| > 0.3
     }
 
     #[test]
@@ -187,14 +187,14 @@ mod tests {
         let _ = filter.filter(1.0f32); // Crossing detected
 
         let filter_reset = filter.reset();
-        let outputs: Vec<_> = vec![-1.0f32, 1.0f32]
+        let outputs: Vec<_> = [-1.0f32, 1.0f32]
             .iter()
             .scan(filter_reset, |filter, &input| Some(filter.filter(input)))
             .collect();
 
         // After reset, first sample should not produce a crossing
-        assert_eq!(outputs[0], false);
-        assert_eq!(outputs[1], true); // Second sample should detect crossing
+        assert!(!outputs[0]);
+        assert!(outputs[1]); // Second sample should detect crossing
     }
 
     #[test]
@@ -216,25 +216,25 @@ mod tests {
     fn test_zero_edge_cases() {
         // 0.0 -> -1.0: signum(0.0)=1, signum(-1.0)=-1, crossing detected
         let mut f = ZeroCrossing::with_config(Config { hysteresis: 0.0f32 });
-        assert_eq!(f.filter(0.0f32), false);
-        assert_eq!(f.filter(-1.0f32), true);
+        assert!(!f.filter(0.0f32));
+        assert!(f.filter(-1.0f32));
 
         // -1.0 -> 0.0: signum(-1.0)=-1, signum(0.0)=1, signs differ
         // but |0.0| > 0.0 is false → no crossing
         let mut f = ZeroCrossing::with_config(Config { hysteresis: 0.0f32 });
-        assert_eq!(f.filter(-1.0f32), false);
-        assert_eq!(f.filter(0.0f32), false);
+        assert!(!f.filter(-1.0f32));
+        assert!(!f.filter(0.0f32));
 
         // 0.0 -> 0.0: signum(0.0)=1, signum(0.0)=1, no sign change
         let mut f = ZeroCrossing::with_config(Config { hysteresis: 0.0f32 });
-        assert_eq!(f.filter(0.0f32), false);
-        assert_eq!(f.filter(0.0f32), false);
+        assert!(!f.filter(0.0f32));
+        assert!(!f.filter(0.0f32));
 
         // -0.5 -> 0.0 -> -0.5: crossing on exit from zero only
         // (|0.0| > 0.0 is false, so entry to zero is not detected)
         let mut f = ZeroCrossing::with_config(Config { hysteresis: 0.0f32 });
-        assert_eq!(f.filter(-0.5f32), false);
-        assert_eq!(f.filter(0.0f32), false);
-        assert_eq!(f.filter(-0.5f32), true);
+        assert!(!f.filter(-0.5f32));
+        assert!(!f.filter(0.0f32));
+        assert!(f.filter(-0.5f32));
     }
 }

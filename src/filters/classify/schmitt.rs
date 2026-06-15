@@ -234,7 +234,7 @@ mod tests {
         assert_eq!(filter.filter(3), 0);
 
         let state = filter.state_mut();
-        assert_eq!(state.on, false);
+        assert!(!state.on);
         // Force the state to on
         state.on = true;
 
@@ -257,7 +257,7 @@ mod tests {
         let (guts_config, guts_state) = filter.into_guts();
         assert_eq!(*guts_config.thresholds.low(), 2.5);
         assert_eq!(*guts_config.thresholds.high(), 7.5);
-        assert_eq!(guts_state.on, true);
+        assert!(guts_state.on);
 
         let filter2 = Schmitt::from_guts((guts_config, guts_state));
         let mut filter2 = filter2;

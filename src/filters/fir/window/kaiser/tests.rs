@@ -201,9 +201,7 @@ fn sidelobe_attenuation() {
 
     assert!(
         (sidelobe_db - documented).abs() < 3.0,
-        "Sidelobe {} dB not within ±3 dB of documented {} dB",
-        sidelobe_db,
-        documented
+        "Sidelobe {sidelobe_db} dB not within ±3 dB of documented {documented} dB"
     );
 }
 

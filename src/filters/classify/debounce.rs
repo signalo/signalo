@@ -172,7 +172,7 @@ mod tests {
         let filter = Debounce::with_config(config);
         let config_ref = filter.config_ref();
         assert_eq!(config_ref.threshold, 5);
-        assert_eq!(config_ref.predicate, true);
+        assert!(config_ref.predicate);
         assert_eq!(config_ref.outputs, [false, true]);
     }
 

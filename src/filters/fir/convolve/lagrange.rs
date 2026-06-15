@@ -128,6 +128,7 @@ macro_rules! half_sample_delay_impl {
             /// middle taps of the buffer.
             pub fn half_sample_delay() -> Self {
                 // Denominators are powers of two; ratios are exact in IEEE 754.
+                #[allow(clippy::cast_precision_loss)]
                 let coefficients = [$($num as f32 / $den as f32),*];
                 Self::with_config(Config { coefficients })
             }

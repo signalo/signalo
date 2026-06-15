@@ -110,10 +110,10 @@ fn linear_signal_preservation() {
 fn lagrange_delta_0p3_matches_x_minus_0p3() {
     let mut f = Convolve::<f64, 4>::lagrange(0.3);
     for n in 0..40 {
-        let x = n as f64;
+        let x = f64::from(n);
         let y = f.filter(x);
         if n >= 16 {
-            let expected = (n as f64) - 0.3;
+            let expected = f64::from(n) - 0.3;
             assert!(
                 (y - expected).abs() < 1e-12,
                 "n={n}: y={y} expected={expected}"

@@ -235,8 +235,7 @@ mod tests {
 
         assert!(
             (output - 1.0).abs() < 1e-6,
-            "DC gain should be 1.0, got {}",
-            output
+            "DC gain should be 1.0, got {output}"
         );
     }
 
@@ -270,8 +269,7 @@ mod tests {
         let expected = 1.0 / 3.0;
         assert!(
             (gain - expected).abs() < 1e-3,
-            "Nyquist gain should be 1/3, got {}",
-            gain
+            "Nyquist gain should be 1/3, got {gain}"
         );
     }
 
