@@ -10,7 +10,8 @@
 //! The oscillator outputs the configured amplitude when the phase is within the
 //! duty cycle and the negated amplitude otherwise.
 //!
-//! A duty cycle of 0.5 produces a symmetric square wave equivalent to [`SquareOscillator`].
+//! A duty cycle of 0.5 produces a symmetric square wave equivalent
+//! to [`crate::sources::oscillator::square::SquareOscillator`].
 //!
 //! # Limitations
 //!
