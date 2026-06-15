@@ -68,7 +68,7 @@ fn config_new() {
     let two_pi = 2.0 * core::f32::consts::PI;
     for k in 0..N {
         let alpha = two_pi * k as f32 / n_minus_1;
-        let expected = 0.21557895 - 0.41663158 * alpha.cos() + 0.277263158 * (2.0 * alpha).cos()
+        let expected = 0.21557895 - 0.41663158 * alpha.cos() + 0.277_263_16 * (2.0 * alpha).cos()
             - 0.083578947 * (3.0 * alpha).cos()
             + 0.006947368 * (4.0 * alpha).cos();
         assert_abs_diff_eq!(config.weights[k], expected, epsilon = 1e-5);
@@ -113,9 +113,7 @@ fn sidelobe_attenuation() {
 
     assert!(
         (sidelobe_db - documented).abs() < 3.0,
-        "Sidelobe {} dB not within ±3 dB of documented {} dB",
-        sidelobe_db,
-        documented
+        "Sidelobe {sidelobe_db} dB not within ±3 dB of documented {documented} dB"
     );
 }
 

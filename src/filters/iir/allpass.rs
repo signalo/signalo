@@ -160,7 +160,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
+
     use alloc::vec::Vec;
 
     use approx::assert_abs_diff_eq;
@@ -173,7 +173,7 @@ mod tests {
         let config = Config { c: 0.0_f32 };
         let filter = Allpass::with_config(config);
 
-        let input = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let input = [1.0, 2.0, 3.0, 4.0, 5.0];
         let output: Vec<_> = input
             .iter()
             .scan(filter, |filter, &input| Some(filter.filter(input)))
@@ -221,10 +221,7 @@ mod tests {
             let power_ratio = out_ss / in_ss;
             assert!(
                 (power_ratio - 1.0).abs() < 1e-3,
-                "unit magnitude failed at c={}, freq={}: power_ratio={}",
-                c,
-                freq,
-                power_ratio
+                "unit magnitude failed at c={c}, freq={freq}: power_ratio={power_ratio}"
             );
         }
     }
@@ -235,7 +232,7 @@ mod tests {
         let config = Config { c: -0.5_f32 };
         let filter = Allpass::with_config(config);
 
-        let input = vec![1.0, 0.0, 0.0, 0.0];
+        let input = [1.0, 0.0, 0.0, 0.0];
         let output: Vec<_> = input
             .iter()
             .scan(filter, |filter, &input| Some(filter.filter(input)))

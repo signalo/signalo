@@ -213,7 +213,7 @@ mod tests {
         for _ in 0..10000 {
             let sample = oscillator.source().unwrap();
             assert!(
-                sample >= -1.1 && sample <= 1.1,
+                (-1.1..=1.1).contains(&sample),
                 "sine amplitude out of bounds: {sample}"
             );
         }

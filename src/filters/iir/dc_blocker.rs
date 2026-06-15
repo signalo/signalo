@@ -205,7 +205,7 @@ mod tests {
             .collect();
 
         let last = output[output.len() - 1].abs();
-        assert!(last > 0.99 && last < 1.05, "expected ~1.0025, got {}", last);
+        assert!(last > 0.99 && last < 1.05, "expected ~1.0025, got {last}");
     }
 
     #[test]
@@ -233,7 +233,7 @@ mod tests {
         }
 
         let output = filter.filter(1.0);
-        assert!(output.abs() < 0.01, "DC gain should be 0, got {}", output);
+        assert!(output.abs() < 0.01, "DC gain should be 0, got {output}");
     }
 
     #[test]
@@ -261,9 +261,7 @@ mod tests {
         let gain = (rms_out / rms_in).sqrt();
         assert!(
             (gain - expected_gain).abs() < 1e-3,
-            "Nyquist gain should be {}, got {}",
-            expected_gain,
-            gain
+            "Nyquist gain should be {expected_gain}, got {gain}"
         );
     }
 

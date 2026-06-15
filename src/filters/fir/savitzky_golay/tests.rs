@@ -209,7 +209,7 @@ fn coefficients_match_scipy_reference_n7() {
     // scipy.signal.savgol_coeffs(7, 2, pos=0, use='dot')
     // Quadratic fit to 7 points, prediction at rightmost position.
     let expected: [f32; 7] = [
-        0.46428571,
+        0.464_285_7,
         0.35714286,
         0.25,
         0.14285714,

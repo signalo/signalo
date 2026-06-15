@@ -110,7 +110,7 @@ mod tests {
             let subject: Vec<_> = (0..expected.len())
                 .scan(source, |source, _| source.source())
                 .collect();
-            assert_eq!(subject, expected, "Failed for amplitude={}", amplitude);
+            assert_eq!(subject, expected, "Failed for amplitude={amplitude}");
         }
     }
 

@@ -15,7 +15,7 @@ fn test_chirp_terminates_after_num_samples() {
     let mut chirp = Chirp::with_config(config);
 
     let mut count = 0;
-    while let Some(_) = chirp.source() {
+    while chirp.source().is_some() {
         count += 1;
     }
 
@@ -48,9 +48,9 @@ fn test_chirp_phase_increases_monotonically() {
     let mut chirp = Chirp::with_config(config);
 
     for _ in 0..100 {
-        let phase_before = chirp.state.phase.clone();
+        let phase_before = chirp.state.phase;
         let _ = chirp.source();
-        let phase_after = chirp.state.phase.clone();
+        let phase_after = chirp.state.phase;
 
         assert!(
             phase_after > phase_before,

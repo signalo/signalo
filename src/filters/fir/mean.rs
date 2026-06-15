@@ -195,7 +195,7 @@ mod tests {
     #[test]
     fn test_non_zero_start() {
         let filter: Mean<f32, 3> = Mean::default();
-        let inputs = vec![10.0, 20.0, 30.0];
+        let inputs = [10.0, 20.0, 30.0];
         let expected_outputs = vec![10.0, 15.0, 20.0];
         let outputs: Vec<_> = inputs
             .iter()

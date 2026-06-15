@@ -123,7 +123,6 @@ mod tests {
     use super::*;
 
     #[allow(clippy::wildcard_imports)]
-
     fn get_input() -> Vec<f32> {
         vec![
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
@@ -162,7 +161,7 @@ mod tests {
 
         let state = filter.state_mut();
         // Verify we can access the state
-        assert!(state.taps.len() > 0);
+        assert!(!state.taps.is_empty());
 
         // Continue filtering
         let output = filter.filter(3);

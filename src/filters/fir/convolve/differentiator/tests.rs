@@ -233,7 +233,7 @@ fn runtime_n11_f64_ramp_response() {
     let mut filter = Convolve::<f64, 11>::central_difference_runtime();
 
     for n in 0..=20 {
-        let out = filter.filter(n as f64);
+        let out = filter.filter(f64::from(n));
         if n >= 10 {
             assert_abs_diff_eq!(out, 1.0, epsilon = 1e-10);
         }
@@ -249,7 +249,7 @@ fn runtime_n19_f64_dc_rejection_and_ramp() {
 
     let mut filter = Convolve::<f64, 19>::central_difference_runtime();
     for n in 0..=30 {
-        let out = filter.filter(n as f64);
+        let out = filter.filter(f64::from(n));
         if n >= 18 {
             assert_abs_diff_eq!(out, 1.0, epsilon = 1e-10);
         }
