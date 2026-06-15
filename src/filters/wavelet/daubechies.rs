@@ -14,13 +14,11 @@ use num_traits::Zero;
 
 use crate::traits::WithConfig;
 
-use super::super::{
-    convolve::Config as ConvolveConfig,
-    wavelet::{
-        analyze::{Analyze, Config as AnalyzeConfig},
-        synthesize::{Config as SynthesizeConfig, Synthesize},
-    },
+use super::{
+    analyze::{Analyze, Config as AnalyzeConfig},
+    synthesize::{Config as SynthesizeConfig, Synthesize},
 };
+use crate::filters::fir::convolve::Config as ConvolveConfig;
 
 /// Trait for Daubechies wavelet filters.
 pub trait Daubechies: Sized {

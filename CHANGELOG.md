@@ -29,6 +29,11 @@ Please make sure to add your changes to the appropriate categories:
 ### Changed
 
 - Made "std" a default-enabled crate feature
+- Re-organized `filters` module from flat listing into grouped sub-modules (`iir`, `fir`, `rank`, `classify`, `estimate`, `ops`, `util`, `wavelet`)
+- Split `Comb` filter into `FeedbackComb` (`iir::comb`) and `FeedforwardComb` (`fir::comb`)
+- Renamed `Cache` wrapper filter to `Last`
+- Renamed `UnitSystem` to `Uom` and moved to `util::uom`
+- Renamed `observe` module to `estimate`
 
 ### Deprecated
 

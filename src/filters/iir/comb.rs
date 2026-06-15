@@ -2,19 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Comb filter implementation with feedforward and feedback components.
+//! Feedback-only comb filter implementation.
 //!
-//! A comb filter uses delayed versions of a signal to create a resonant filtering effect.
-//! It can operate in two modes:
+//! A feedback comb filter uses delayed versions of the output to create
+//! a resonant filtering effect.
 //!
-//! - **FIR Comb (Feedforward only)**: `y[n] = x[n] + ff·x[n−D]`
-//! - **IIR Comb (Feedback only)**: `y[n] = x[n] + fb·y[n−D]`
-//! - **Combined**: `y[n] = x[n] + ff·x[n−D] + fb·y[n−D]`
+//! Difference equation: `y[n] = x[n] + fb·y[n−D]`
 //!
 //! where D is the delay in samples. This follows the standard Schroeder/Zölzer convention:
 //! a positive `feedback` value produces an additive feedback comb. Stability requires `|fb| < 1`.
 
-use circular_buffer::CircularBuffer;
 use num_traits::Num;
 
 use crate::traits::{
@@ -26,19 +23,16 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
-/// The comb filter's configuration.
+/// The feedback comb filter's configuration.
 ///
-/// Contains the feedforward and feedback coefficients that control the resonance
+/// Contains the feedback coefficient that controls the resonance
 /// and decay characteristics of the comb filter.
 ///
 /// # Stability
 ///
-/// The IIR feedback path is stable when `|feedback| < 1`. The feedforward path is
-/// always stable (FIR). Combined stability depends only on the feedback coefficient.
+/// The feedback path is stable when `|feedback| < 1`.
 #[derive(Clone, Debug)]
 pub struct Config<T> {
-    /// Feedforward coefficient (multiplies x[n-D]).
-    pub feedforward: T,
     /// Feedback coefficient (multiplies y[n−D]).
     ///
     /// Uses the additive (Schroeder) convention: a positive value produces constructive
@@ -52,37 +46,30 @@ where
 {
     fn default() -> Self {
         Self {
-            feedforward: T::zero(),
             feedback: T::zero(),
         }
     }
 }
 
-/// The comb filter's state.
+/// The feedback comb filter's state.
 ///
-/// Contains a circular buffer for the input delay line (feedforward component)
-/// and an array for the output delay line (feedback component).
+/// Contains an array for the output delay line (feedback component).
 ///
-/// The two delay lines use different representations intentionally: `input_delay`
-/// is a [`CircularBuffer`] that starts empty and returns `None` for the first `D`
-/// pushes, naturally representing zero input history without pre-filling. The output
-/// delay cannot use the same mechanism because its evicted value must be available
-/// for the feedback computation *before* the new output is known, so it uses a
-/// pre-zeroed `[T; D]` array with a manual `output_index` pointer instead.
+/// Uses a pre-zeroed `[T; D]` array with a manual `output_index` pointer.
+///
+/// # Invariant
+///
+/// At the start of each [`Filter::filter`] call (and between calls),
+/// `output_delay[output_index]` holds `y[n−D]`; the output that is `D` steps old.
+/// When pre-warming this array externally, write the oldest sample to
+/// `output_delay[output_index]` and the most-recent sample to
+/// `output_delay[(output_index + D - 1) % D]`.
+/// External mutation of `output_delay` must preserve this invariant together with
+/// `output_index`; otherwise the next [`Filter::filter`] call will read a stale
+/// delayed sample.
 #[derive(Clone)]
 pub struct State<T, const D: usize> {
-    /// Input delay line for feedforward component
-    pub input_delay: CircularBuffer<D, T>,
     /// Circular buffer of the last `D` outputs used for the feedback path.
-    ///
-    /// Invariant: at the start of each [`Filter::filter`] call (and between calls),
-    /// `output_delay[output_index]` holds `y[n−D]` — the output that is `D` steps old.
-    /// When pre-warming this array externally, write the oldest sample to
-    /// `output_delay[output_index]` and the most-recent sample to
-    /// `output_delay[(output_index + D - 1) % D]`.
-    /// External mutation of `output_delay` must preserve this invariant together with
-    /// `output_index`; otherwise the next [`Filter::filter`] call will read a stale
-    /// delayed sample.
     pub output_delay: [T; D],
     /// Index for circular `output_delay` array
     pub output_index: usize,
@@ -94,23 +81,22 @@ where
 {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         f.debug_struct("State")
-            .field("input_delay", &self.input_delay)
             .field("output_delay", &self.output_delay)
             .field("output_index", &self.output_index)
             .finish()
     }
 }
 
-/// A comb filter with feedforward and feedback components.
+/// A feedback comb filter.
 ///
-/// The delay length `D` must be at least 1; `Comb<T, 0>` is rejected at compile time.
+/// The delay length `D` must be at least 1; `FeedbackComb<T, 0>` is rejected at compile time.
 #[derive(Clone, Debug)]
-pub struct Comb<T, const D: usize> {
+pub struct FeedbackComb<T, const D: usize> {
     config: Config<T>,
     state: State<T, D>,
 }
 
-impl<T, const D: usize> Default for Comb<T, D>
+impl<T, const D: usize> Default for FeedbackComb<T, D>
 where
     T: Clone + Num,
 {
@@ -119,28 +105,31 @@ where
     }
 }
 
-impl<T, const D: usize> ConfigTrait for Comb<T, D> {
+impl<T, const D: usize> ConfigTrait for FeedbackComb<T, D> {
     type Config = Config<T>;
 }
 
-impl<T, const D: usize> StateTrait for Comb<T, D> {
+impl<T, const D: usize> StateTrait for FeedbackComb<T, D> {
     type State = State<T, D>;
 }
 
-impl<T, const D: usize> WithConfig for Comb<T, D>
+impl<T, const D: usize> WithConfig for FeedbackComb<T, D>
 where
     T: Clone + Num,
 {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        const { assert!(D >= 1, "Comb<T, D>: delay length D must be at least 1") };
+        const {
+            assert!(
+                D >= 1,
+                "FeedbackComb<T, D>: delay length D must be at least 1"
+            )
+        };
         let state = {
-            let input_delay = CircularBuffer::default();
             let output_delay = core::array::from_fn(|_| T::zero());
             let output_index = 0;
             State {
-                input_delay,
                 output_delay,
                 output_index,
             }
@@ -149,13 +138,13 @@ where
     }
 }
 
-impl<T, const D: usize> ConfigRef for Comb<T, D> {
+impl<T, const D: usize> ConfigRef for FeedbackComb<T, D> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, const D: usize> ConfigClone for Comb<T, D>
+impl<T, const D: usize> ConfigClone for FeedbackComb<T, D>
 where
     Config<T>: Clone,
 {
@@ -164,30 +153,30 @@ where
     }
 }
 
-impl<T, const D: usize> StateMut for Comb<T, D> {
+impl<T, const D: usize> StateMut for FeedbackComb<T, D> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const D: usize> HasGuts for Comb<T, D> {
+impl<T, const D: usize> HasGuts for FeedbackComb<T, D> {
     type Guts = (Config<T>, State<T, D>);
 }
 
-impl<T, const D: usize> FromGuts for Comb<T, D> {
+impl<T, const D: usize> FromGuts for FeedbackComb<T, D> {
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }
 }
 
-impl<T, const D: usize> IntoGuts for Comb<T, D> {
+impl<T, const D: usize> IntoGuts for FeedbackComb<T, D> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }
 
-impl<T, const D: usize> Reset for Comb<T, D>
+impl<T, const D: usize> Reset for FeedbackComb<T, D>
 where
     T: Clone + Num,
 {
@@ -197,32 +186,22 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, const D: usize> ResetMut for Comb<T, D> where Self: Reset {}
+impl<T, const D: usize> ResetMut for FeedbackComb<T, D> where Self: Reset {}
 
-impl<T, const D: usize> Filter<T> for Comb<T, D>
+impl<T, const D: usize> Filter<T> for FeedbackComb<T, D>
 where
     T: Clone + Num,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let Config {
-            ref feedforward,
-            ref feedback,
-        } = self.config;
+        let Config { ref feedback } = self.config;
         let State {
-            ref mut input_delay,
             ref mut output_delay,
             ref mut output_index,
         } = self.state;
 
-        let forward = input_delay
-            .push_back(input.clone())
-            .map_or_else(T::zero, |delayed| feedforward.clone() * delayed);
-
-        let backward = feedback.clone() * output_delay[*output_index].clone();
-
-        let output = input + forward + backward;
+        let output = input + feedback.clone() * output_delay[*output_index].clone();
 
         output_delay[*output_index] = output.clone();
         *output_index = (*output_index + 1) % D;
@@ -240,29 +219,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_fir_comb_feedforward_only() {
-        let filter = Comb::<f32, 2>::with_config(Config {
-            feedforward: 1.0,
-            feedback: 0.0,
-        });
-
-        let input = [1.0, 0.0, 0.0, 0.0, 0.0];
-        let expected = [1.0, 0.0, 1.0, 0.0, 0.0];
-
-        let output: Vec<_> = input
-            .iter()
-            .scan(filter, |filter, &input| Some(filter.filter(input)))
-            .collect();
-
-        assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-6);
-    }
-
-    #[test]
-    fn test_iir_comb_feedback_only() {
-        let filter = Comb::<f32, 2>::with_config(Config {
-            feedforward: 0.0,
-            feedback: 0.5,
-        });
+    fn test_feedback_comb_simple() {
+        let filter = FeedbackComb::<f32, 2>::with_config(Config { feedback: 0.5 });
 
         let input = [1.0, 0.0, 0.0, 0.0, 0.0];
         let expected = [1.0, 0.0, 0.5, 0.0, 0.25];
@@ -276,29 +234,8 @@ mod tests {
     }
 
     #[test]
-    fn test_comb_combined_feedforward_feedback() {
-        let filter = Comb::<f32, 2>::with_config(Config {
-            feedforward: 1.0,
-            feedback: 0.5,
-        });
-
-        let input = [1.0, 0.0, 1.0, 0.0];
-        let expected = [1.0, 0.0, 2.5, 0.0];
-
-        let output: Vec<_> = input
-            .iter()
-            .scan(filter, |filter, &input| Some(filter.filter(input)))
-            .collect();
-
-        assert_abs_diff_eq!(output.as_slice(), expected.as_slice(), epsilon = 1e-6);
-    }
-
-    #[test]
-    fn test_comb_zero_coefficients() {
-        let filter = Comb::<f32, 2>::with_config(Config {
-            feedforward: 0.0,
-            feedback: 0.0,
-        });
+    fn test_feedback_comb_zero_coefficient() {
+        let filter = FeedbackComb::<f32, 2>::with_config(Config { feedback: 0.0 });
 
         let input = [1.0, 2.0, 3.0, 4.0, 5.0];
 
@@ -311,11 +248,8 @@ mod tests {
     }
 
     #[test]
-    fn test_comb_reset() {
-        let mut filter = Comb::<i32, 2>::with_config(Config {
-            feedforward: 1,
-            feedback: 0,
-        });
+    fn test_feedback_comb_reset() {
+        let mut filter = FeedbackComb::<i32, 2>::with_config(Config { feedback: 1 });
 
         filter.filter(10);
         filter.filter(20);
@@ -333,8 +267,8 @@ mod tests {
     }
 
     #[test]
-    fn test_comb_state_mut() {
-        let mut filter = Comb::<f32, 2>::default();
+    fn test_feedback_comb_state_mut() {
+        let mut filter = FeedbackComb::<f32, 2>::default();
         filter.filter(1.0);
         filter.filter(2.0);
 
@@ -347,19 +281,15 @@ mod tests {
     }
 
     #[test]
-    fn test_comb_from_into_guts() {
-        let filter: Comb<i32, 2> = Comb::default();
+    fn test_feedback_comb_from_into_guts() {
+        let filter: FeedbackComb<i32, 2> = FeedbackComb::default();
         let guts = filter.into_guts();
-        let _new_filter: Comb<i32, 2> = FromGuts::from_guts(guts);
+        let _new_filter: FeedbackComb<i32, 2> = FromGuts::from_guts(guts);
     }
 
     #[test]
     fn smoke() {
-        // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let filter = Comb::<f32, 2>::with_config(Config {
-            feedforward: 0.0,
-            feedback: 0.0,
-        });
+        let filter = FeedbackComb::<f32, 2>::with_config(Config { feedback: 0.0 });
         let input = [
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,
             12.0, 20.0, 20.0, 7.0,
@@ -372,14 +302,10 @@ mod tests {
     }
 
     #[test]
-    fn test_iir_comb_marginally_stable_with_unit_feedback() {
+    fn test_feedback_comb_marginally_stable_with_unit_feedback() {
         // With |feedback| = 1 the impulse circulates forever without decaying (marginal stability).
         // D=2, fb=1: impulse at n=0 reappears every 2 samples → outputs[n] = 1.0 for even n, 0.0 for odd n.
-        // True instability requires |feedback| > 1.
-        let mut filter = Comb::<f64, 2>::with_config(Config {
-            feedforward: 0.0,
-            feedback: 1.0,
-        });
+        let mut filter = FeedbackComb::<f64, 2>::with_config(Config { feedback: 1.0 });
         let outputs: Vec<_> = (0..20)
             .map(|i| filter.filter(if i == 0 { 1.0 } else { 0.0 }))
             .collect();

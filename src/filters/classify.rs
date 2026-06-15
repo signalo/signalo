@@ -37,6 +37,12 @@ pub mod peaks;
 /// useful for trend analysis and phase detection.
 pub mod slopes;
 
+/// Zero-crossing detection filter.
+///
+/// Detects when signals cross zero, with optional hysteresis to suppress spurious crossings
+/// near the zero threshold.
+pub mod zero_crossing;
+
 /// A trait describing a classification value.
 pub trait Classification<T, const N: usize>: Sized {
     /// The available classes.
