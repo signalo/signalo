@@ -63,8 +63,8 @@ pub struct State<T> {
 ///
 /// # Complexity
 ///
-/// - **Time per sample:** O(1) — delegates to `Slopes` (O(1)) plus a fixed-depth match.
-/// - **Space:** O(1) — stores the inner `Slopes` filter and one `Option<Slope>`.
+/// - **Time per sample:** O(1); delegates to `Slopes` (O(1)) plus a fixed-depth match.
+/// - **Space:** O(1); stores the inner `Slopes` filter and one `Option<Slope>`.
 #[derive(Clone, Debug)]
 pub struct Peaks<T, U> {
     config: Config<U>,

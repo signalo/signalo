@@ -42,9 +42,9 @@ pub struct State<T, const N: usize> {
 ///
 /// # Complexity
 ///
-/// - **Time per sample:** O(N) — two independent `Convolve<T, N>` calls (low-pass and high-pass),
+/// - **Time per sample:** O(N); two independent `Convolve<T, N>` calls (low-pass and high-pass),
 ///   each O(N).
-/// - **Space:** O(N) — two tap buffers of N elements each.
+/// - **Space:** O(N); two tap buffers of N elements each.
 #[derive(Clone, Debug)]
 pub struct Analyze<T, const N: usize> {
     state: State<T, N>,

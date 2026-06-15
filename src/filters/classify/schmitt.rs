@@ -72,8 +72,8 @@ pub struct State {
 ///
 /// # Complexity
 ///
-/// - **Time per sample:** O(1) — two threshold comparisons and an array index.
-/// - **Space:** O(1) — stores one `bool`.
+/// - **Time per sample:** O(1); two threshold comparisons and an array index.
+/// - **Space:** O(1); stores one `bool`.
 #[derive(Clone, Debug)]
 pub struct Schmitt<T, U> {
     /// The filter's configuration.

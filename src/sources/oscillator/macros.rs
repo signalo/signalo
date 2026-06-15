@@ -9,8 +9,8 @@
 ///
 /// # Parameters
 ///
-/// - `$osc` — the oscillator type name (e.g. `SineOscillator`)
-/// - `$($bound)*` — the where-clause bounds for `WithConfig`, `Default`, and `Reset`
+/// - `$osc`; the oscillator type name (e.g. `SineOscillator`)
+/// - `$($bound)*`; the where-clause bounds for `WithConfig`, `Default`, and `Reset`
 ///   (e.g. `T: num_traits::float::FloatCore`)
 macro_rules! impl_oscillator_traits {
     ($osc:ident, $($bound:tt)*) => {

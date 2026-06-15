@@ -123,7 +123,7 @@ pub trait Causal: Sized {}
 ///
 /// Discrete time views values of variables as **occurring at distinct,
 /// separate _points in time_** ("samples" or "time period"), or equivalently as being unchanged
-/// throughout each sample — that is, **time is viewed as a discrete variable**.
+/// throughout each sample; that is, **time is viewed as a discrete variable**.
 ///
 /// Thus a non-time variable **jumps from one value to another** as **time moves from one
 /// sample/time period to the next**. (This view of time corresponds to a digital clock
