@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! "Last value" sinks.
+//! Sink returning only the last received value.
+//!
+//! Discards all intermediate values and produces only the final input sample, useful for
+//! extracting end states and terminal values.
 
 use crate::traits::{Finalize, Sink};
 

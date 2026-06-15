@@ -2,7 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Arithmetic division filters.
+//! Division filter for signal scaling.
+//!
+//! Divides each input signal sample by a constant divisor.
 
 use core::ops::Div as StdDiv;
 

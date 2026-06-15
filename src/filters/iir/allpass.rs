@@ -2,8 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Allpass filter implementation.
+//! Allpass filter for phase manipulation without magnitude modification.
 //!
+//! An allpass filter has constant magnitude response across all frequencies.
+//! It passes all frequency components with equal gain while altering only the phase response.
+//! Transfer function: `H(z) = (c + z^-1) / (1 + c*z^-1)` where `c` is the allpass coefficient.
 //! An allpass filter has constant magnitude response across all frequencies,
 //! meaning it passes all frequency components with equal gain. It only alters
 //! the phase response of the signal.

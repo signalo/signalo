@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Constant value sources.
+//! Constant DC source generating a single repeated value.
+//!
+//! Produces an infinite stream of identical values, useful as a baseline signal or for
+//! testing and placeholder generation.
 
 use crate::traits::Source;
 

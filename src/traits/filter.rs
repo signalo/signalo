@@ -2,7 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Filters of a digital signal.
+//! Signal transformers that accept an input value and produce an output.
+//!
+//! Filters are the primary building blocks for signal processing pipelines. They transform
+//! input signals according to their internal state and logic, supporting complex operations
+//! like filtering, decimation, and statistical analysis.
 
 /// Filters accept values of a signal, and produce transformed values.
 /// Furthermore, the result of concatenating all the output data is the same as the result

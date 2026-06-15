@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Peakable wrapper sinks.
+//! Peek-ahead wrapper allowing inspection without consuming from the source.
+//!
+//! Provides read-only access to upcoming values without advancing the source, enabling
+//! lookahead and conditional processing.
 
 use crate::traits::Source;
 

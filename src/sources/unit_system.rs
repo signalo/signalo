@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Dimensional analysis wrapper sinks.
+//! Unit-aware source support with dimensional types.
+//!
+//! Enables type-safe signal generation with physical units, ensuring dimensional consistency
+//! throughout source chains.
 
 #![cfg(feature = "dimensioned")]
 

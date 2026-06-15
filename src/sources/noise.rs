@@ -4,6 +4,8 @@
 
 //! Noise source using xorshift32 pseudorandom number generator.
 //!
+//! Generates deterministic sequences of pseudorandom u32 values with configurable seeding,
+//! suitable for DSP and embedded applications requiring fast, simple PRNG behavior.
 //! Generates a deterministic sequence of pseudorandom u32 values using the xorshift32
 //! algorithm, seeded with a configurable initial value. Seed of 0 is automatically
 //! replaced with a non-zero default to ensure valid output.

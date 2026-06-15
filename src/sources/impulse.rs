@@ -2,8 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Unit impulse (Dirac delta) signal source.
+//! Unit impulse signal source.
 //!
+//! Generates a single-sample pulse at time zero with zero amplitude thereafter, representing
+//! the discrete-time unit impulse (Dirac delta function). Fundamental for impulse response
+//! measurement and filter characterization.
 //! Generates a single-sample pulse at time zero, with zero amplitude thereafter.
 //! This is the fundamental DSP primitive for impulse response measurement and filter testing.
 

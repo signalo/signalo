@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Square wave oscillator.
+//! Square wave oscillator with configurable duty cycle.
 //!
+//! Generates square wave output with a fixed 50% duty cycle.
+//! Amplitude and frequency are configurable.
 //! This module provides a basic square wave oscillator using phase accumulation.
 //! The oscillator outputs the configured amplitude for the first half of each period
 //! and the negated amplitude for the second half.

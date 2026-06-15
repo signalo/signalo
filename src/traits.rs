@@ -3,33 +3,18 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 //! Core trait definitions for the signal processing framework.
+//!
+//! Defines the fundamental traits: [`Source`], [`Filter`], [`Sink`],
+//! [`Finalize`], and auxiliary traits for configuration, state, and reset operations.
 
 pub use guts;
 
-/// Signal transformers that accept an input value and produce an output.
-///
-/// Filters are the primary building blocks for signal processing pipelines. They transform
-/// input signals according to their internal state and logic, supporting complex operations
-/// like filtering, decimation, and statistical analysis.
 pub mod filter;
 
-/// Trait for extracting results from pipelines.
-///
-/// Finalizers consume the pipeline and produce a final output value, typically used to
-/// extract accumulated results (sums, means, collected values, etc.) from sinks or filters.
 pub mod finalize;
 
-/// Signal consumers that process values without direct output.
-///
-/// Sinks accept values from filters or sources and perform side effects or accumulate results
-/// (writing to buffers, computing statistics, etc.). They must be paired with a [`Finalize`]
-/// implementation to extract the final result.
 pub mod sink;
 
-/// Signal generators that produce values when queried.
-///
-/// Sources are the entry points for signal processing pipelines. They generate or provide
-/// signal values on demand, such as waveform generators or iterators over buffered data.
 pub mod source;
 
 pub use self::filter::Filter;

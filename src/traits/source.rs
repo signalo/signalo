@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Sources of a digital signal.
+//! Signal generators that produce values when queried.
+//!
+//! Sources are the entry points for signal processing pipelines. They generate or provide
+//! signal values on demand, such as waveform generators or iterators over buffered data.
 
 /// A source returns the next signal value each time it is called.
 /// When there is no more data, it just returns `None`.

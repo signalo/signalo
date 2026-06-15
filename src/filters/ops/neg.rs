@@ -2,7 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Arithmetic negation filters.
+//! Negation filter that inverts signal amplitude.
+//!
+//! Negates each input value, equivalent to multiplying by -1.
 
 use core::ops::Neg as StdNeg;
 

@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Sawtooth wave oscillator.
+//! Sawtooth wave oscillator with linear ramps.
 //!
+//! Generates sawtooth wave output that rises linearly from negative to positive peaks
+//! over each period before resetting.
 //! This module provides a basic sawtooth wave oscillator using phase accumulation.
 //! The oscillator outputs a linear ramp from -amplitude to +amplitude per period.
 //!

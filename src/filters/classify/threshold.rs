@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Thresholding filters.
+//! Threshold detector for binary signal classification.
+//!
+//! Classifies input values as above or below a threshold, producing binary output useful for
+//! level detection, event triggering, and signal digitization.
 
 use core::cmp::PartialOrd;
 

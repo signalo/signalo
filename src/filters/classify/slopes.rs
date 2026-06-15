@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Slope detection filters.
+//! Slope detection filter.
+//!
+//! Classifies signal regions based on slope direction (rising, falling, or flat),
+//! useful for trend analysis and phase detection.
 
 use core::cmp::{Ordering, PartialOrd};
 

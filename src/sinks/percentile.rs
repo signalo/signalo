@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Percentile approximation sinks based on histogram analysis.
+//! Percentile approximation sinks based on histogram binning.
+//!
+//! Approximates percentiles (quartiles, medians, etc.) by computing cumulative bin counts
+//! from the underlying histogram and returning interpolated quantile values.
 
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},

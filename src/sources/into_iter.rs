@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Iterator bridging sources.
+//! Wrapper converting IntoIterator to Source trait implementation.
+//!
+//! Adapts types implementing IntoIterator into the Source trait, enabling flexible
+//! integration with Rust's iterator ecosystem.
 
 use crate::traits::Source;
 

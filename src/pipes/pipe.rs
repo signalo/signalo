@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Filter pipes.
+//! Adapter joining two trait implementations in series.
+//!
+//! Implements composition of Source→Filter, Filter→Filter, Filter→Sink, and other trait
+//! combinations, enabling sequential pipeline building through the `Pipe::new()` constructor.
 
 use core::ops::BitOr;
 

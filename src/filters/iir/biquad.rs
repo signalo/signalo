@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Biquad filter implementation using Direct Form II Transposed (DF2T) topology.
+//! Biquad (second-order IIR) filters using Direct Form II Transposed topology.
+//!
+//! Provides a core building block for designing more complex digital filters with
+//! arbitrary frequency response characteristics. Can be cascaded for higher-order responses.
 //!
 //! A biquad filter is a second-order infinite impulse response (IIR) filter that processes
 //! signals according to the difference equation:
@@ -30,9 +33,6 @@ use crate::traits::{
 use crate::traits::ResetMut;
 
 /// Cascaded biquad filters for higher-order IIR implementations.
-///
-/// Combines multiple biquad stages in series to achieve higher-order filter responses
-/// while maintaining stability and reducing computational complexity of direct higher-order implementations.
 pub mod cascade;
 
 /// Coefficient factory traits for computing biquad filter coefficients from standard DSP design

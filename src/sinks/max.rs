@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! "Max value" sinks.
+//! Sink tracking maximum value seen.
+//!
+//! Maintains the largest value encountered across all inputs, useful for finding peaks
+//! and signal amplitude analysis.
 
 use crate::traits::{Filter, Finalize, Sink};
 

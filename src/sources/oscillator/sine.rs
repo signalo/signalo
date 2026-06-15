@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Sine and cosine oscillators.
+//! Sine wave oscillator using stable recursive generation.
 //!
+//! Generates sinusoidal output using a recursive oscillator structure that maintains
+//! amplitude stability over extended generation periods without accumulated phase drift.
 //! This module provides stable recursive oscillators that use the identity:
 //! ```text
 //! sin(θ + Δ) = sin(θ)·cos(Δ) + cos(θ)·sin(Δ)

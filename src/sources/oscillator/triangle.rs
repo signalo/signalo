@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Triangle wave oscillator.
+//! Triangle wave oscillator with linear ramps.
 //!
+//! Generates triangle wave output with equal rise and fall times,
+//! producing linear ramps between positive and negative peaks.
 //! This module provides a basic triangle wave oscillator using phase accumulation.
 //! The oscillator outputs a linear ramp from -amplitude to +amplitude in the first
 //! half period, then from +amplitude to -amplitude in the second half, repeating.

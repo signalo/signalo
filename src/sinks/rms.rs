@@ -4,6 +4,9 @@
 
 //! Root Mean Square (RMS) sinks.
 //!
+//! Computes the mean square value over a fixed-size sliding window. Returns mean square value.
+//! Apply `sqrt()` (requires `std`) for true RMS.
+//!
 //! Computes the mean square value over a fixed-size sliding window.
 //! Returns mean square value. Apply `sqrt()` (requires `std`) for true RMS.
 

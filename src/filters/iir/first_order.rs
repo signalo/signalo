@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! First-order IIR filters.
+//! First-order IIR filter for low-pass, high-pass, and general filtering.
+//!
+//! Implements the standard first-order IIR difference equation:
+//! `y[n] = b0*x[n] + b1*x[n-1] - a1*y[n-1]`
 
 use num_traits::Num;
 

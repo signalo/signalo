@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Debounce filters.
+//! Debounce filter for noise reduction in digital signals.
+//!
+//! Filters out short pulses and noise spikes by requiring signals to remain stable for a
+//! configurable duration before state changes are recognized.
 
 use core::cmp::PartialEq;
 

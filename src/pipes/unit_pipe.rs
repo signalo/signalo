@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Filter unit pipes.
+//! Single-trait wrapper enabling BitOr operator chaining for trait implementations.
+//!
+//! Wraps a single Filter, Source, or Sink implementation in a lightweight adapter that
+//! supports the `|` operator for ergonomic pipeline composition.
 
 use core::ops::BitOr;
 

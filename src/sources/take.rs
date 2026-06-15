@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Trimming sources.
+//! Take source limiting output to first N values.
+//!
+//! Generates at most N values from the underlying source before terminating, useful for
+//! windowing and finite sample extraction.
 
 use crate::traits::Source;
 

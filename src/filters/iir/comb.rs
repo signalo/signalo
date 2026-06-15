@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Feedback-only comb filter implementation.
+//! Feedback comb filter.
 //!
+//! A feedback comb filter uses delayed versions of the output to create
+//! a resonant filtering effect. Stability requires `|feedback| < 1`.
 //! A feedback comb filter uses delayed versions of the output to create
 //! a resonant filtering effect.
 //!

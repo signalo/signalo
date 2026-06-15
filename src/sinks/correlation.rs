@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Cross-correlation sinks.
+//! Cross-correlation sinks for signal correlation analysis.
+//!
+//! Computes the normalized cross-correlation coefficient between two input signals over
+//! a fixed-size sliding window. Takes tuple inputs `(T, T)` and produces correlation values.
 //!
 //! Computes the normalized cross-correlation coefficient between two signals
 //! over a fixed-size sliding window.

@@ -2,7 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Integration sinks.
+//! Sink computing cumulative sum/integration over input values.
+//!
+//! Accumulates inputs through running addition, effectively computing a discrete integral
+//! over the signal, useful for energy and area calculations.
 
 use num_traits::Num;
 
