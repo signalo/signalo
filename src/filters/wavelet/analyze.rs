@@ -14,10 +14,8 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
-use super::super::{
-    convolve::{Config as ConvolveConfig, Convolve},
-    wavelet::Decomposition,
-};
+use super::Decomposition;
+use crate::filters::fir::convolve::{Config as ConvolveConfig, Convolve};
 
 /// The wavelet filter's configuration.
 #[derive(Clone, Debug)]

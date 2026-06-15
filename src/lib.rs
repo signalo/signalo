@@ -17,7 +17,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use signalo::filters::mean::mean::Mean;
+//! use signalo::filters::fir::mean::Mean;
 //! use signalo::sources::constant::Constant;
 //! use signalo::sinks::mean::Mean as MeanSink;
 //! use signalo::traits::{Source, Filter, Sink, Finalize};

@@ -25,12 +25,12 @@
 //!
 //! # When to use which filter
 //!
-//! - [`first_order`]: generic first-order IIR; use when you need to set `b0`, `b1`, `a1`
+//! - `first_order`: generic first-order IIR; use when you need to set `b0`, `b1`, `a1`
 //!   directly or when computing them from physics/control-system equations.
-//! - [`dc_blocker`]: convenience wrapper for the specific `H(z) = (1−z⁻¹)/(1−r·z⁻¹)` form.
-//! - [`allpass`]: phase manipulation without gain change; use in reverb networks and
+//! - `dc_blocker`: convenience wrapper for the specific `H(z) = (1−z⁻¹)/(1−r·z⁻¹)` form.
+//! - `allpass`: phase manipulation without gain change; use in reverb networks and
 //!   crossover/all-pass EQ chains.
-//! - [`comb`]: resonant delay-line filter; use in reverb, flanger, and chorus effects.
+//! - `comb`: resonant delay-line filter; use in reverb, flanger, and chorus effects.
 //!
 //! # See also
 //!
@@ -46,6 +46,23 @@
 /// `y[n] = b0*x[n] + b1*x[n-1] - a1*y[n-1]`
 pub mod first_order;
 
+/// Biquad (second-order IIR) filters using Direct Form II Transposed topology.
+///
+/// Provides a core building block for designing more complex digital filters with
+/// arbitrary frequency response characteristics. Can be cascaded for higher-order responses.
+pub mod biquad;
+
+/// Envelope follower filter with asymmetric attack and release.
+///
+/// Tracks the peak amplitude of a signal with fast attack and slow release characteristics,
+/// useful for dynamic range compression, peak detection, and amplitude modulation.
+pub mod envelope;
+
+/// Exponential (recursive) mean and mean-variance filters.
+///
+/// Implements exponential moving average (EMA) and exponential moving variance filters.
+pub mod exp;
+
 /// Allpass filter for phase manipulation without magnitude modification.
 ///
 /// An allpass filter has constant magnitude response across all frequencies.
@@ -53,11 +70,17 @@ pub mod first_order;
 /// Transfer function: `H(z) = (c + z^-1) / (1 + c*z^-1)` where `c` is the allpass coefficient.
 pub mod allpass;
 
-/// Comb filter with feedforward and feedback components.
+/// Feedback comb filter.
 ///
-/// A comb filter uses delayed versions of a signal to create resonant filtering.
-/// It can operate with feedforward-only (FIR mode), feedback-only (IIR mode), or both.
+/// A feedback comb filter uses delayed versions of the output to create
+/// a resonant filtering effect. Stability requires `|feedback| < 1`.
 pub mod comb;
+
+/// Numerical integration (cumulative sum) filter.
+///
+/// Computes the discrete integral or cumulative sum of input signals, useful for slope
+/// extraction, position tracking, and accumulation operations.
+pub mod integrate;
 
 /// DC blocker (high-pass) filter for removing constant DC bias from signals.
 ///
