@@ -140,13 +140,13 @@ fn config_new_weights_match_formula() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn triangular_parity_with_windowed_sinc() {
-    use crate::filters::util::window::triangular_window;
+    use crate::filters::util::window::triangular;
 
     const N: usize = 33;
     let mut window = Triangular::<f64, N>::default();
 
     for k in 0..N {
-        let expected = triangular_window::<f64>(k, N);
+        let expected = triangular::<f64>(k, N);
         let got = window.filter(1.0);
         assert_abs_diff_eq!(got, expected, epsilon = 1e-12);
     }

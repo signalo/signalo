@@ -39,11 +39,11 @@ impl<T: num_traits::Float, const N: usize> Config<T, N> {
     /// Create a window configuration with precomputed weights.
     #[must_use]
     pub fn new() -> Self {
-        use crate::filters::util::window::blackman_harris_window;
+        use crate::filters::util::window::blackman_harris;
         assert!(N > 0, "BlackmanHarris: window size N must be > 0");
         let mut weights = [T::zero(); N];
         for (k, w) in weights.iter_mut().enumerate() {
-            *w = blackman_harris_window::<T>(k, N);
+            *w = blackman_harris::<T>(k, N);
         }
         Self { weights }
     }

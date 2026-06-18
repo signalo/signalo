@@ -10,8 +10,8 @@ use crate::filters::util::window as helpers;
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn default_kaiser_window<T: Float + core::fmt::Debug>() -> impl Fn(usize, usize) -> T {
-    helpers::kaiser_window(T::from(6.0).unwrap())
+pub(crate) fn default_kaiser<T: Float + core::fmt::Debug>() -> impl Fn(usize, usize) -> T {
+    helpers::kaiser(T::from(6.0).unwrap())
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
