@@ -140,7 +140,7 @@ fn config_new_weights_match_formula() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn triangular_parity_with_windowed_sinc() {
-    use crate::filters::fir::convolve::windowed_sinc::triangular_window;
+    use crate::filters::util::window::triangular_window;
 
     const N: usize = 33;
     let mut window = Triangular::<f64, N>::default();

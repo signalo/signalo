@@ -6,7 +6,7 @@
 use num_traits::Float;
 
 #[cfg(any(feature = "libm", feature = "std"))]
-use super::helpers;
+use crate::filters::util::window as helpers;
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]

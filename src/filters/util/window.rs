@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#![cfg(any(feature = "libm", feature = "std"))]
+
 use num_traits::Float;
 
 pub(crate) use crate::math::bessel_i0;
@@ -104,7 +106,7 @@ pub(crate) fn flat_top_window<T: Float>(k: usize, n: usize) -> T {
 }
 
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn kaiser_window<T: Float + core::fmt::Debug>(beta: T) -> impl Fn(usize, usize) -> T {
+pub(crate) fn kaiser_window<T: Float>(beta: T) -> impl Fn(usize, usize) -> T {
     let i0_beta = bessel_i0(beta);
     let two = T::from(2.0).unwrap();
     let one = T::one();

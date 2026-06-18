@@ -124,7 +124,7 @@ fn n_eq_1() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn hamming_parity_with_windowed_sinc() {
-    use crate::filters::fir::convolve::windowed_sinc::hamming_window;
+    use crate::filters::util::window::hamming_window;
 
     const N: usize = 33;
     let config = Config::<f64, N>::new();
@@ -140,7 +140,7 @@ fn hamming_parity_with_windowed_sinc() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn hamming_parity_with_windowed_sinc_n2() {
-    use crate::filters::fir::convolve::windowed_sinc::hamming_window;
+    use crate::filters::util::window::hamming_window;
 
     const N: usize = 2;
     let config = Config::<f64, N>::new();
