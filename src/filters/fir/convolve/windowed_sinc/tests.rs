@@ -436,7 +436,7 @@ fn kernel_symmetry_even_n() {
     for k in 0..10 {
         assert_abs_diff_eq!(h[k], h[9 - k], epsilon = 1e-12);
     }
-    let h = sinc_lowpass::<f64, 10>(0.2_f64, hann_window::<f64>, false);
+    let h = sinc_lowpass::<f64, 10>(0.2_f64, hann::<f64>, false);
     for k in 0..10 {
         assert_abs_diff_eq!(h[k], h[9 - k], epsilon = 1e-12);
     }
@@ -445,13 +445,13 @@ fn kernel_symmetry_even_n() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn kernel_window_n1() {
-    assert_abs_diff_eq!(hann_window::<f64>(0, 1), 1.0, epsilon = 1e-15);
-    assert_abs_diff_eq!(triangular_window::<f64>(0, 1), 1.0, epsilon = 1e-15);
-    assert_abs_diff_eq!(hamming_window::<f64>(0, 1), 1.0, epsilon = 1e-15);
-    assert_abs_diff_eq!(blackman_window::<f64>(0, 1), 1.0, epsilon = 1e-15);
-    assert_abs_diff_eq!(blackman_harris_window::<f64>(0, 1), 1.0, epsilon = 1e-15);
-    assert_abs_diff_eq!(flat_top_window::<f64>(0, 1), 1.0, epsilon = 1e-15);
-    assert_abs_diff_eq!((kaiser_window::<f64>(6.0))(0, 1), 1.0, epsilon = 1e-15);
+    assert_abs_diff_eq!(hann::<f64>(0, 1), 1.0, epsilon = 1e-15);
+    assert_abs_diff_eq!(triangular::<f64>(0, 1), 1.0, epsilon = 1e-15);
+    assert_abs_diff_eq!(hamming::<f64>(0, 1), 1.0, epsilon = 1e-15);
+    assert_abs_diff_eq!(blackman::<f64>(0, 1), 1.0, epsilon = 1e-15);
+    assert_abs_diff_eq!(blackman_harris::<f64>(0, 1), 1.0, epsilon = 1e-15);
+    assert_abs_diff_eq!(flat_top::<f64>(0, 1), 1.0, epsilon = 1e-15);
+    assert_abs_diff_eq!((kaiser::<f64>(6.0))(0, 1), 1.0, epsilon = 1e-15);
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
@@ -459,31 +459,23 @@ fn kernel_window_n1() {
 fn kaiser_window_n2_computes_naturally() {
     for beta in &[0.0_f64, 1.0, 5.0, 8.0, 12.0, 20.0] {
         let expected = 1.0 / bessel_i0(*beta);
-        assert_abs_diff_eq!(
-            (kaiser_window::<f64>(*beta))(0, 2),
-            expected,
-            epsilon = 1e-12
-        );
-        assert_abs_diff_eq!(
-            (kaiser_window::<f64>(*beta))(1, 2),
-            expected,
-            epsilon = 1e-12
-        );
+        assert_abs_diff_eq!((kaiser::<f64>(*beta))(0, 2), expected, epsilon = 1e-12);
+        assert_abs_diff_eq!((kaiser::<f64>(*beta))(1, 2), expected, epsilon = 1e-12);
     }
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn hann_window_n2_is_zero() {
-    assert!((hann_window::<f64>(0, 2) - 0.0).abs() < 1e-12);
-    assert!((hann_window::<f64>(1, 2) - 0.0).abs() < 1e-12);
+    assert!((hann::<f64>(0, 2) - 0.0).abs() < 1e-12);
+    assert!((hann::<f64>(1, 2) - 0.0).abs() < 1e-12);
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn numpy_hanning_n2_parity() {
-    assert!((hann_window::<f64>(0, 2)).abs() < 1e-12);
-    assert!((hann_window::<f64>(1, 2)).abs() < 1e-12);
+    assert!((hann::<f64>(0, 2)).abs() < 1e-12);
+    assert!((hann::<f64>(1, 2)).abs() < 1e-12);
 }
 
 // MARK: - Allpass complement (lowpass + highpass ≈ δ[M])
@@ -605,8 +597,8 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_highpass_raw_delta_minus_lowpass() {
-        let h_lp = sinc_lowpass::<f64, 9>(FC, hann_window::<f64>, false);
-        let h_hp = sinc_highpass::<f64, 9>(FC, hann_window::<f64>, false);
+        let h_lp = sinc_lowpass::<f64, 9>(FC, hann::<f64>, false);
+        let h_hp = sinc_highpass::<f64, 9>(FC, hann::<f64>, false);
         let m = 4;
         for k in 0..9 {
             let expected = if k == m { 1.0 - h_lp[k] } else { -h_lp[k] };
@@ -616,9 +608,9 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_bandpass_raw_difference_of_lowpass() {
-        let h_hi = sinc_lowpass::<f64, 9>(F_HI, hann_window::<f64>, false);
-        let h_lo = sinc_lowpass::<f64, 9>(F_LO, hann_window::<f64>, false);
-        let h_bp = sinc_bandpass::<f64, 9>(F_LO, F_HI, hann_window::<f64>, false);
+        let h_hi = sinc_lowpass::<f64, 9>(F_HI, hann::<f64>, false);
+        let h_lo = sinc_lowpass::<f64, 9>(F_LO, hann::<f64>, false);
+        let h_bp = sinc_bandpass::<f64, 9>(F_LO, F_HI, hann::<f64>, false);
         for k in 0..9 {
             assert_abs_diff_eq!(h_bp[k], h_hi[k] - h_lo[k], epsilon = 1e-12);
         }
@@ -626,8 +618,8 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_bandstop_raw_delta_minus_bandpass() {
-        let h_bp = sinc_bandpass::<f64, 9>(F_LO, F_HI, hann_window::<f64>, false);
-        let h_bs = sinc_bandstop::<f64, 9>(F_LO, F_HI, hann_window::<f64>, false);
+        let h_bp = sinc_bandpass::<f64, 9>(F_LO, F_HI, hann::<f64>, false);
+        let h_bs = sinc_bandstop::<f64, 9>(F_LO, F_HI, hann::<f64>, false);
         let m = 4;
         for k in 0..9 {
             let expected = if k == m { 1.0 - h_bp[k] } else { -h_bp[k] };

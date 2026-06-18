@@ -231,13 +231,13 @@ fn kaiser_weights_consistency() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn kaiser_parity_with_windowed_sinc() {
-    use crate::filters::util::window::kaiser_window;
+    use crate::filters::util::window::kaiser;
 
     const N: usize = 33;
     let beta = 6.0_f64;
 
     let config = Config::<f64, N>::new(beta);
-    let win_fn = kaiser_window::<f64>(beta);
+    let win_fn = kaiser::<f64>(beta);
 
     for k in 0..N {
         let expected = win_fn(k, N);

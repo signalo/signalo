@@ -73,9 +73,7 @@ pub(crate) use crate::filters::util::window::*;
 pub(crate) mod kernel;
 
 #[cfg(any(feature = "libm", feature = "std"))]
-use self::kernel::{
-    default_kaiser_window, sinc_bandpass, sinc_bandstop, sinc_highpass, sinc_lowpass,
-};
+use self::kernel::{default_kaiser, sinc_bandpass, sinc_bandstop, sinc_highpass, sinc_lowpass};
 
 #[cfg(all(any(feature = "libm", feature = "std"), test))]
 use self::kernel::gain_at_freq;
@@ -223,7 +221,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
     #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
     pub fn lowpass_with_beta(beta: T, fc: T) -> Self {
         assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
-        let coeffs = sinc_lowpass::<T, N>(fc, kaiser_window(beta), true);
+        let coeffs = sinc_lowpass::<T, N>(fc, kaiser(beta), true);
         Self(Convolve::with_config(Config {
             coefficients: coeffs,
         }))
@@ -248,7 +246,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
     #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
     pub fn highpass_with_beta(beta: T, fc: T) -> Self {
         assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
-        let coeffs = sinc_highpass::<T, N>(fc, kaiser_window(beta), true);
+        let coeffs = sinc_highpass::<T, N>(fc, kaiser(beta), true);
         Self(Convolve::with_config(Config {
             coefficients: coeffs,
         }))
@@ -265,7 +263,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
     #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
     pub fn bandpass_with_beta(beta: T, f_lo: T, f_hi: T) -> Self {
         assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
-        let coeffs = sinc_bandpass::<T, N>(f_lo, f_hi, kaiser_window(beta), true);
+        let coeffs = sinc_bandpass::<T, N>(f_lo, f_hi, kaiser(beta), true);
         Self(Convolve::with_config(Config {
             coefficients: coeffs,
         }))
@@ -282,7 +280,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
     #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
     pub fn bandstop_with_beta(beta: T, f_lo: T, f_hi: T) -> Self {
         assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
-        let coeffs = sinc_bandstop::<T, N>(f_lo, f_hi, kaiser_window(beta), true);
+        let coeffs = sinc_bandstop::<T, N>(f_lo, f_hi, kaiser(beta), true);
         Self(Convolve::with_config(Config {
             coefficients: coeffs,
         }))
@@ -484,26 +482,20 @@ macro_rules! impl_windowed_sinc {
 }
 
 impl_windowed_sinc!(RectangularSinc, |k: usize, n: usize| {
-    rectangular_window::<T>(k, n)
+    rectangular::<T>(k, n)
 });
 impl_windowed_sinc!(TriangularSinc, |k: usize, n: usize| {
-    triangular_window::<T>(k, n)
+    triangular::<T>(k, n)
 });
-impl_windowed_sinc!(HannSinc, |k: usize, n: usize| { hann_window::<T>(k, n) });
-impl_windowed_sinc!(HammingSinc, |k: usize, n: usize| {
-    hamming_window::<T>(k, n)
-});
-impl_windowed_sinc!(BlackmanSinc, |k: usize, n: usize| {
-    blackman_window::<T>(k, n)
-});
+impl_windowed_sinc!(HannSinc, |k: usize, n: usize| { hann::<T>(k, n) });
+impl_windowed_sinc!(HammingSinc, |k: usize, n: usize| { hamming::<T>(k, n) });
+impl_windowed_sinc!(BlackmanSinc, |k: usize, n: usize| { blackman::<T>(k, n) });
 impl_windowed_sinc!(BlackmanHarrisSinc, |k: usize, n: usize| {
-    blackman_harris_window::<T>(k, n)
+    blackman_harris::<T>(k, n)
 });
-impl_windowed_sinc!(FlatTopSinc, |k: usize, n: usize| {
-    flat_top_window::<T>(k, n)
-});
+impl_windowed_sinc!(FlatTopSinc, |k: usize, n: usize| { flat_top::<T>(k, n) });
 impl_windowed_sinc!(KaiserSinc, |k: usize, n: usize| {
-    (default_kaiser_window::<T>())(k, n)
+    (default_kaiser::<T>())(k, n)
 });
 
 #[cfg(test)]

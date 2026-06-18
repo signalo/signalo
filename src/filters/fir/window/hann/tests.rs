@@ -135,11 +135,11 @@ fn n_eq_1() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn hann_parity_with_windowed_sinc() {
-    use crate::filters::util::window::hann_window;
+    use crate::filters::util::window::hann;
 
     const N: usize = 33;
     let config = Config::<f64, N>::new();
-    let win_fn = hann_window::<f64>;
+    let win_fn = hann::<f64>;
 
     for k in 0..N {
         let expected = win_fn(k, N);
@@ -151,11 +151,11 @@ fn hann_parity_with_windowed_sinc() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn hann_parity_with_windowed_sinc_n2() {
-    use crate::filters::util::window::hann_window;
+    use crate::filters::util::window::hann;
 
     const N: usize = 2;
     let config = Config::<f64, N>::new();
-    let win_fn = hann_window::<f64>;
+    let win_fn = hann::<f64>;
 
     for k in 0..N {
         let expected = win_fn(k, N);

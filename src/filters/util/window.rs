@@ -8,12 +8,12 @@ use num_traits::Float;
 
 pub(crate) use crate::math::bessel_i0;
 
-pub(crate) fn rectangular_window<T: Float>(_: usize, _: usize) -> T {
+pub(crate) fn rectangular<T: Float>(_: usize, _: usize) -> T {
     T::one()
 }
 
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn triangular_window<T: Float>(k: usize, n: usize) -> T {
+pub(crate) fn triangular<T: Float>(k: usize, n: usize) -> T {
     if n == 1 {
         return T::one();
     }
@@ -26,7 +26,7 @@ pub(crate) fn triangular_window<T: Float>(k: usize, n: usize) -> T {
 }
 
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn hann_window<T: Float>(k: usize, n: usize) -> T {
+pub(crate) fn hann<T: Float>(k: usize, n: usize) -> T {
     if n == 1 {
         return T::one();
     }
@@ -37,7 +37,7 @@ pub(crate) fn hann_window<T: Float>(k: usize, n: usize) -> T {
 }
 
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn hamming_window<T: Float>(k: usize, n: usize) -> T {
+pub(crate) fn hamming<T: Float>(k: usize, n: usize) -> T {
     if n == 1 {
         return T::one();
     }
@@ -49,7 +49,7 @@ pub(crate) fn hamming_window<T: Float>(k: usize, n: usize) -> T {
 }
 
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn blackman_window<T: Float>(k: usize, n: usize) -> T {
+pub(crate) fn blackman<T: Float>(k: usize, n: usize) -> T {
     if n == 1 {
         return T::one();
     }
@@ -65,7 +65,7 @@ pub(crate) fn blackman_window<T: Float>(k: usize, n: usize) -> T {
 }
 
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn blackman_harris_window<T: Float>(k: usize, n: usize) -> T {
+pub(crate) fn blackman_harris<T: Float>(k: usize, n: usize) -> T {
     if n == 1 {
         return T::one();
     }
@@ -84,7 +84,7 @@ pub(crate) fn blackman_harris_window<T: Float>(k: usize, n: usize) -> T {
 }
 
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn flat_top_window<T: Float>(k: usize, n: usize) -> T {
+pub(crate) fn flat_top<T: Float>(k: usize, n: usize) -> T {
     if n == 1 {
         return T::one();
     }
@@ -106,7 +106,7 @@ pub(crate) fn flat_top_window<T: Float>(k: usize, n: usize) -> T {
 }
 
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-pub(crate) fn kaiser_window<T: Float>(beta: T) -> impl Fn(usize, usize) -> T {
+pub(crate) fn kaiser<T: Float>(beta: T) -> impl Fn(usize, usize) -> T {
     let i0_beta = bessel_i0(beta);
     let two = T::from(2.0).unwrap();
     let one = T::one();
