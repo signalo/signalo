@@ -41,7 +41,7 @@ impl<T: num_traits::Float, const N: usize> Config<T, N> {
     /// Create a window configuration with precomputed weights.
     #[must_use]
     pub fn new() -> Self {
-        use crate::filters::fir::convolve::windowed_sinc::hamming_window;
+        use crate::filters::util::window::hamming_window;
         assert!(N > 0, "Hamming: window size N must be > 0");
         let mut weights = [T::zero(); N];
         for (k, w) in weights.iter_mut().enumerate() {

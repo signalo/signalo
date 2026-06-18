@@ -31,7 +31,7 @@ use num_traits::Float;
 /// (impossible for any `Float`-implementing type).
 #[cfg(any(feature = "libm", feature = "std"))]
 #[allow(clippy::unwrap_used)]
-pub fn bessel_i0<T: Float + core::fmt::Debug>(x: T) -> T {
+pub fn bessel_i0<T: Float>(x: T) -> T {
     let eps = T::epsilon();
     let mut sum = T::one();
     let mut term = T::one();
@@ -48,7 +48,7 @@ pub fn bessel_i0<T: Float + core::fmt::Debug>(x: T) -> T {
     }
     debug_assert!(
         term / sum < eps,
-        "bessel_i0: series did not converge for x = {x:?}; |x| <= 20 is supported",
+        "bessel_i0: series did not converge for x; |x| <= 20 is supported",
     );
     sum
 }

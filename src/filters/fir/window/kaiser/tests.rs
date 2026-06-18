@@ -231,7 +231,7 @@ fn kaiser_weights_consistency() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn kaiser_parity_with_windowed_sinc() {
-    use crate::filters::fir::convolve::windowed_sinc::kaiser_window;
+    use crate::filters::util::window::kaiser_window;
 
     const N: usize = 33;
     let beta = 6.0_f64;

@@ -68,12 +68,9 @@ pub(crate) use crate::traits::{ConfigRef, Filter};
 use super::Config;
 
 #[cfg(any(feature = "libm", feature = "std"))]
-pub(crate) mod helpers;
+pub(crate) use crate::filters::util::window::*;
 
 pub(crate) mod kernel;
-
-#[cfg(any(feature = "libm", feature = "std"))]
-pub(crate) use helpers::*;
 
 #[cfg(any(feature = "libm", feature = "std"))]
 use self::kernel::{
