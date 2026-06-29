@@ -11,7 +11,7 @@ edition = "2021"
 version = "0.8.0"
 
 [dependencies]
-circular-buffer = { version = "1.0.0", default-features = false }
+circular-buffer = { version = "2.0.0", default-features = false }
 dimensioned = { version = "0.8", optional = true, default-features = false }
 guts = { version = "0.2.0", default-features = false }
 libm = { version = "0.2.16", optional = true, default-features = false }
