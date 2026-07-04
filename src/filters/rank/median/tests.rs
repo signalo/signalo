@@ -11,7 +11,7 @@ use super::*;
 
 macro_rules! test_filter {
     ($size:expr, $input:expr, $output:expr) => {
-        let filter: Median<_, $size> = Median::default();
+        let filter: MedianArray<_, $size> = MedianArray::default();
         let output: Vec<_> = $input
             .iter()
             .scan(filter, |filter, &input| Some(filter.filter(input)))
@@ -136,7 +136,7 @@ fn descending_5() {
 #[test]
 fn min_max_median() {
     let input = vec![70, 50, 30, 10, 20, 40, 60];
-    let mut filter: Median<_, 5> = Median::default();
+    let mut filter: MedianArray<_, 5> = MedianArray::default();
     for input in input {
         filter.filter(input);
     }
@@ -148,13 +148,13 @@ fn min_max_median() {
 #[test]
 #[should_panic(expected = "window size N must be > 0")]
 fn zero_window_panics() {
-    let _: Median<f32, 0> = Median::default();
+    let _: MedianArray<f32, 0> = MedianArray::default();
 }
 
 #[test]
 fn max_is_not_most_recently_inserted() {
     // Feed values such that the max is not the last inserted element.
-    let mut filter: Median<_, 3> = Median::default();
+    let mut filter: MedianArray<_, 3> = MedianArray::default();
     filter.filter(1);
     filter.filter(100);
     filter.filter(2);
@@ -182,7 +182,7 @@ fn get_output() -> Vec<f32> {
 
 #[test]
 fn test() {
-    let filter: Median<_, 5> = Median::default();
+    let filter: MedianArray<_, 5> = MedianArray::default();
     // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
     let input = get_input();
     let output: Vec<_> = input

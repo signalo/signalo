@@ -20,16 +20,16 @@ use crate::traits::ResetMut;
 #[derive(Clone)]
 pub struct State<T, const N: usize> {
     /// The internal `min` filter.
-    pub min: super::min::Min<T, N>,
+    pub min: super::min::MinArray<T, N>,
     /// The internal `max` filter.
-    pub max: super::max::Max<T, N>,
+    pub max: super::max::MaxArray<T, N>,
 }
 
 impl<T, const N: usize> Default for State<T, N> {
     fn default() -> Self {
         Self {
-            min: super::min::Min::default(),
-            max: super::max::Max::default(),
+            min: super::min::MinArray::default(),
+            max: super::max::MaxArray::default(),
         }
     }
 }
