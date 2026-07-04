@@ -10,43 +10,100 @@
 //! Computes the mean square value over a fixed-size sliding window.
 //! Returns mean square value. Apply `sqrt()` (requires `std`) for true RMS.
 
-use circular_buffer::CircularBuffer;
+use circular_buffer::FixedCircularBuffer;
 use num_traits::{cast::NumCast, Num};
 
+use crate::storage::RingBuffer;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Finalize, Reset, Sink,
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
+
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
 /// The RMS accumulator state.
-#[derive(Clone, Debug)]
-pub struct State<T, const N: usize> {
-    buffer: CircularBuffer<N, T>,
-    sum_sq: T,
-    len: usize,
-}
-
-/// A sink that computes the root mean square over a sliding window of N samples.
 ///
-/// Returns the mean square value. Apply `sqrt()` for the actual RMS value.
+/// Holds the ring buffer `R` together with the running sum-of-squares and the
+/// current fill count. The fill count starts at zero and increases up to the
+/// buffer's capacity, tracking how many samples have been ingested so far.
 #[derive(Clone, Debug)]
-pub struct Rms<T, const N: usize> {
-    state: State<T, N>,
+pub struct State<T, R> {
+    /// The ring buffer holding the most recent samples.
+    pub buffer: R,
+    /// The running sum of squared samples.
+    pub sum_sq: T,
+    /// The number of samples currently in the buffer (≤ `buffer.capacity()`).
+    pub len: usize,
 }
 
-impl<T, const N: usize> ConfigTrait for Rms<T, N> {
+/// A sink that computes the root mean square over a sliding window.
+///
+/// Returns the **mean square** value (i.e. `Σxᵢ² / N`). Apply `sqrt()` to
+/// obtain the true RMS. The window size is determined by the capacity of the
+/// ring buffer `R`.
+///
+/// # Type aliases
+///
+/// Prefer the concrete aliases for common use:
+/// - [`RmsArray<T, N>`] — stack-allocated, `no_std`-friendly.
+/// - [`RmsVec<T>`] — heap-allocated, requires the `alloc` feature.
+#[derive(Clone, Debug)]
+pub struct Rms<T, R> {
+    state: State<T, R>,
+}
+
+/// A RMS sink backed by a const-generic [`FixedCircularBuffer`].
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. Both `T` and
+/// the window size `N` are fixed at compile time.
+pub type RmsArray<T, const N: usize> = Rms<T, FixedCircularBuffer<T, N>>;
+
+/// A RMS sink backed by a heap-allocated [`HeapCircularBuffer`].
+///
+/// Requires the `alloc` feature. Use [`Rms::from_parts`] to construct this
+/// variant, since the buffer capacity must be known at runtime.
+#[cfg(feature = "alloc")]
+pub type RmsVec<T> = Rms<T, HeapCircularBuffer<T>>;
+
+impl<T, R> Rms<T, R>
+where
+    T: Num,
+    R: RingBuffer<T>,
+{
+    /// Creates an [`Rms`] sink from an already-constructed ring buffer.
+    ///
+    /// Use this constructor when the buffer is not `Default`-constructible,
+    /// e.g. for [`RmsVec`] whose capacity must be known at runtime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `buffer.capacity()` is zero.
+    pub fn from_parts(buffer: R) -> Self {
+        assert!(buffer.capacity() > 0, "Rms: window size must be > 0");
+        Self {
+            state: State {
+                buffer,
+                sum_sq: T::zero(),
+                len: 0,
+            },
+        }
+    }
+}
+
+impl<T, R> ConfigTrait for Rms<T, R> {
     type Config = ();
 }
 
-impl<T, const N: usize> StateTrait for Rms<T, N> {
-    type State = State<T, N>;
+impl<T, R> StateTrait for Rms<T, R> {
+    type State = State<T, R>;
 }
 
-impl<T, const N: usize> WithConfig for Rms<T, N>
+impl<T, const N: usize> WithConfig for RmsArray<T, N>
 where
     T: Clone + Num,
 {
@@ -55,7 +112,7 @@ where
     fn with_config(_config: Self::Config) -> Self::Output {
         Self {
             state: State {
-                buffer: CircularBuffer::new(),
+                buffer: FixedCircularBuffer::new(),
                 sum_sq: T::zero(),
                 len: 0,
             },
@@ -63,7 +120,7 @@ where
     }
 }
 
-impl<T, const N: usize> Default for Rms<T, N>
+impl<T, const N: usize> Default for RmsArray<T, N>
 where
     T: Clone + Num,
 {
@@ -72,39 +129,39 @@ where
     }
 }
 
-impl<T, const N: usize> ConfigRef for Rms<T, N> {
+impl<T, R> ConfigRef for Rms<T, R> {
     fn config_ref(&self) -> &Self::Config {
         &()
     }
 }
 
-impl<T, const N: usize> ConfigClone for Rms<T, N> {
+impl<T, R> ConfigClone for Rms<T, R> {
     fn config(&self) -> Self::Config {}
 }
 
-impl<T, const N: usize> StateMut for Rms<T, N> {
+impl<T, R> StateMut for Rms<T, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Rms<T, N> {
-    type Guts = State<T, N>;
+impl<T, R> HasGuts for Rms<T, R> {
+    type Guts = State<T, R>;
 }
 
-impl<T, const N: usize> FromGuts for Rms<T, N> {
+impl<T, R> FromGuts for Rms<T, R> {
     fn from_guts(guts: Self::Guts) -> Self {
         Self { state: guts }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Rms<T, N> {
+impl<T, R> IntoGuts for Rms<T, R> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, const N: usize> Reset for Rms<T, N>
+impl<T, const N: usize> Reset for RmsArray<T, N>
 where
     T: Clone + Num,
 {
@@ -114,11 +171,12 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Rms<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for RmsArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Sink<T> for Rms<T, N>
+impl<T, R> Sink<T> for Rms<T, R>
 where
     T: Clone + Num,
+    R: RingBuffer<T>,
 {
     #[inline]
     fn sink(&mut self, input: T) {
@@ -128,15 +186,17 @@ where
         }
         let input_sq = input.clone() * input;
         self.state.sum_sq = self.state.sum_sq.clone() + input_sq;
-        if self.state.len < N {
+        let cap = self.state.buffer.capacity();
+        if self.state.len < cap {
             self.state.len += 1;
         }
     }
 }
 
-impl<T, const N: usize> Filter<T> for Rms<T, N>
+impl<T, R> Filter<T> for Rms<T, R>
 where
     T: Clone + Num + NumCast,
+    R: RingBuffer<T>,
 {
     type Output = T;
 
@@ -152,9 +212,10 @@ where
     }
 }
 
-impl<T, const N: usize> Finalize for Rms<T, N>
+impl<T, R> Finalize for Rms<T, R>
 where
     T: Clone + Num + NumCast,
+    R: RingBuffer<T>,
 {
     type Output = Option<T>;
 
@@ -176,7 +237,7 @@ mod tests {
 
     #[test]
     fn empty() {
-        let sink: Rms<f32, 4> = Rms::default();
+        let sink: RmsArray<f32, 4> = RmsArray::default();
         let result = sink.finalize();
         assert_eq!(result, None);
     }
@@ -185,7 +246,7 @@ mod tests {
     fn all_ones() {
         // Input: [1.0, 1.0, 1.0, 1.0]
         // Mean of squares: (1 + 1 + 1 + 1) / 4 = 1.0
-        let mut sink: Rms<f32, 4> = Rms::default();
+        let mut sink: RmsArray<f32, 4> = RmsArray::default();
         sink.sink(1.0);
         sink.sink(1.0);
         sink.sink(1.0);
@@ -198,7 +259,7 @@ mod tests {
     fn three_four_window_two() {
         // Input: [3.0, 4.0] with N=2
         // Mean of squares: (9 + 16) / 2 = 25 / 2 = 12.5
-        let mut sink: Rms<f32, 2> = Rms::default();
+        let mut sink: RmsArray<f32, 2> = RmsArray::default();
         sink.sink(3.0);
         sink.sink(4.0);
         let result = sink.finalize();
@@ -207,14 +268,14 @@ mod tests {
 
     #[test]
     fn test_nan_propagation() {
-        let mut sink: Rms<f32, 4> = Rms::default();
+        let mut sink: RmsArray<f32, 4> = RmsArray::default();
         let result = sink.filter(f32::NAN);
         assert!(result.is_nan());
     }
 
     #[test]
     fn test_large_values() {
-        let mut sink: Rms<f32, 2> = Rms::default();
+        let mut sink: RmsArray<f32, 2> = RmsArray::default();
         let result = sink.filter(1e10);
         assert!(result.is_finite());
         let result = sink.filter(1e10);
@@ -223,7 +284,7 @@ mod tests {
 
     #[test]
     fn test_inf_propagation() {
-        let mut sink: Rms<f32, 4> = Rms::default();
+        let mut sink: RmsArray<f32, 4> = RmsArray::default();
         let result = sink.filter(f32::INFINITY);
         assert!(result.is_infinite());
         let result = sink.filter(f32::NEG_INFINITY);
@@ -232,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_reset() {
-        let mut sink: Rms<f32, 2> = Rms::default();
+        let mut sink: RmsArray<f32, 2> = RmsArray::default();
         sink.sink(1.0);
         sink.sink(2.0);
         sink.sink(3.0);
@@ -243,14 +304,14 @@ mod tests {
 
     #[test]
     fn test_n1_window() {
-        let mut sink: Rms<f32, 1> = Rms::default();
+        let mut sink: RmsArray<f32, 1> = RmsArray::default();
         let result = sink.filter(5.0);
         assert_eq!(result, 25.0);
     }
 
     #[test]
     fn test_integer_type() {
-        let mut sink: Rms<i32, 3> = Rms::default();
+        let mut sink: RmsArray<i32, 3> = RmsArray::default();
         sink.sink(1);
         sink.sink(2);
         sink.sink(3);
@@ -261,7 +322,7 @@ mod tests {
 
     #[test]
     fn test_state_mut() {
-        let mut sink: Rms<f32, 4> = Rms::default();
+        let mut sink: RmsArray<f32, 4> = RmsArray::default();
         let state = sink.state_mut();
         state.sum_sq = 10.0;
         state.len = 1;
@@ -276,7 +337,7 @@ mod tests {
         // After 2.0: [1.0, 2.0] -> mean_sq = (1 + 4) / 2 = 2.5
         // After 3.0: [2.0, 3.0] (1.0 removed) -> mean_sq = (4 + 9) / 2 = 6.5
         // After 4.0: [3.0, 4.0] (2.0 removed) -> mean_sq = (9 + 16) / 2 = 12.5
-        let mut sink: Rms<f32, 2> = Rms::default();
+        let mut sink: RmsArray<f32, 2> = RmsArray::default();
         let out1 = sink.filter(1.0);
         let out2 = sink.filter(2.0);
         let out3 = sink.filter(3.0);
@@ -295,7 +356,7 @@ mod tests {
             12.0, 20.0, 20.0, 7.0,
         ];
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
-        let mut sink: Rms<f32, 20> = Rms::default();
+        let mut sink: RmsArray<f32, 20> = RmsArray::default();
         for value in input {
             sink.sink(value);
         }

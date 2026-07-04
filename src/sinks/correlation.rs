@@ -10,44 +10,110 @@
 //! Computes the normalized cross-correlation coefficient between two signals
 //! over a fixed-size sliding window.
 
-use circular_buffer::CircularBuffer;
+use circular_buffer::FixedCircularBuffer;
 use num_traits::{cast::NumCast, Num};
 
+use crate::storage::RingBuffer;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Finalize, Reset, Sink,
     State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
+
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
 /// The cross-correlation accumulator state.
+///
+/// Holds two ring buffers `Rx` and `Ry` (for the x and y signal windows
+/// respectively) together with the current fill count. Both buffers must
+/// have the same capacity.
 #[derive(Clone, Debug)]
-pub struct State<T, const N: usize> {
-    buffer_x: CircularBuffer<N, T>,
-    buffer_y: CircularBuffer<N, T>,
-    len: usize,
+pub struct State<T, Rx, Ry> {
+    /// The ring buffer holding the most recent x samples.
+    pub buffer_x: Rx,
+    /// The ring buffer holding the most recent y samples.
+    pub buffer_y: Ry,
+    /// The number of samples currently in each buffer (≤ `buffer_x.capacity()`).
+    pub len: usize,
+    _pd: core::marker::PhantomData<T>,
 }
 
 /// A sink that computes the normalized cross-correlation coefficient between two input signals.
 ///
 /// Takes tuples of `(T, T)` and computes the dot product of the last N x and y samples,
 /// normalized by N to produce a correlation coefficient at lag 0.
+///
+/// # Type aliases
+///
+/// Prefer the concrete aliases for common use:
+/// - [`CorrelationArray<T, N>`] — stack-allocated, `no_std`-friendly.
+/// - [`CorrelationVec<T>`] — heap-allocated, requires the `alloc` feature.
 #[derive(Clone, Debug)]
-pub struct Correlation<T, const N: usize> {
-    state: State<T, N>,
+pub struct Correlation<T, Rx, Ry> {
+    state: State<T, Rx, Ry>,
 }
 
-impl<T, const N: usize> ConfigTrait for Correlation<T, N> {
+/// A cross-correlation sink backed by two const-generic [`FixedCircularBuffer`]s.
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. Both `T` and
+/// the window size `N` are fixed at compile time.
+pub type CorrelationArray<T, const N: usize> =
+    Correlation<T, FixedCircularBuffer<T, N>, FixedCircularBuffer<T, N>>;
+
+/// A cross-correlation sink backed by two heap-allocated [`HeapCircularBuffer`]s.
+///
+/// Requires the `alloc` feature. Use [`Correlation::from_parts`] to construct
+/// this variant, since the buffer capacities must be known at runtime.
+#[cfg(feature = "alloc")]
+pub type CorrelationVec<T> = Correlation<T, HeapCircularBuffer<T>, HeapCircularBuffer<T>>;
+
+impl<T, Rx, Ry> Correlation<T, Rx, Ry>
+where
+    Rx: RingBuffer<T>,
+    Ry: RingBuffer<T>,
+{
+    /// Creates a [`Correlation`] sink from two already-constructed ring buffers.
+    ///
+    /// Use this constructor when the buffers are not `Default`-constructible,
+    /// e.g. for [`CorrelationVec`] whose capacity must be known at runtime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the two buffers do not have the same capacity, or if that
+    /// capacity is zero.
+    pub fn from_parts(bx: Rx, by: Ry) -> Self {
+        assert!(bx.capacity() > 0, "Correlation: window size must be > 0");
+        assert_eq!(
+            bx.capacity(),
+            by.capacity(),
+            "Correlation: buffer_x capacity ({}) must equal buffer_y capacity ({})",
+            bx.capacity(),
+            by.capacity(),
+        );
+        Self {
+            state: State {
+                buffer_x: bx,
+                buffer_y: by,
+                len: 0,
+                _pd: core::marker::PhantomData,
+            },
+        }
+    }
+}
+
+impl<T, Rx, Ry> ConfigTrait for Correlation<T, Rx, Ry> {
     type Config = ();
 }
 
-impl<T, const N: usize> StateTrait for Correlation<T, N> {
-    type State = State<T, N>;
+impl<T, Rx, Ry> StateTrait for Correlation<T, Rx, Ry> {
+    type State = State<T, Rx, Ry>;
 }
 
-impl<T, const N: usize> WithConfig for Correlation<T, N>
+impl<T, const N: usize> WithConfig for CorrelationArray<T, N>
 where
     T: Clone + Num,
 {
@@ -56,15 +122,16 @@ where
     fn with_config(_config: Self::Config) -> Self::Output {
         Self {
             state: State {
-                buffer_x: CircularBuffer::new(),
-                buffer_y: CircularBuffer::new(),
+                buffer_x: FixedCircularBuffer::new(),
+                buffer_y: FixedCircularBuffer::new(),
                 len: 0,
+                _pd: core::marker::PhantomData,
             },
         }
     }
 }
 
-impl<T, const N: usize> Default for Correlation<T, N>
+impl<T, const N: usize> Default for CorrelationArray<T, N>
 where
     T: Clone + Num,
 {
@@ -73,39 +140,39 @@ where
     }
 }
 
-impl<T, const N: usize> ConfigRef for Correlation<T, N> {
+impl<T, Rx, Ry> ConfigRef for Correlation<T, Rx, Ry> {
     fn config_ref(&self) -> &Self::Config {
         &()
     }
 }
 
-impl<T, const N: usize> ConfigClone for Correlation<T, N> {
+impl<T, Rx, Ry> ConfigClone for Correlation<T, Rx, Ry> {
     fn config(&self) -> Self::Config {}
 }
 
-impl<T, const N: usize> StateMut for Correlation<T, N> {
+impl<T, Rx, Ry> StateMut for Correlation<T, Rx, Ry> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Correlation<T, N> {
-    type Guts = State<T, N>;
+impl<T, Rx, Ry> HasGuts for Correlation<T, Rx, Ry> {
+    type Guts = State<T, Rx, Ry>;
 }
 
-impl<T, const N: usize> FromGuts for Correlation<T, N> {
+impl<T, Rx, Ry> FromGuts for Correlation<T, Rx, Ry> {
     fn from_guts(guts: Self::Guts) -> Self {
         Self { state: guts }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Correlation<T, N> {
+impl<T, Rx, Ry> IntoGuts for Correlation<T, Rx, Ry> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, const N: usize> Reset for Correlation<T, N>
+impl<T, const N: usize> Reset for CorrelationArray<T, N>
 where
     T: Clone + Num,
 {
@@ -115,26 +182,31 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Correlation<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for CorrelationArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Sink<(T, T)> for Correlation<T, N>
+impl<T, Rx, Ry> Sink<(T, T)> for Correlation<T, Rx, Ry>
 where
     T: Clone + Num,
+    Rx: RingBuffer<T>,
+    Ry: RingBuffer<T>,
 {
     #[inline]
     fn sink(&mut self, input: (T, T)) {
         let (x, y) = input;
         self.state.buffer_x.push_back(x);
         self.state.buffer_y.push_back(y);
-        if self.state.len < N {
+        let cap = self.state.buffer_x.capacity();
+        if self.state.len < cap {
             self.state.len += 1;
         }
     }
 }
 
-impl<T, const N: usize> Filter<(T, T)> for Correlation<T, N>
+impl<T, Rx, Ry> Filter<(T, T)> for Correlation<T, Rx, Ry>
 where
     T: Clone + Num + NumCast,
+    Rx: RingBuffer<T>,
+    Ry: RingBuffer<T>,
 {
     type Output = T;
 
@@ -158,9 +230,11 @@ where
     }
 }
 
-impl<T, const N: usize> Finalize for Correlation<T, N>
+impl<T, Rx, Ry> Finalize for Correlation<T, Rx, Ry>
 where
     T: Clone + Num + NumCast,
+    Rx: RingBuffer<T>,
+    Ry: RingBuffer<T>,
 {
     type Output = Option<T>;
 

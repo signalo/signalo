@@ -18,23 +18,23 @@ use crate::traits::ResetMut;
 
 use num_traits::{float::FloatCore, NumCast};
 
-use super::histogram::{Config as HistogramConfig, Histogram};
+use super::histogram::{Config as HistogramConfig, HistogramArray};
 
 /// Configuration for a percentile sink.
 ///
-/// Specifies the histogram range [min, max] and the target percentile (0.0..1.0).
-/// The percentile value represents the target quantile: 0.5 = median, 0.25 = quartile, etc.
+/// Specifies the histogram range `[min, max]` and the target percentile `(0.0..1.0)`.
+/// The percentile value represents the target quantile: `0.5` = median, `0.25` = quartile, etc.
 #[derive(Clone, Debug)]
-pub struct Config<T, const N: usize> {
-    /// Minimum value of the histogram range
+pub struct Config<T> {
+    /// Minimum value of the histogram range.
     pub min: T,
-    /// Maximum value of the histogram range
+    /// Maximum value of the histogram range.
     pub max: T,
-    /// Target percentile as a fraction in [0.0, 1.0]
+    /// Target percentile as a fraction in `[0.0, 1.0]`.
     pub percentile: T,
 }
 
-impl<T: Clone, const N: usize> Config<T, N> {
+impl<T: Clone> Config<T> {
     /// Creates a new percentile configuration.
     pub fn new(min: T, max: T, percentile: T) -> Self {
         Self {
@@ -45,7 +45,7 @@ impl<T: Clone, const N: usize> Config<T, N> {
     }
 }
 
-impl<T: Clone + Default, const N: usize> Default for Config<T, N> {
+impl<T: Clone + Default> Default for Config<T> {
     fn default() -> Self {
         Self {
             min: T::default(),
@@ -57,40 +57,42 @@ impl<T: Clone + Default, const N: usize> Default for Config<T, N> {
 
 /// A percentile sink that approximates percentiles using histogram binning.
 ///
-/// Internally wraps a histogram sink and divides the [min, max] range into N equal-width bins.
-/// The percentile is approximated by finding the bin where the cumulative count exceeds
-/// the target percentage of total samples, then interpolating the result.
+/// Internally wraps a [`HistogramArray`] sink and divides the `[min, max]` range into `N`
+/// equal-width bins. The percentile is approximated by finding the bin where the
+/// cumulative count exceeds the target percentage of total samples, then linearly
+/// interpolating within that bin.
 #[derive(Clone, Debug)]
 pub struct Percentile<T: Clone, const N: usize> {
-    config: Config<T, N>,
-    histogram: Histogram<T, N>,
+    config: Config<T>,
+    histogram: HistogramArray<T, N>,
 }
 
 impl<T: Clone + Default, const N: usize> Default for Percentile<T, N> {
     fn default() -> Self {
         Self {
             config: Config::default(),
-            histogram: Histogram::default(),
+            histogram: HistogramArray::default(),
         }
     }
 }
 
 impl<T: Clone, const N: usize> ConfigTrait for Percentile<T, N> {
-    type Config = Config<T, N>;
+    type Config = Config<T>;
 }
 
 impl<T: Clone, const N: usize> StateTrait for Percentile<T, N> {
-    type State = super::histogram::State<N>;
+    type State = super::histogram::State<[u32; N]>;
 }
 
-impl<T: Clone, const N: usize> WithConfig for Percentile<T, N> {
+impl<T: Clone + Default, const N: usize> WithConfig for Percentile<T, N> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
         let histogram_config = HistogramConfig::new(config.min.clone(), config.max.clone());
+
         Self {
             config,
-            histogram: Histogram::with_config(histogram_config),
+            histogram: HistogramArray::with_config(histogram_config),
         }
     }
 }
@@ -114,7 +116,7 @@ impl<T: Clone, const N: usize> StateMut for Percentile<T, N> {
 }
 
 impl<T: Clone, const N: usize> HasGuts for Percentile<T, N> {
-    type Guts = (Config<T, N>, Histogram<T, N>);
+    type Guts = (Config<T>, HistogramArray<T, N>);
 }
 
 impl<T: Clone, const N: usize> FromGuts for Percentile<T, N> {
@@ -130,14 +132,14 @@ impl<T: Clone, const N: usize> IntoGuts for Percentile<T, N> {
     }
 }
 
-impl<T: Clone, const N: usize> Reset for Percentile<T, N> {
+impl<T: Clone + Default, const N: usize> Reset for Percentile<T, N> {
     fn reset(self) -> Self {
         Self::with_config(self.config)
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T: Clone, const N: usize> ResetMut for Percentile<T, N> where Self: Reset {}
+impl<T: Clone + Default, const N: usize> ResetMut for Percentile<T, N> where Self: Reset {}
 
 macro_rules! impl_sink_percentile {
     ($ty:ty) => {
@@ -153,12 +155,13 @@ macro_rules! impl_sink_percentile {
 impl_sink_percentile!(f32);
 impl_sink_percentile!(f64);
 
-impl<T: Clone + FloatCore, const N: usize> Finalize for Percentile<T, N> {
+impl<T: Clone + Default + FloatCore, const N: usize> Finalize for Percentile<T, N> {
     type Output = Option<T>;
 
     #[inline]
     fn finalize(self) -> Self::Output {
-        let bins = self.histogram.finalize();
+        // HistogramArray's Finalize::Output is [u32; N] (the bin storage B).
+        let bins: [u32; N] = self.histogram.finalize();
 
         let total: u32 = bins.iter().sum();
         if total == 0 {
@@ -184,6 +187,7 @@ impl<T: Clone + FloatCore, const N: usize> Finalize for Percentile<T, N> {
             return Some(self.config.min);
         }
 
+        // Bin count is the length of the fixed array; cast to T for arithmetic.
         let n_t: T = NumCast::from(N).unwrap_or(T::zero());
         let bin_width = range / n_t;
         let i_t: T = NumCast::from(bin_index).unwrap_or(T::zero());
