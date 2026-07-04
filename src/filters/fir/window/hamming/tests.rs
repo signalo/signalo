@@ -2,7 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use std::vec::Vec;
+#[cfg(any(feature = "libm", feature = "std"))]
+use alloc::vec::Vec;
 
 use approx::assert_abs_diff_eq;
 
@@ -11,8 +12,9 @@ use super::*;
 use crate::window_behavior_tests;
 
 /// Numeric test fixture for smoke tests.
+#[cfg(any(feature = "libm", feature = "std"))]
 fn numeric_fixture() -> Vec<f32> {
-    std::vec![
+    alloc::vec![
         0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0,
         20.0, 20.0, 7.0, 7.0, 15.0, 15.0, 10.0, 23.0, 10.0, 111.0, 18.0, 18.0, 18.0, 106.0, 5.0,
         26.0, 13.0, 13.0, 21.0, 21.0, 21.0, 34.0, 8.0, 109.0, 8.0, 29.0, 16.0, 16.0, 16.0, 104.0,
@@ -20,11 +22,12 @@ fn numeric_fixture() -> Vec<f32> {
     ]
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn smoke() {
     const N: usize = 8;
-    let config = Config::<f32, N>::new();
-    let mut window = Hamming::<f32, N>::with_config(config.clone());
+    let config = Config::<[f32; N]>::new();
+    let mut window = HammingArray::<f32, N>::with_config(config.clone());
     let input = numeric_fixture();
     let expected: Vec<f32> = input
         .iter()
@@ -36,18 +39,19 @@ fn smoke() {
 }
 
 window_behavior_tests!(
-    Hamming::<f32, N>::with_config(Config::<f32, N>::new()),
-    Hamming::<f32, 0>::with_config(Config {
+    HammingArray::<f32, N>::with_config(Config::<[f32; N]>::new()),
+    HammingArray::<f32, 0>::with_config(Config {
         weights: [0.0f32; 0],
     }),
     "window size N must be > 0"
 );
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn endpoints() {
     const N: usize = 8;
-    let config = Config::<f32, N>::new();
-    let mut window = Hamming::<f32, N>::with_config(config.clone());
+    let config = Config::<[f32; N]>::new();
+    let mut window = HammingArray::<f32, N>::with_config(config.clone());
 
     let input: Vec<f32> = (0..N as u32).map(|i| i as f32).collect();
     let output: Vec<_> = input.iter().map(|&x| window.filter(x)).collect();
@@ -60,10 +64,11 @@ fn endpoints() {
     );
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn config_new() {
     const N: usize = 8;
-    let config = Config::<f32, N>::new();
+    let config = Config::<[f32; N]>::new();
     let n_minus_1 = (N - 1) as f32;
     let two_pi = 2.0 * core::f32::consts::PI;
     for k in 0..N {
@@ -80,7 +85,7 @@ fn sidelobe_attenuation() {
     const ZP: usize = 8;
     const L: usize = N * ZP;
 
-    let config = Config::<f64, N>::new();
+    let config = Config::<[f64; N]>::new();
     let weights = &config.weights;
 
     let two_pi = core::f64::consts::PI * 2.0;
@@ -115,9 +120,10 @@ fn sidelobe_attenuation() {
     );
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn n_eq_1() {
-    let config = Config::<f32, 1>::new();
+    let config = Config::<[f32; 1]>::new();
     assert_abs_diff_eq!(config.weights[0], 1.0, epsilon = 1e-7);
 }
 
@@ -127,7 +133,7 @@ fn hamming_parity_with_windowed_sinc() {
     use crate::filters::util::window::hamming;
 
     const N: usize = 33;
-    let config = Config::<f64, N>::new();
+    let config = Config::<[f64; N]>::new();
     let win_fn = hamming::<f64>;
 
     for k in 0..N {
@@ -143,7 +149,7 @@ fn hamming_parity_with_windowed_sinc_n2() {
     use crate::filters::util::window::hamming;
 
     const N: usize = 2;
-    let config = Config::<f64, N>::new();
+    let config = Config::<[f64; N]>::new();
     let win_fn = hamming::<f64>;
 
     for k in 0..N {
@@ -157,5 +163,5 @@ fn hamming_parity_with_windowed_sinc_n2() {
 #[test]
 #[should_panic(expected = "window size N must be > 0")]
 fn config_new_n0_panics() {
-    let _ = Config::<f64, 0>::new();
+    let _ = Config::<[f64; 0]>::new();
 }

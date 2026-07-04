@@ -4,6 +4,7 @@
 
 //! Classical (truncated 3-term) Blackman window.
 
+use crate::storage::AsSlice;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -21,15 +22,20 @@ use crate::traits::ResetMut;
 /// the classical form keeps the simpler `a0 = 0.42` at the cost of a slight
 /// discontinuity at the endpoints.
 ///
+/// The storage backend `C` may be any type that implements [`AsSlice<T>`],
+/// e.g. `[T; N]` (stack-allocated) or `Vec<T>` (heap-allocated, requires the
+/// `alloc` feature). Prefer the [`BlackmanArray`] and [`BlackmanVec`] type
+/// aliases over naming this type directly.
+///
 /// # Periodicity warning
 ///
 /// Applied periodically: the k-th tap returned is `w[k mod N]`, not tied to
 /// input sample index. This means the same coefficient sequence repeats
 /// every N calls.
 #[derive(Clone, Debug)]
-pub struct Config<T, const N: usize> {
+pub struct Config<C> {
     /// Precomputed window weights.
-    pub weights: [T; N],
+    pub weights: C,
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
@@ -38,8 +44,15 @@ pub struct Config<T, const N: usize> {
     clippy::unwrap_used,
     clippy::missing_panics_doc
 )]
-impl<T: num_traits::Float, const N: usize> Config<T, N> {
+impl<T: num_traits::Float, const N: usize> Config<[T; N]> {
     /// Create a window configuration with precomputed weights.
+    ///
+    /// Computes `w[k] = 0.42 − 0.5·cos(α) + 0.08·cos(2α)` with
+    /// `α = 2πk/(N−1)` for each tap `k`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N == 0`.
     #[must_use]
     pub fn new() -> Self {
         use crate::filters::util::window::blackman;
@@ -59,7 +72,8 @@ pub struct State {
     k: usize,
 }
 
-/// A classical (truncated 3-term) Blackman window.
+/// A classical (truncated 3-term) Blackman window generic over its weight
+/// storage `C`.
 ///
 /// Each tap coefficient `w[k] = 0.42 − 0.5·cos(α) + 0.08·cos(2α)` with
 /// `α = 2πk/(N−1)`. This is the classical three-term Blackman window
@@ -76,31 +90,77 @@ pub struct State {
 /// - **Time per sample:** O(1)
 /// - **Space:** O(N · `sizeof::<T>()`)
 ///
+/// # Type aliases
+///
+/// Prefer the concrete aliases for common use:
+/// - [`BlackmanArray<T, N>`] — stack-allocated, `no_std`-friendly.
+/// - [`BlackmanVec<T>`] — heap-allocated, requires the `alloc` feature.
+///
 /// # Examples
 ///
 /// ```rust
-/// use signalo::filters::fir::window::blackman::{Config as BlackmanConfig, Blackman};
+/// # #[cfg(any(feature = "libm", feature = "std"))] {
+/// use signalo::filters::fir::window::blackman::{Config, BlackmanArray};
 /// use signalo::traits::{Filter, WithConfig};
 ///
-/// let mut window = Blackman::<f32, 4>::with_config(BlackmanConfig::<f32, 4>::new());
+/// let mut window = BlackmanArray::<f32, 4>::with_config(Config::<[f32; 4]>::new());
 /// let output = window.filter(1.0);
 /// assert!((output - 0.0).abs() < 1e-5); // w[0] = 0
+/// # }
 /// ```
 #[derive(Clone, Debug)]
-pub struct Blackman<T, const N: usize> {
-    config: Config<T, N>,
+pub struct Blackman<T, C> {
+    config: Config<C>,
     state: State,
+    _pd: core::marker::PhantomData<T>,
 }
 
-impl<T, const N: usize> ConfigTrait for Blackman<T, N> {
-    type Config = Config<T, N>;
+/// A Blackman window backed by a const-generic array of weights.
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. The weight
+/// array lives entirely on the stack.
+pub type BlackmanArray<T, const N: usize> = Blackman<T, [T; N]>;
+
+/// A Blackman window backed by a heap-allocated [`Vec`](alloc::vec::Vec) of weights.
+///
+/// Requires the `alloc` feature. Use [`Blackman::from_parts`] to construct
+/// this variant, since the size is not known at compile time.
+#[cfg(feature = "alloc")]
+pub type BlackmanVec<T> = Blackman<T, alloc::vec::Vec<T>>;
+
+impl<T, C> Blackman<T, C>
+where
+    C: AsSlice<T>,
+{
+    /// Creates a [`Blackman`] window from a pre-built config.
+    ///
+    /// Use this constructor when the weight storage is not
+    /// `Default`-constructible, e.g. for [`BlackmanVec`] whose size is only
+    /// known at runtime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `config.weights.as_slice().len()` is zero.
+    pub fn from_parts(config: Config<C>) -> Self {
+        let n = config.weights.as_slice().len();
+        assert!(n > 0, "Blackman: window size N must be > 0");
+        Self {
+            config,
+            state: State::default(),
+            _pd: core::marker::PhantomData,
+        }
+    }
 }
 
-impl<T, const N: usize> StateTrait for Blackman<T, N> {
+impl<T, C> ConfigTrait for Blackman<T, C> {
+    type Config = Config<C>;
+}
+
+impl<T, C> StateTrait for Blackman<T, C> {
     type State = State;
 }
 
-impl<T, const N: usize> WithConfig for Blackman<T, N> {
+impl<T, const N: usize> WithConfig for BlackmanArray<T, N> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
@@ -108,67 +168,79 @@ impl<T, const N: usize> WithConfig for Blackman<T, N> {
         Self {
             config,
             state: State::default(),
+            _pd: core::marker::PhantomData,
         }
     }
 }
 
-impl<T, const N: usize> ConfigRef for Blackman<T, N> {
+impl<T, C> ConfigRef for Blackman<T, C> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, const N: usize> ConfigClone for Blackman<T, N>
+impl<T, C> ConfigClone for Blackman<T, C>
 where
-    Config<T, N>: Clone,
+    Config<C>: Clone,
 {
     fn config(&self) -> Self::Config {
         self.config.clone()
     }
 }
 
-impl<T, const N: usize> StateMut for Blackman<T, N> {
+impl<T, C> StateMut for Blackman<T, C> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Blackman<T, N> {
-    type Guts = (Config<T, N>, State);
+impl<T, C> HasGuts for Blackman<T, C> {
+    type Guts = (Config<C>, State);
 }
 
-impl<T, const N: usize> FromGuts for Blackman<T, N> {
+impl<T, C> FromGuts for Blackman<T, C>
+where
+    C: AsSlice<T>,
+{
     fn from_guts(guts: Self::Guts) -> Self {
-        assert!(N > 0, "Blackman: window size N must be > 0");
         let (config, state) = guts;
-        Self { config, state }
+        let n = config.weights.as_slice().len();
+        assert!(n > 0, "Blackman: window size N must be > 0");
+        Self {
+            config,
+            state,
+            _pd: core::marker::PhantomData,
+        }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Blackman<T, N> {
+impl<T, C> IntoGuts for Blackman<T, C> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }
 
-impl<T, const N: usize> Reset for Blackman<T, N> {
+impl<T, const N: usize> Reset for BlackmanArray<T, N> {
     fn reset(self) -> Self {
         Self::with_config(self.config)
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Blackman<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for BlackmanArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<T> for Blackman<T, N>
+impl<T, C> Filter<T> for Blackman<T, C>
 where
     T: Clone + core::ops::Mul<Output = T>,
+    C: AsSlice<T>,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let w = self.config.weights[self.state.k].clone();
-        self.state.k = (self.state.k + 1) % N;
+        let weights = self.config.weights.as_slice();
+        let n = weights.len();
+        let w = weights[self.state.k].clone();
+        self.state.k = (self.state.k + 1) % n;
         input * w
     }
 }
