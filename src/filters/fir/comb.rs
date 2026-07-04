@@ -11,9 +11,13 @@
 //!
 //! where D is the delay in samples. The feedforward path is always stable (FIR).
 
-use circular_buffer::CircularBuffer;
+use circular_buffer::FixedCircularBuffer;
 use num_traits::Num;
 
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
+
+use crate::storage::RingBuffer;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -48,19 +52,19 @@ where
 
 /// The feedforward comb filter's state.
 ///
-/// Contains a circular buffer for the input delay line (feedforward component).
+/// Contains a ring-buffer `R` for the input delay line (feedforward component).
 ///
-/// The `input_delay` is a [`CircularBuffer`] that starts empty and returns `None`
-/// for the first `D` pushes, naturally representing zero input history without pre-filling.
+/// The `input_delay` is a ring-buffer that starts empty and returns `None`
+/// for the first D pushes, naturally representing zero input history without pre-filling.
 #[derive(Clone)]
-pub struct State<T, const D: usize> {
-    /// Input delay line for feedforward component
-    pub input_delay: CircularBuffer<D, T>,
+pub struct State<R> {
+    /// Input delay line for feedforward component.
+    pub input_delay: R,
 }
 
-impl<T, const D: usize> core::fmt::Debug for State<T, D>
+impl<R> core::fmt::Debug for State<R>
 where
-    T: core::fmt::Debug,
+    R: core::fmt::Debug,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         f.debug_struct("State")
@@ -69,16 +73,52 @@ where
     }
 }
 
-/// A feedforward comb filter.
+/// A feedforward comb filter generic over delay-line storage `R`.
 ///
-/// The delay length `D` must be at least 1; `FeedforwardComb<T, 0>` is rejected at compile time.
+/// The delay length is determined by the capacity of the ring-buffer `R`.
+///
+/// # Type aliases
+///
+/// Prefer the concrete aliases for common use:
+/// - [`FeedforwardCombArray<T, D>`] — stack-allocated, `no_std`-friendly; delay `D` must be >= 1.
+/// - [`FeedforwardCombVec<T>`] — heap-allocated, requires the `alloc` feature.
 #[derive(Clone, Debug)]
-pub struct FeedforwardComb<T, const D: usize> {
+pub struct FeedforwardComb<T, R> {
     config: Config<T>,
-    state: State<T, D>,
+    state: State<R>,
 }
 
-impl<T, const D: usize> Default for FeedforwardComb<T, D>
+/// A feedforward comb filter backed by a const-generic [`FixedCircularBuffer`] delay line.
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. The delay length `D` must be
+/// at least 1; `FeedforwardCombArray<T, 0>` is rejected at compile time via [`WithConfig`].
+pub type FeedforwardCombArray<T, const D: usize> = FeedforwardComb<T, FixedCircularBuffer<T, D>>;
+
+/// A feedforward comb filter backed by a heap-allocated [`HeapCircularBuffer`] delay line.
+///
+/// Requires the `alloc` feature. Use [`FeedforwardComb::from_parts`] to construct this
+/// variant, since the delay buffer capacity must be known at runtime.
+#[cfg(feature = "alloc")]
+pub type FeedforwardCombVec<T> = FeedforwardComb<T, HeapCircularBuffer<T>>;
+
+impl<T, R> FeedforwardComb<T, R>
+where
+    R: RingBuffer<T>,
+{
+    /// Creates a [`FeedforwardComb`] filter from an already-constructed `config` and
+    /// `input_delay` ring-buffer.
+    ///
+    /// Use this constructor when the delay storage is not `Default`-constructible,
+    /// e.g. for [`FeedforwardCombVec`] whose capacity must be known at runtime.
+    pub fn from_parts(config: Config<T>, input_delay: R) -> Self {
+        Self {
+            config,
+            state: State { input_delay },
+        }
+    }
+}
+
+impl<T, const D: usize> Default for FeedforwardCombArray<T, D>
 where
     T: Clone + Num,
 {
@@ -87,15 +127,15 @@ where
     }
 }
 
-impl<T, const D: usize> ConfigTrait for FeedforwardComb<T, D> {
+impl<T, R> ConfigTrait for FeedforwardComb<T, R> {
     type Config = Config<T>;
 }
 
-impl<T, const D: usize> StateTrait for FeedforwardComb<T, D> {
-    type State = State<T, D>;
+impl<T, R> StateTrait for FeedforwardComb<T, R> {
+    type State = State<R>;
 }
 
-impl<T, const D: usize> WithConfig for FeedforwardComb<T, D>
+impl<T, const D: usize> WithConfig for FeedforwardCombArray<T, D>
 where
     T: Clone + Num,
 {
@@ -109,20 +149,20 @@ where
             );
         };
         let state = {
-            let input_delay = CircularBuffer::default();
+            let input_delay = FixedCircularBuffer::default();
             State { input_delay }
         };
         Self { config, state }
     }
 }
 
-impl<T, const D: usize> ConfigRef for FeedforwardComb<T, D> {
+impl<T, R> ConfigRef for FeedforwardComb<T, R> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, const D: usize> ConfigClone for FeedforwardComb<T, D>
+impl<T, R> ConfigClone for FeedforwardComb<T, R>
 where
     Config<T>: Clone,
 {
@@ -131,30 +171,30 @@ where
     }
 }
 
-impl<T, const D: usize> StateMut for FeedforwardComb<T, D> {
+impl<T, R> StateMut for FeedforwardComb<T, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const D: usize> HasGuts for FeedforwardComb<T, D> {
-    type Guts = (Config<T>, State<T, D>);
+impl<T, R> HasGuts for FeedforwardComb<T, R> {
+    type Guts = (Config<T>, State<R>);
 }
 
-impl<T, const D: usize> FromGuts for FeedforwardComb<T, D> {
+impl<T, R> FromGuts for FeedforwardComb<T, R> {
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }
 }
 
-impl<T, const D: usize> IntoGuts for FeedforwardComb<T, D> {
+impl<T, R> IntoGuts for FeedforwardComb<T, R> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }
 
-impl<T, const D: usize> Reset for FeedforwardComb<T, D>
+impl<T, const D: usize> Reset for FeedforwardCombArray<T, D>
 where
     T: Clone + Num,
 {
@@ -164,11 +204,12 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, const D: usize> ResetMut for FeedforwardComb<T, D> where Self: Reset {}
+impl<T, const D: usize> ResetMut for FeedforwardCombArray<T, D> where Self: Reset {}
 
-impl<T, const D: usize> Filter<T> for FeedforwardComb<T, D>
+impl<T, R> Filter<T> for FeedforwardComb<T, R>
 where
     T: Clone + Num,
+    R: RingBuffer<T>,
 {
     type Output = T;
 
@@ -196,7 +237,7 @@ mod tests {
 
     #[test]
     fn test_fir_comb_feedforward_only() {
-        let filter = FeedforwardComb::<f32, 2>::with_config(Config { feedforward: 1.0 });
+        let filter = FeedforwardCombArray::<f32, 2>::with_config(Config { feedforward: 1.0 });
 
         let input = [1.0, 0.0, 0.0, 0.0, 0.0];
         let expected = [1.0, 0.0, 1.0, 0.0, 0.0];
@@ -211,7 +252,7 @@ mod tests {
 
     #[test]
     fn test_feedforward_comb_zero_coefficient() {
-        let filter = FeedforwardComb::<f32, 2>::with_config(Config { feedforward: 0.0 });
+        let filter = FeedforwardCombArray::<f32, 2>::with_config(Config { feedforward: 0.0 });
 
         let input = [1.0, 2.0, 3.0, 4.0, 5.0];
 
@@ -225,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_feedforward_comb_reset() {
-        let mut filter = FeedforwardComb::<i32, 2>::with_config(Config { feedforward: 1 });
+        let mut filter = FeedforwardCombArray::<i32, 2>::with_config(Config { feedforward: 1 });
 
         filter.filter(10);
         filter.filter(20);
