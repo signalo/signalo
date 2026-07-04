@@ -12,6 +12,7 @@ use approx::assert_abs_diff_eq;
 use crate::traits::{ConfigRef, Filter};
 
 use super::*;
+use crate::filters::fir::convolve::ConvolveArray;
 use crate::util::test_fixtures::collatz as get_input;
 
 fn get_output_3() -> Vec<f32> {
@@ -134,7 +135,7 @@ macro_rules! sg_golden {
     ($name:ident, $n:literal, $expected:expr) => {
         #[test]
         fn $name() {
-            let filter: Convolve<f32, $n> = Convolve::savitzky_golay();
+            let filter: ConvolveArray<f32, $n> = ConvolveArray::savitzky_golay();
             let out: Vec<_> = get_input()
                 .iter()
                 .scan(filter, |f, &x| Some(f.filter(x)))
@@ -161,11 +162,11 @@ sg_golden!(sg_n13, 13, get_output_13());
 fn coefficients_sum_to_one() {
     // Savitzky-Golay smoothers must have unity DC gain: Σ h[k] = 1.
     // This is a defining property independent of the coefficient source.
-    let c3 = Convolve::<f32, 3>::savitzky_golay();
-    let c5 = Convolve::<f32, 5>::savitzky_golay();
-    let c7 = Convolve::<f32, 7>::savitzky_golay();
-    let c9 = Convolve::<f32, 9>::savitzky_golay();
-    let c13 = Convolve::<f32, 13>::savitzky_golay();
+    let c3 = ConvolveArray::<f32, 3>::savitzky_golay();
+    let c5 = ConvolveArray::<f32, 5>::savitzky_golay();
+    let c7 = ConvolveArray::<f32, 7>::savitzky_golay();
+    let c9 = ConvolveArray::<f32, 9>::savitzky_golay();
+    let c13 = ConvolveArray::<f32, 13>::savitzky_golay();
 
     {
         let sum: f32 = c3.config_ref().coefficients.iter().sum();
@@ -196,7 +197,7 @@ fn coefficients_match_scipy_reference_n5() {
     // Quadratic fit to 5 points, prediction at rightmost position.
     // Reference values to 6 decimal places:
     let expected: [f32; 5] = [0.6, 0.4, 0.2, 0.0, -0.2];
-    let filter = Convolve::<f32, 5>::savitzky_golay();
+    let filter = ConvolveArray::<f32, 5>::savitzky_golay();
     let actual = filter.config_ref().coefficients;
     for (a, e) in actual.iter().zip(expected.iter()) {
         assert_abs_diff_eq!(a, e, epsilon = 1e-5);
@@ -217,7 +218,7 @@ fn coefficients_match_scipy_reference_n7() {
         -0.07142857,
         -0.17857143,
     ];
-    let filter = Convolve::<f32, 7>::savitzky_golay();
+    let filter = ConvolveArray::<f32, 7>::savitzky_golay();
     let actual = filter.config_ref().coefficients;
     for (a, e) in actual.iter().zip(expected.iter()) {
         assert_abs_diff_eq!(a, e, epsilon = 1e-5);
@@ -240,7 +241,7 @@ fn coefficients_match_scipy_reference_n9() {
         -0.08888889,
         -0.15555556,
     ];
-    let filter = Convolve::<f32, 9>::savitzky_golay();
+    let filter = ConvolveArray::<f32, 9>::savitzky_golay();
     let actual = filter.config_ref().coefficients;
     for (a, e) in actual.iter().zip(expected.iter()) {
         assert_abs_diff_eq!(a, e, epsilon = 1e-5);

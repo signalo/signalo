@@ -36,7 +36,7 @@
 //!
 //! # Boundary effects
 //!
-//! See [`Convolve`] for cold-start behaviour: the tap buffer is pre-filled
+//! See [`ConvolveArray`] for cold-start behaviour: the tap buffer is pre-filled
 //! with `N` zeros, so the first `N − 1` outputs are biased by implicit
 //! zero-padding `x[n] = 0` for `n < 0`.
 //!
@@ -52,11 +52,11 @@
 //! # Coefficient ordering
 //!
 //! `h[0]` pairs with the newest sample (see
-//! [`Convolve::filter`](super::Convolve::filter)).
+//! [`ConvolveArray::filter`](super::ConvolveArray::filter)).
 
 use crate::traits::WithConfig;
 
-use super::{Config, Convolve};
+use super::{Config, ConvolveArray};
 
 /// Trait for first-order central-difference FIR filters.
 ///
@@ -64,9 +64,9 @@ use super::{Config, Convolve};
 /// derivative. These filters have exactly zero DC gain and produce per-sample
 /// differences (dy/dn). Multiply by the sample rate for a true dy/dt.
 ///
-/// This trait is implemented for `Convolve<T, N>` with `N ∈ {3, 5, 7, 9}`,
+/// This trait is implemented for `ConvolveArray<T, N>` with `N ∈ {3, 5, 7, 9}`,
 /// using pre-computed closed-form Fornberg tables. For higher odd `N` up to
-/// 19, use [`Convolve::central_difference_runtime()`] instead.
+/// 19, use [`ConvolveArray::central_difference_runtime()`] instead.
 pub trait FirDifferentiator: Sized {
     /// Returns a convolution filter with the Fornberg central-difference
     /// coefficients for the first derivative.
@@ -79,14 +79,14 @@ pub trait FirDifferentiator: Sized {
 macro_rules! central_difference_impl {
     ($width:expr => [$($num:literal / $den:literal),* $(,)?]) => {
         #[allow(clippy::cast_precision_loss)]
-        impl FirDifferentiator for Convolve<f32, $width> {
+        impl FirDifferentiator for ConvolveArray<f32, $width> {
             fn central_difference() -> Self {
                 Self::with_config(Config {
                     coefficients: [$($num as f32 / $den as f32),*]
                 })
             }
         }
-        impl FirDifferentiator for Convolve<f64, $width> {
+        impl FirDifferentiator for ConvolveArray<f64, $width> {
             fn central_difference() -> Self {
                 Self::with_config(Config {
                     coefficients: [$(f64::from($num) / f64::from($den)),*]
@@ -117,7 +117,7 @@ central_difference_impl!(9 => [
 
 macro_rules! central_difference_runtime_impl {
     ($float:ty) => {
-        impl<const N: usize> Convolve<$float, N> {
+        impl<const N: usize> ConvolveArray<$float, N> {
             /// Returns a convolution filter with Fornberg central-difference
             /// coefficients for the first derivative, computed at runtime for
             /// arbitrary odd `N` (3 ≤ N ≤ 19).
@@ -205,7 +205,7 @@ central_difference_runtime_impl!(f64);
 
 macro_rules! laplacian_impl {
     ($float:ty) => {
-        impl Convolve<$float, 3> {
+        impl ConvolveArray<$float, 3> {
             /// Returns a 3-tap Laplacian filter with coefficients `[1, -2, 1]`.
             ///
             /// The Laplacian approximates the second derivative. For a signal
@@ -227,7 +227,7 @@ laplacian_impl!(f64);
 
 macro_rules! second_central_difference_impl {
     ($float:ty) => {
-        impl Convolve<$float, 5> {
+        impl ConvolveArray<$float, 5> {
             /// Returns a 5-tap second-order central-difference filter
             /// approximating the second derivative.
             ///

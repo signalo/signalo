@@ -12,7 +12,7 @@
 
 use crate::traits::WithConfig;
 
-use super::convolve::{Config, Convolve};
+use super::convolve::{Config, ConvolveArray};
 
 /// Trait for Savitzky-Golay convolution filters.
 pub trait SavitzkyGolay: Sized {
@@ -23,14 +23,14 @@ pub trait SavitzkyGolay: Sized {
 macro_rules! savitzky_golay_impl_float {
     ($width:expr => [$($num:literal / $den:literal),* $(,)?]) => {
         #[allow(clippy::cast_precision_loss)]
-        impl SavitzkyGolay for Convolve<f32, $width> {
+        impl SavitzkyGolay for ConvolveArray<f32, $width> {
             fn savitzky_golay() -> Self {
                 Self::with_config(Config {
                     coefficients: [$($num as f32 / $den as f32),*]
                 })
             }
         }
-        impl SavitzkyGolay for Convolve<f64, $width> {
+        impl SavitzkyGolay for ConvolveArray<f64, $width> {
             fn savitzky_golay() -> Self {
                 Self::with_config(Config {
                     coefficients: [$(f64::from($num) / f64::from($den)),*]

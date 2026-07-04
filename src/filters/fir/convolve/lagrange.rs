@@ -43,7 +43,7 @@
 //! `half_sample_delay()` is pre-defined for even `M ∈ {4, 6, 8, 10}`. Odd `M`
 //! yields `(M−1)/2 ∈ ℤ` — that is an *integer* delay and should use
 //! [`Delay`](crate::filters::delay::Delay) (or
-//! [`Convolve::with_config`](crate::filters::fir::convolve::Convolve::with_config)
+//! [`ConvolveArray::with_config`](crate::filters::fir::convolve::ConvolveArray::with_config)
 //! with a unit impulse at the relevant tap).
 //!
 //! `h[k]` pairs with the newest sample, so `δ = 0` outputs `x[n]` and
@@ -57,7 +57,7 @@ use num_traits::Float;
 
 use crate::traits::WithConfig;
 
-use super::{Config, Convolve};
+use super::{Config, ConvolveArray};
 
 /// Trait for Lagrange fractional-delay FIR filters.
 ///
@@ -74,7 +74,7 @@ pub trait FractionalDelay<T>: Sized {
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
-impl<T: Float, const M: usize> FractionalDelay<T> for Convolve<T, M> {
+impl<T: Float, const M: usize> FractionalDelay<T> for ConvolveArray<T, M> {
     fn lagrange(delta: T) -> Self {
         assert!(
             M >= 2,
@@ -114,7 +114,7 @@ impl<T: Float, const M: usize> FractionalDelay<T> for Convolve<T, M> {
 macro_rules! half_sample_delay_impl {
     ($width:expr => [$($num:literal / $den:literal),* $(,)?]) => {
         // Denominators are powers of two; ratios are exact in IEEE 754.
-        impl Convolve<f32, $width> {
+        impl ConvolveArray<f32, $width> {
             /// Returns a convolution filter pre-configured with Lagrange
             /// half-sample-delay coefficients for `δ = (M−1)/2`.
             ///
@@ -133,7 +133,7 @@ macro_rules! half_sample_delay_impl {
                 Self::with_config(Config { coefficients })
             }
         }
-        impl Convolve<f64, $width> {
+        impl ConvolveArray<f64, $width> {
             /// Returns a convolution filter pre-configured with Lagrange
             /// half-sample-delay coefficients for `δ = (M−1)/2`.
             ///

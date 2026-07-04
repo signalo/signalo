@@ -29,16 +29,16 @@
 //! # Usage
 //!
 //! Each window family is a newtype wrapper (e.g. [`HannSinc`], [`BlackmanSinc`])
-//! implementing [`WindowedSinc`]. Construct a filter and convert to [`Convolve`]:
+//! implementing [`WindowedSinc`]. Construct a filter and convert to [`ConvolveArray`]:
 //!
 //! ```rust
 //! # #[cfg(any(feature = "libm", feature = "std"))] {
-//! use signalo::filters::fir::convolve::Convolve;
+//! use signalo::filters::fir::convolve::ConvolveArray;
 //! use signalo::filters::fir::convolve::windowed_sinc::{HannSinc, WindowedSinc};
 //! use signalo::traits::Filter;
 //!
 //! // 1 kHz low-pass at 44.1 kHz sample rate
-//! let mut lp = HannSinc::<Convolve<f64, 65>>::lowpass_hz(44_100.0, 1_000.0);
+//! let mut lp = HannSinc::<ConvolveArray<f64, 65>>::lowpass_hz(44_100.0, 1_000.0);
 //! let output = lp.filter(1.0);
 //! # }
 //! ```
@@ -46,7 +46,7 @@
 //! # Related
 //!
 //! - [`super::savitzky_golay`] for polynomial smoothing filters
-//! - [`super::Convolve::normalized`] for general coefficient normalisation
+//! - [`super::ConvolveArray::normalized`] for general coefficient normalisation
 //!
 //! # Coefficient ordering
 //!
@@ -56,7 +56,7 @@
 #[cfg(any(feature = "libm", feature = "std"))]
 use num_traits::Float;
 
-pub(crate) use crate::filters::fir::convolve::Convolve;
+pub(crate) use crate::filters::fir::convolve::ConvolveArray;
 
 #[allow(unused_imports)]
 pub(crate) use crate::traits::WithConfig;
@@ -173,21 +173,21 @@ pub struct KaiserSinc<C>(pub C);
 
 macro_rules! impl_into_inner {
     ($ty:ident) => {
-        impl<T, const N: usize> core::ops::Deref for $ty<Convolve<T, N>> {
-            type Target = Convolve<T, N>;
+        impl<T, const N: usize> core::ops::Deref for $ty<ConvolveArray<T, N>> {
+            type Target = ConvolveArray<T, N>;
             fn deref(&self) -> &Self::Target {
                 &self.0
             }
         }
 
-        impl<T, const N: usize> core::ops::DerefMut for $ty<Convolve<T, N>> {
+        impl<T, const N: usize> core::ops::DerefMut for $ty<ConvolveArray<T, N>> {
             fn deref_mut(&mut self) -> &mut Self::Target {
                 &mut self.0
             }
         }
 
-        impl<T, const N: usize> From<$ty<Convolve<T, N>>> for Convolve<T, N> {
-            fn from(wrapper: $ty<Convolve<T, N>>) -> Self {
+        impl<T, const N: usize> From<$ty<ConvolveArray<T, N>>> for ConvolveArray<T, N> {
+            fn from(wrapper: $ty<ConvolveArray<T, N>>) -> Self {
                 wrapper.0
             }
         }
@@ -206,7 +206,7 @@ impl_into_inner!(KaiserSinc);
 // MARK: - KaiserSinc with custom β
 
 #[cfg(any(feature = "libm", feature = "std"))]
-impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
+impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<ConvolveArray<T, N>> {
     /// Create a lowpass Kaiser-windowed sinc filter with custom shape parameter β.
     ///
     /// A larger β produces stronger stopband attenuation and a wider transition band.
@@ -222,7 +222,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
     pub fn lowpass_with_beta(beta: T, fc: T) -> Self {
         assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
         let coeffs = sinc_lowpass::<T, N>(fc, kaiser(beta), true);
-        Self(Convolve::with_config(Config {
+        Self(ConvolveArray::with_config(Config {
             coefficients: coeffs,
         }))
     }
@@ -247,7 +247,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
     pub fn highpass_with_beta(beta: T, fc: T) -> Self {
         assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
         let coeffs = sinc_highpass::<T, N>(fc, kaiser(beta), true);
-        Self(Convolve::with_config(Config {
+        Self(ConvolveArray::with_config(Config {
             coefficients: coeffs,
         }))
     }
@@ -264,7 +264,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
     pub fn bandpass_with_beta(beta: T, f_lo: T, f_hi: T) -> Self {
         assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
         let coeffs = sinc_bandpass::<T, N>(f_lo, f_hi, kaiser(beta), true);
-        Self(Convolve::with_config(Config {
+        Self(ConvolveArray::with_config(Config {
             coefficients: coeffs,
         }))
     }
@@ -281,7 +281,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<Convolve<T, N>> {
     pub fn bandstop_with_beta(beta: T, f_lo: T, f_hi: T) -> Self {
         assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
         let coeffs = sinc_bandstop::<T, N>(f_lo, f_hi, kaiser(beta), true);
-        Self(Convolve::with_config(Config {
+        Self(ConvolveArray::with_config(Config {
             coefficients: coeffs,
         }))
     }
@@ -378,60 +378,60 @@ macro_rules! impl_windowed_sinc {
     ($ty:ident, $win:expr) => {
         #[cfg(any(feature = "libm", feature = "std"))]
         impl<T: Float + core::fmt::Debug, const N: usize> WindowedSinc<T, N>
-            for $ty<Convolve<T, N>>
+            for $ty<ConvolveArray<T, N>>
         {
             fn lowpass(fc: T) -> Self {
                 let coeffs = sinc_lowpass::<T, N>(fc, $win, true);
-                Self(Convolve::with_config(Config {
+                Self(ConvolveArray::with_config(Config {
                     coefficients: coeffs,
                 }))
             }
 
             fn lowpass_unnormalized(fc: T) -> Self {
                 let coeffs = sinc_lowpass::<T, N>(fc, $win, false);
-                Self(Convolve::with_config(Config {
+                Self(ConvolveArray::with_config(Config {
                     coefficients: coeffs,
                 }))
             }
 
             fn highpass(fc: T) -> Self {
                 let coeffs = sinc_highpass::<T, N>(fc, $win, true);
-                Self(Convolve::with_config(Config {
+                Self(ConvolveArray::with_config(Config {
                     coefficients: coeffs,
                 }))
             }
 
             fn highpass_unnormalized(fc: T) -> Self {
                 let coeffs = sinc_highpass::<T, N>(fc, $win, false);
-                Self(Convolve::with_config(Config {
+                Self(ConvolveArray::with_config(Config {
                     coefficients: coeffs,
                 }))
             }
 
             fn bandpass(f_lo: T, f_hi: T) -> Self {
                 let coeffs = sinc_bandpass::<T, N>(f_lo, f_hi, $win, true);
-                Self(Convolve::with_config(Config {
+                Self(ConvolveArray::with_config(Config {
                     coefficients: coeffs,
                 }))
             }
 
             fn bandpass_unnormalized(f_lo: T, f_hi: T) -> Self {
                 let coeffs = sinc_bandpass::<T, N>(f_lo, f_hi, $win, false);
-                Self(Convolve::with_config(Config {
+                Self(ConvolveArray::with_config(Config {
                     coefficients: coeffs,
                 }))
             }
 
             fn bandstop(f_lo: T, f_hi: T) -> Self {
                 let coeffs = sinc_bandstop::<T, N>(f_lo, f_hi, $win, true);
-                Self(Convolve::with_config(Config {
+                Self(ConvolveArray::with_config(Config {
                     coefficients: coeffs,
                 }))
             }
 
             fn bandstop_unnormalized(f_lo: T, f_hi: T) -> Self {
                 let coeffs = sinc_bandstop::<T, N>(f_lo, f_hi, $win, false);
-                Self(Convolve::with_config(Config {
+                Self(ConvolveArray::with_config(Config {
                     coefficients: coeffs,
                 }))
             }

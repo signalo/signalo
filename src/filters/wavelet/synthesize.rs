@@ -18,31 +18,31 @@ use crate::traits::{
 use crate::traits::ResetMut;
 
 use super::Decomposition;
-use crate::filters::fir::convolve::{Config as ConvolveConfig, Convolve};
+use crate::filters::fir::convolve::{Config as ConvolveConfig, ConvolveArray};
 
 /// The wavelet filter's configuration.
 #[derive(Clone, Debug)]
 pub struct Config<T, const N: usize> {
     /// The low-pass convolution' configuration.
-    pub low_pass: ConvolveConfig<T, N>,
+    pub low_pass: ConvolveConfig<[T; N]>,
     /// The high-pass convolution' configuration.
-    pub high_pass: ConvolveConfig<T, N>,
+    pub high_pass: ConvolveConfig<[T; N]>,
 }
 
 /// A wavelet filter's internal state.
 #[derive(Clone, Debug)]
 pub struct State<T, const N: usize> {
     /// Low-pass convolution.
-    pub low_pass: Convolve<T, N>,
+    pub low_pass: ConvolveArray<T, N>,
     /// High-pass convolution.
-    pub high_pass: Convolve<T, N>,
+    pub high_pass: ConvolveArray<T, N>,
 }
 
 /// A wavelet filter.
 ///
 /// # Complexity
 ///
-/// - **Time per sample:** O(N); two independent `Convolve<T, N>` calls, each O(N).
+/// - **Time per sample:** O(N); two independent `ConvolveArray<T, N>` calls, each O(N).
 /// - **Space:** O(N); two tap buffers of N elements each.
 #[derive(Clone, Debug)]
 pub struct Synthesize<T, const N: usize> {
@@ -65,8 +65,8 @@ where
 
     fn with_config(config: Self::Config) -> Self::Output {
         let state = {
-            let low_pass = Convolve::with_config(config.low_pass);
-            let high_pass = Convolve::with_config(config.high_pass);
+            let low_pass = ConvolveArray::with_config(config.low_pass);
+            let high_pass = ConvolveArray::with_config(config.high_pass);
             State {
                 low_pass,
                 high_pass,
@@ -78,7 +78,7 @@ where
 
 impl<T, const N: usize> ConfigClone for Synthesize<T, N>
 where
-    Convolve<T, N>: ConfigClone<Config = ConvolveConfig<T, N>>,
+    ConvolveArray<T, N>: ConfigClone<Config = ConvolveConfig<[T; N]>>,
 {
     fn config(&self) -> Self::Config {
         let low_pass = self.state.low_pass.config();

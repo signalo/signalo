@@ -14,10 +14,11 @@ use super::*;
 
 // MARK: Integer-delta identity tests
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn integer_delta_identity_m3() {
     for delta in 0..=2 {
-        let filter = Convolve::<f32, 3>::lagrange(delta as f32);
+        let filter = ConvolveArray::<f32, 3>::lagrange(delta as f32);
         let c = filter.config_ref().coefficients;
 
         for (k, &val) in c.iter().enumerate() {
@@ -30,10 +31,11 @@ fn integer_delta_identity_m3() {
     }
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn integer_delta_identity_m5() {
     for delta in 0..=4 {
-        let filter = Convolve::<f32, 5>::lagrange(delta as f32);
+        let filter = ConvolveArray::<f32, 5>::lagrange(delta as f32);
         let c = filter.config_ref().coefficients;
 
         for (k, &val) in c.iter().enumerate() {
@@ -48,11 +50,12 @@ fn integer_delta_identity_m5() {
 
 // MARK: Sum-to-one tests
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn sum_to_one_m4() {
     for delta_int in 0..=10 {
         let delta = delta_int as f32 * 0.3;
-        let filter = Convolve::<f32, 4>::lagrange(delta);
+        let filter = ConvolveArray::<f32, 4>::lagrange(delta);
         let coeffs = filter.config_ref().coefficients;
         let sum: f32 = coeffs.iter().sum();
 
@@ -60,11 +63,12 @@ fn sum_to_one_m4() {
     }
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn sum_to_one_m6() {
     for delta_int in 0..=16 {
         let delta = delta_int as f32 * 0.3;
-        let filter = Convolve::<f32, 6>::lagrange(delta);
+        let filter = ConvolveArray::<f32, 6>::lagrange(delta);
         let coeffs = filter.config_ref().coefficients;
         let sum: f32 = coeffs.iter().sum();
 
@@ -72,20 +76,22 @@ fn sum_to_one_m6() {
     }
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn sum_to_one_f64_edge() {
     // Test near edges where ill-conditioning is worst.
-    let filter1 = Convolve::<f64, 8>::lagrange(0.001);
+    let filter1 = ConvolveArray::<f64, 8>::lagrange(0.001);
     let sum1: f64 = filter1.config_ref().coefficients.iter().sum();
     assert_abs_diff_eq!(sum1, 1.0, epsilon = 1e-10);
 
-    let filter2 = Convolve::<f64, 8>::lagrange(6.999);
+    let filter2 = ConvolveArray::<f64, 8>::lagrange(6.999);
     let sum2: f64 = filter2.config_ref().coefficients.iter().sum();
     assert_abs_diff_eq!(sum2, 1.0, epsilon = 1e-10);
 }
 
 // MARK: Linear-signal preservation
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn linear_signal_preservation() {
     // x[n] = a + b*n, output should be a + b*(n - delta) after warm-up.
@@ -93,7 +99,7 @@ fn linear_signal_preservation() {
     let b = 2.5f32;
     let delta = 1.5f32;
     let m: usize = 4;
-    let mut filter = Convolve::<f32, 4>::lagrange(delta);
+    let mut filter = ConvolveArray::<f32, 4>::lagrange(delta);
 
     for n in 0..=20 {
         let x = a + b * (n as f32);
@@ -106,9 +112,10 @@ fn linear_signal_preservation() {
     }
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn lagrange_delta_0p3_matches_x_minus_0p3() {
-    let mut f = Convolve::<f64, 4>::lagrange(0.3);
+    let mut f = ConvolveArray::<f64, 4>::lagrange(0.3);
     for n in 0..40 {
         let x = f64::from(n);
         let y = f.filter(x);
@@ -132,7 +139,7 @@ fn phase_lag_slow_sinusoid() {
     let m: usize = 6;
     let n_samples = 10_000;
 
-    let mut filter = Convolve::<f64, 6>::lagrange(delta);
+    let mut filter = ConvolveArray::<f64, 6>::lagrange(delta);
 
     // Warm up
     for n in 0..(m * 4) {
@@ -164,9 +171,10 @@ fn phase_lag_slow_sinusoid() {
 
 // MARK: Smoke test
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn smoke() {
-    let filter = Convolve::<f32, 4>::lagrange(1.5);
+    let filter = ConvolveArray::<f32, 4>::lagrange(1.5);
     let input = collatz();
     let output: Vec<_> = input
         .iter()
@@ -187,10 +195,11 @@ fn smoke() {
 
 // MARK: f64 precision
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn f64_half_sample_matches_f32() {
-    let filter_f32 = Convolve::<f32, 4>::lagrange(1.5);
-    let filter_f64 = Convolve::<f64, 4>::lagrange(1.5);
+    let filter_f32 = ConvolveArray::<f32, 4>::lagrange(1.5);
+    let filter_f64 = ConvolveArray::<f64, 4>::lagrange(1.5);
 
     let c32 = filter_f32.config_ref().coefficients;
     let c64 = filter_f64.config_ref().coefficients;
@@ -204,7 +213,7 @@ fn f64_half_sample_matches_f32() {
 
 #[test]
 fn half_sample_m4_golden() {
-    let filter = Convolve::<f32, 4>::half_sample_delay();
+    let filter = ConvolveArray::<f32, 4>::half_sample_delay();
     let c = filter.config_ref().coefficients;
 
     assert_abs_diff_eq!(c[0], -0.0625, epsilon = f32::EPSILON);
@@ -213,10 +222,11 @@ fn half_sample_m4_golden() {
     assert_abs_diff_eq!(c[3], -0.0625, epsilon = f32::EPSILON);
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn half_sample_m4_matches_runtime() {
-    let table = Convolve::<f32, 4>::half_sample_delay();
-    let runtime = Convolve::<f32, 4>::lagrange(1.5);
+    let table = ConvolveArray::<f32, 4>::half_sample_delay();
+    let runtime = ConvolveArray::<f32, 4>::lagrange(1.5);
 
     let ct = table.config_ref().coefficients;
     let cr = runtime.config_ref().coefficients;
@@ -226,10 +236,11 @@ fn half_sample_m4_matches_runtime() {
     }
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn half_sample_m6_matches_runtime() {
-    let table = Convolve::<f64, 6>::half_sample_delay();
-    let runtime = Convolve::<f64, 6>::lagrange(2.5);
+    let table = ConvolveArray::<f64, 6>::half_sample_delay();
+    let runtime = ConvolveArray::<f64, 6>::lagrange(2.5);
 
     let ct = table.config_ref().coefficients;
     let cr = runtime.config_ref().coefficients;
@@ -239,10 +250,11 @@ fn half_sample_m6_matches_runtime() {
     }
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn half_sample_m10_f32_bit_exact_with_runtime() {
-    let table = Convolve::<f32, 10>::half_sample_delay();
-    let runtime = Convolve::<f32, 10>::lagrange(4.5);
+    let table = ConvolveArray::<f32, 10>::half_sample_delay();
+    let runtime = ConvolveArray::<f32, 10>::lagrange(4.5);
     for (a, b) in table
         .config_ref()
         .coefficients
@@ -259,14 +271,16 @@ fn half_sample_m10_f32_bit_exact_with_runtime() {
 
 // MARK: Out-of-range delta panic tests
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 #[should_panic(expected = "delta must be non-negative")]
 fn lagrange_delta_negative_panics() {
-    let _ = Convolve::<f64, 3>::lagrange(-0.1);
+    let _ = ConvolveArray::<f64, 3>::lagrange(-0.1);
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 #[should_panic(expected = "delta must be <= M-1")]
 fn lagrange_delta_too_large_panics() {
-    let _ = Convolve::<f64, 3>::lagrange(3.0);
+    let _ = ConvolveArray::<f64, 3>::lagrange(3.0);
 }

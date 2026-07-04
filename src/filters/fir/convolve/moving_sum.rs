@@ -27,7 +27,7 @@ use num_traits::Num;
 
 use crate::traits::WithConfig;
 
-use super::{Config, Convolve};
+use super::{Config, ConvolveArray};
 
 /// Trait for moving-sum FIR convolution filters.
 pub trait MovingSum: Sized {
@@ -36,7 +36,7 @@ pub trait MovingSum: Sized {
     fn moving_sum() -> Self;
 }
 
-impl<T, const N: usize> MovingSum for Convolve<T, N>
+impl<T, const N: usize> MovingSum for ConvolveArray<T, N>
 where
     T: Num + Clone,
 {
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn coefficients_are_all_ones() {
-        let filter = Convolve::<f32, 5>::moving_sum();
+        let filter = ConvolveArray::<f32, 5>::moving_sum();
         let coeffs = filter.config_ref().coefficients;
 
         for c in coeffs {
@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn coefficient_sum_equals_n() {
-        let filter = Convolve::<f32, 5>::moving_sum();
+        let filter = ConvolveArray::<f32, 5>::moving_sum();
         let coeffs = filter.config_ref().coefficients;
         let sum: f32 = coeffs.iter().sum();
 
@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn constant_signal_response() {
         // Feed constant 1.0 repeatedly; after warm-up, output → N.
-        let mut filter = Convolve::<f32, 4>::moving_sum();
+        let mut filter = ConvolveArray::<f32, 4>::moving_sum();
 
         for _ in 0..4 {
             let _ = filter.filter(1.0);
@@ -99,7 +99,7 @@ mod tests {
     fn matches_mean_times_n() {
         // MovingSum<N> / N == arithmetic average of the last N samples.
         // Verify on a known sequence in steady state.
-        let mut filter = Convolve::<f32, 3>::moving_sum();
+        let mut filter = ConvolveArray::<f32, 3>::moving_sum();
 
         // Warm up with three 4.0 samples
         for _ in 0..3 {
@@ -112,7 +112,7 @@ mod tests {
         assert_abs_diff_eq!(out / 3.0, 4.0, epsilon = f32::EPSILON);
 
         // With values 2.0, 4.0, 6.0 the sum should be 12.0, avg 4.0
-        let mut filter2 = Convolve::<f32, 3>::moving_sum();
+        let mut filter2 = ConvolveArray::<f32, 3>::moving_sum();
 
         for _ in 0..3 {
             let _ = filter2.filter(0.0);
@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn smoke() {
         // Collatz sequence smoke test — compare against a golden vector.
-        let filter = Convolve::<f32, 3>::moving_sum();
+        let filter = ConvolveArray::<f32, 3>::moving_sum();
         let input = collatz();
         let output: Vec<_> = input
             .iter()
@@ -147,7 +147,7 @@ mod tests {
 
     #[test]
     fn integer_moving_sum() {
-        let mut filter = Convolve::<i32, 3>::moving_sum();
+        let mut filter = ConvolveArray::<i32, 3>::moving_sum();
 
         assert_eq!(filter.filter(1), 1);
         assert_eq!(filter.filter(2), 3);

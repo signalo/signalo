@@ -13,7 +13,7 @@ use crate::util::test_fixtures::collatz as get_input;
 #[test]
 #[should_panic(expected = "window size N must be > 0")]
 fn zero_window_panics() {
-    let _ = Convolve::<f32, 0>::with_config(Config { coefficients: [] });
+    let _ = ConvolveArray::<f32, 0>::with_config(Config { coefficients: [] });
 }
 
 fn get_output() -> Vec<f32> {
@@ -28,8 +28,8 @@ fn get_output() -> Vec<f32> {
 #[test]
 fn test() {
     // Effectively calculates the derivative:
-    let filter = Convolve::with_config(Config {
-        coefficients: [1.000, -1.000],
+    let filter = ConvolveArray::with_config(Config {
+        coefficients: [1.000_f32, -1.000],
     });
     let input = get_input();
     let output: Vec<_> = input
@@ -44,9 +44,9 @@ fn test_filter_buffer_filling() {
     // With zero-padded cold-start (tap buffer pre-filled with zeros),
     // the first N outputs are partial convolutions.
     let config = Config {
-        coefficients: [0.25, 0.25, 0.25, 0.25],
+        coefficients: [0.25_f32, 0.25, 0.25, 0.25],
     };
-    let mut filter = Convolve::<f32, 4>::with_config(config);
+    let mut filter = ConvolveArray::<f32, 4>::with_config(config);
 
     // taps=[0,0,0,0] → push(4.0) → taps=[0,0,0,4.0] → sum=1.0
     let output1 = filter.filter(4.0);
@@ -60,7 +60,7 @@ fn test_filter_buffer_filling() {
 #[test]
 fn cold_start_is_zero_padded_partial_convolution() {
     let h = [0.5_f32, -0.25, 0.125];
-    let mut filter = Convolve::<f32, 3>::with_config(Config { coefficients: h });
+    let mut filter = ConvolveArray::<f32, 3>::with_config(Config { coefficients: h });
     assert!((filter.filter(4.0) - 0.5 * 4.0).abs() < 1e-7);
     assert!((filter.filter(8.0) - (0.5 * 8.0 + -0.25 * 4.0)).abs() < 1e-7);
     assert!((filter.filter(2.0) - (0.5 * 2.0 + -0.25 * 8.0 + 0.125 * 4.0)).abs() < 1e-7);
@@ -72,7 +72,7 @@ fn impulse_response() {
     // with zero-padding (x[n] = 0 for n < 0).
     // The impulse response must reproduce h[0], h[1], …, h[N−1] exactly.
     let h = [0.1, 0.2, 0.3, 0.4, 0.5_f32];
-    let mut filter = Convolve::<f32, 5>::with_config(Config { coefficients: h });
+    let mut filter = ConvolveArray::<f32, 5>::with_config(Config { coefficients: h });
     let response: Vec<f32> = [1.0_f32]
         .into_iter()
         .chain(core::iter::repeat(0.0).take(h.len()))
@@ -91,7 +91,7 @@ fn impulse_response() {
 fn integer_convolution() {
     // Integer convolution must work without overflow surprises.
     // 2-tap moving sum: output(n) = x[n] + x[n-1]
-    let mut filter = Convolve::<i32, 2>::with_config(Config {
+    let mut filter = ConvolveArray::<i32, 2>::with_config(Config {
         coefficients: [1, 1],
     });
     // taps=[0,0], push(4): taps=[0,4], output = 0*1 + 4*1 = 4
@@ -106,19 +106,21 @@ fn integer_convolution() {
     assert_eq!(filter2.filter(2), 3);
 }
 
+#[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 #[should_panic(expected = "denominator magnitude")]
 fn tiny_sum_rejected() {
-    let _ = Convolve::<f32, 3>::normalized(Config {
+    let _ = ConvolveArray::<f32, 3>::normalized(Config {
         coefficients: [1.0, -1.0, f32::from_bits(1)],
     });
 }
 
 macro_rules! normalized_case {
     ($name:ident, $n:literal, $input:expr, $expected:expr) => {
+        #[cfg(any(feature = "libm", feature = "std"))]
         #[test]
         fn $name() {
-            let filter = Convolve::<f32, $n>::normalized(Config {
+            let filter = ConvolveArray::<f32, $n>::normalized(Config {
                 coefficients: $input,
             });
             let c = filter.config_ref().coefficients;
@@ -137,3 +139,45 @@ normalized_case!(
 );
 normalized_case!(normalized_negative, 2, [-1.0, 0.5], [2.0, -1.0]);
 normalized_case!(normalized_zero_sum, 3, [1.0, -1.0, 0.0], [1.0, -1.0, 0.0]);
+
+// ---------------------------------------------------------------------------
+// Backend-equivalence: ConvolveArray vs ConvolveVec must produce identical output
+// ---------------------------------------------------------------------------
+
+/// Verifies that `ConvolveArray` and `ConvolveVec` produce numerically identical
+/// results when given the same coefficients and input sequence.
+///
+/// Both filters are fed the same 10-sample sequence and the per-sample outputs
+/// are compared with `assert_abs_diff_eq!` at epsilon 1e-6.  Any divergence
+/// here points to a construction or iteration-order bug in the generic `filter`
+/// implementation (Task 5 contract).
+#[cfg(feature = "alloc")]
+#[test]
+fn array_and_vec_backends_are_equivalent() {
+    use circular_buffer::HeapCircularBuffer;
+
+    use crate::traits::{Filter, WithConfig};
+
+    // 4-tap low-pass FIR (box average)
+    let coeffs: [f32; 4] = [0.25, 0.25, 0.25, 0.25];
+
+    // ConvolveArray — stack-allocated
+    let mut array_filter = ConvolveArray::<f32, 4>::with_config(Config {
+        coefficients: coeffs,
+    });
+
+    // ConvolveVec — heap-allocated; capacity must match coefficient count
+    let taps = HeapCircularBuffer::<f32>::with_capacity(4);
+    let vec_config = Config {
+        coefficients: alloc::vec![0.25_f32, 0.25, 0.25, 0.25],
+    };
+    let mut vec_filter = ConvolveVec::<f32>::from_parts(vec_config, taps);
+
+    let input: [f32; 10] = [1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0];
+
+    for &x in &input {
+        let array_out = array_filter.filter(x);
+        let vec_out = vec_filter.filter(x);
+        assert_abs_diff_eq!(array_out, vec_out, epsilon = 1e-6);
+    }
+}
