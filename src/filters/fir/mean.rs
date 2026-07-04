@@ -6,31 +6,51 @@
 
 use core::fmt;
 
-use circular_buffer::CircularBuffer;
+use circular_buffer::FixedCircularBuffer;
 use num_traits::{Num, Zero};
 
+use crate::storage::RingBuffer;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
-    Filter, Reset, State as StateTrait, StateMut,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
+
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
 
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
+/// Configuration for a [`Mean`] filter.
+///
+/// This type is a unit struct because all mean-filter parameters are
+/// encoded in the type system (window size `N` for the `*Array` aliases,
+/// or the capacity of the supplied ring-buffer). It exists so that
+/// [`Mean`] can satisfy the [`WithConfig`] and related config traits
+/// uniformly with other filters.
+#[derive(Clone, Debug, Default)]
+pub struct Config;
+
 /// The mean filter's state.
+///
+/// Generic over the ring-buffer backend `R` that stores the tap window.
+/// Use [`MeanArray`] for stack-allocated tap storage or [`MeanVec`] for
+/// heap-allocated tap storage.
 #[derive(Clone)]
-pub struct State<T, const N: usize> {
+pub struct State<T, R> {
     /// The current mean value.
     pub mean: Option<T>,
     /// The current taps buffer.
-    pub taps: CircularBuffer<N, T>,
-    /// The current weight.
+    pub taps: R,
+    /// The current weight (number of samples accumulated so far, as `T`).
     pub weight: T,
 }
 
-impl<T, const N: usize> fmt::Debug for State<T, N>
+impl<T, R> fmt::Debug for State<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -41,7 +61,15 @@ where
     }
 }
 
-/// A mean filter producing the moving median over a given signal.
+/// A mean filter producing the moving average over a given signal.
+///
+/// # Storage
+///
+/// The tap ring-buffer backend is selected by the `R` type parameter.
+/// Prefer the concrete aliases for common use:
+///
+/// - [`MeanArray<T, N>`] — stack-allocated, `no_std`-friendly.
+/// - [`MeanVec<T>`] — heap-allocated, requires the `alloc` feature.
 ///
 /// # Complexity
 ///
@@ -49,77 +77,158 @@ where
 ///   prevent floating-point drift); O(1) during the initial N-sample warm-up.
 /// - **Space:** O(N); circular buffer of N samples plus scalar accumulators.
 #[derive(Clone)]
-pub struct Mean<T, const N: usize> {
-    state: State<T, N>,
+pub struct Mean<T, R> {
+    config: Config,
+    state: State<T, R>,
 }
 
-impl<T, const N: usize> Default for Mean<T, N>
+/// A mean filter backed by a const-generic [`FixedCircularBuffer`] tap buffer.
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. The tap
+/// ring-buffer lives entirely on the stack.
+pub type MeanArray<T, const N: usize> = Mean<T, FixedCircularBuffer<T, N>>;
+
+/// A mean filter backed by a heap-allocated [`HeapCircularBuffer`] tap buffer.
+///
+/// Requires the `alloc` feature. Use [`Mean::from_parts`] to construct
+/// this variant, since the tap buffer cannot be `Default`-constructed without
+/// knowing the desired capacity at compile time.
+#[cfg(feature = "alloc")]
+pub type MeanVec<T> = Mean<T, HeapCircularBuffer<T>>;
+
+impl<T, const N: usize> Default for MeanArray<T, N>
 where
     T: Zero,
 {
     fn default() -> Self {
         assert!(N > 0, "Mean: window size N must be > 0");
-        let state = {
-            let mean = None;
-            let taps = CircularBuffer::default();
-            let weight = T::zero();
-            State { mean, taps, weight }
+        let state = State {
+            mean: None,
+            taps: FixedCircularBuffer::new(),
+            weight: T::zero(),
         };
-        Self { state }
+        Self {
+            config: Config,
+            state,
+        }
     }
 }
 
-impl<T, const N: usize> fmt::Debug for Mean<T, N>
+impl<T, R> fmt::Debug for Mean<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Mean").field("state", &self.state).finish()
     }
 }
 
-impl<T, const N: usize> StateTrait for Mean<T, N> {
-    type State = State<T, N>;
+impl<T, R> Mean<T, R>
+where
+    R: RingBuffer<T>,
+{
+    /// Creates a [`Mean`] filter from an already-constructed `taps` ring-buffer.
+    ///
+    /// Use this constructor when the tap storage is not `Default`-constructible,
+    /// e.g. for [`MeanVec`] whose capacity must be known at runtime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `taps.capacity()` is zero.
+    pub fn from_parts(config: Config, taps: R) -> Self
+    where
+        T: Zero,
+    {
+        assert!(
+            taps.capacity() > 0,
+            "Mean: window size (taps capacity) must be > 0"
+        );
+        let state = State {
+            mean: None,
+            taps,
+            weight: T::zero(),
+        };
+        Self { config, state }
+    }
 }
 
-impl<T, const N: usize> StateMut for Mean<T, N> {
+impl<T, R> ConfigTrait for Mean<T, R> {
+    type Config = Config;
+}
+
+impl<T, R> StateTrait for Mean<T, R> {
+    type State = State<T, R>;
+}
+
+impl<T, const N: usize> WithConfig for MeanArray<T, N>
+where
+    T: Zero,
+{
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        assert!(N > 0, "Mean: window size N must be > 0");
+        let state = State {
+            mean: None,
+            taps: FixedCircularBuffer::new(),
+            weight: T::zero(),
+        };
+        Self { config, state }
+    }
+}
+
+impl<T, R> ConfigRef for Mean<T, R> {
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl<T, R> ConfigClone for Mean<T, R> {
+    fn config(&self) -> Self::Config {
+        self.config.clone()
+    }
+}
+
+impl<T, R> StateMut for Mean<T, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Mean<T, N> {
-    type Guts = State<T, N>;
+impl<T, R> HasGuts for Mean<T, R> {
+    type Guts = (Config, State<T, R>);
 }
 
-impl<T, const N: usize> FromGuts for Mean<T, N> {
+impl<T, R> FromGuts for Mean<T, R> {
     fn from_guts(guts: Self::Guts) -> Self {
-        let state = guts;
-        Self { state }
+        let (config, state) = guts;
+        Self { config, state }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Mean<T, N> {
+impl<T, R> IntoGuts for Mean<T, R> {
     fn into_guts(self) -> Self::Guts {
-        self.state
+        (self.config, self.state)
     }
 }
 
-impl<T, const N: usize> Reset for Mean<T, N>
+impl<T, const N: usize> Reset for MeanArray<T, N>
 where
     T: Zero,
 {
     fn reset(self) -> Self {
-        Self::default()
+        Self::with_config(self.config)
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Mean<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for MeanArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<T> for Mean<T, N>
+impl<T, R> Filter<T> for Mean<T, R>
 where
     T: Clone + Num,
+    R: RingBuffer<T>,
 {
     type Output = T;
 
@@ -158,7 +267,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "window size N must be > 0")]
     fn zero_window_panics() {
-        let _: Mean<f32, 0> = Mean::default();
+        let _: MeanArray<f32, 0> = MeanArray::default();
     }
 
     fn get_input() -> Vec<f32> {
@@ -182,7 +291,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Mean<f32, 3> = Mean::default();
+        let filter: MeanArray<f32, 3> = MeanArray::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
@@ -194,7 +303,7 @@ mod tests {
 
     #[test]
     fn test_non_zero_start() {
-        let filter: Mean<f32, 3> = Mean::default();
+        let filter: MeanArray<f32, 3> = MeanArray::default();
         let inputs = [10.0, 20.0, 30.0];
         let expected_outputs = vec![10.0, 15.0, 20.0];
         let outputs: Vec<_> = inputs
@@ -210,7 +319,7 @@ mod tests {
 
     #[test]
     fn no_float_drift_over_long_run() {
-        let mut filter: Mean<f64, 4> = Mean::default();
+        let mut filter: MeanArray<f64, 4> = MeanArray::default();
         for _ in 0..1_000_000 {
             filter.filter(1.0);
             filter.filter(3.0);

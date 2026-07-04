@@ -4,15 +4,20 @@
 
 //! Moving average filters.
 
-use circular_buffer::CircularBuffer;
+use circular_buffer::FixedCircularBuffer;
 use core::fmt;
 
 use num_traits::{Num, Zero};
 
+use crate::storage::RingBuffer;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
-    Filter, Reset, State as StateTrait, StateMut,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
+    WithConfig,
 };
+
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
 
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
@@ -26,11 +31,25 @@ pub struct Output<T> {
     pub variance: T,
 }
 
+/// Configuration for a [`MeanVariance`] filter.
+///
+/// This type is a unit struct because all mean-variance-filter parameters are
+/// encoded in the type system (window size `N` for the `*Array` aliases,
+/// or the capacity of the supplied ring-buffer). It exists so that
+/// [`MeanVariance`] can satisfy the [`WithConfig`] and related config traits
+/// uniformly with other filters.
+#[derive(Clone, Debug, Default)]
+pub struct Config;
+
 /// The mean/variance filter's state.
+///
+/// Generic over the ring-buffer backend `R` that stores the tap window.
+/// Use [`MeanVarianceArray`] for stack-allocated tap storage or
+/// [`MeanVarianceVec`] for heap-allocated tap storage.
 #[derive(Clone)]
-pub struct State<T, const N: usize> {
+pub struct State<T, R> {
     /// Buffer of recent input values.
-    pub taps: CircularBuffer<N, T>,
+    pub taps: R,
     /// The running sum of the window.
     pub sum: T,
     /// The running sum of squares of the window.
@@ -39,9 +58,10 @@ pub struct State<T, const N: usize> {
     pub weight: usize,
 }
 
-impl<T, const N: usize> fmt::Debug for State<T, N>
+impl<T, R> fmt::Debug for State<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -55,6 +75,14 @@ where
 
 /// A mean/variance filter producing the moving average and variance over a given signal.
 ///
+/// # Storage
+///
+/// The tap ring-buffer backend is selected by the `R` type parameter.
+/// Prefer the concrete aliases for common use:
+///
+/// - [`MeanVarianceArray<T, N>`] — stack-allocated, `no_std`-friendly.
+/// - [`MeanVarianceVec<T>`] — heap-allocated, requires the `alloc` feature.
+///
 /// # Complexity
 ///
 /// - **Time per sample:** O(N); weight-to-T conversion iterates up to N times;
@@ -63,29 +91,48 @@ where
 /// - **Space:** O(N); circular tap buffer of N samples plus three scalar accumulators
 ///   (`sum`, `sum_sq`, `weight`).
 #[derive(Clone)]
-pub struct MeanVariance<T, const N: usize> {
-    state: State<T, N>,
+pub struct MeanVariance<T, R> {
+    config: Config,
+    state: State<T, R>,
 }
 
-impl<T, const N: usize> Default for MeanVariance<T, N>
+/// A mean/variance filter backed by a const-generic [`FixedCircularBuffer`] tap buffer.
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. The tap
+/// ring-buffer lives entirely on the stack.
+pub type MeanVarianceArray<T, const N: usize> = MeanVariance<T, FixedCircularBuffer<T, N>>;
+
+/// A mean/variance filter backed by a heap-allocated [`HeapCircularBuffer`] tap buffer.
+///
+/// Requires the `alloc` feature. Use [`MeanVariance::from_parts`] to construct
+/// this variant, since the tap buffer cannot be `Default`-constructed without
+/// knowing the desired capacity at compile time.
+#[cfg(feature = "alloc")]
+pub type MeanVarianceVec<T> = MeanVariance<T, HeapCircularBuffer<T>>;
+
+impl<T, const N: usize> Default for MeanVarianceArray<T, N>
 where
     T: Zero,
 {
     fn default() -> Self {
         assert!(N > 0, "MeanVariance: window size N must be > 0");
         let state = State {
-            taps: CircularBuffer::default(),
+            taps: FixedCircularBuffer::new(),
             sum: T::zero(),
             sum_sq: T::zero(),
             weight: 0,
         };
-        Self { state }
+        Self {
+            config: Config,
+            state,
+        }
     }
 }
 
-impl<T, const N: usize> fmt::Debug for MeanVariance<T, N>
+impl<T, R> fmt::Debug for MeanVariance<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("MeanVariance")
@@ -94,48 +141,113 @@ where
     }
 }
 
-impl<T, const N: usize> StateTrait for MeanVariance<T, N> {
-    type State = State<T, N>;
+impl<T, R> MeanVariance<T, R>
+where
+    R: RingBuffer<T>,
+{
+    /// Creates a [`MeanVariance`] filter from an already-constructed `taps` ring-buffer.
+    ///
+    /// Use this constructor when the tap storage is not `Default`-constructible,
+    /// e.g. for [`MeanVarianceVec`] whose capacity must be known at runtime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `taps.capacity()` is zero.
+    pub fn from_parts(config: Config, taps: R) -> Self
+    where
+        T: Zero,
+    {
+        assert!(
+            taps.capacity() > 0,
+            "MeanVariance: window size (taps capacity) must be > 0"
+        );
+        let state = State {
+            taps,
+            sum: T::zero(),
+            sum_sq: T::zero(),
+            weight: 0,
+        };
+        Self { config, state }
+    }
 }
 
-impl<T, const N: usize> StateMut for MeanVariance<T, N> {
+impl<T, R> ConfigTrait for MeanVariance<T, R> {
+    type Config = Config;
+}
+
+impl<T, R> StateTrait for MeanVariance<T, R> {
+    type State = State<T, R>;
+}
+
+impl<T, const N: usize> WithConfig for MeanVarianceArray<T, N>
+where
+    T: Zero,
+{
+    type Output = Self;
+
+    fn with_config(config: Self::Config) -> Self::Output {
+        assert!(N > 0, "MeanVariance: window size N must be > 0");
+        let state = State {
+            taps: FixedCircularBuffer::new(),
+            sum: T::zero(),
+            sum_sq: T::zero(),
+            weight: 0,
+        };
+        Self { config, state }
+    }
+}
+
+impl<T, R> ConfigRef for MeanVariance<T, R> {
+    fn config_ref(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl<T, R> ConfigClone for MeanVariance<T, R> {
+    fn config(&self) -> Self::Config {
+        self.config.clone()
+    }
+}
+
+impl<T, R> StateMut for MeanVariance<T, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for MeanVariance<T, N> {
-    type Guts = State<T, N>;
+impl<T, R> HasGuts for MeanVariance<T, R> {
+    type Guts = (Config, State<T, R>);
 }
 
-impl<T, const N: usize> FromGuts for MeanVariance<T, N> {
+impl<T, R> FromGuts for MeanVariance<T, R> {
     fn from_guts(guts: Self::Guts) -> Self {
-        let state = guts;
-        Self { state }
+        let (config, state) = guts;
+        Self { config, state }
     }
 }
 
-impl<T, const N: usize> IntoGuts for MeanVariance<T, N> {
+impl<T, R> IntoGuts for MeanVariance<T, R> {
     fn into_guts(self) -> Self::Guts {
-        self.state
+        (self.config, self.state)
     }
 }
 
-impl<T, const N: usize> Reset for MeanVariance<T, N>
+impl<T, const N: usize> Reset for MeanVarianceArray<T, N>
 where
     T: Zero,
 {
     fn reset(self) -> Self {
-        Self::default()
+        Self::with_config(self.config)
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for MeanVariance<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for MeanVarianceArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<T> for MeanVariance<T, N>
+impl<T, R> Filter<T> for MeanVariance<T, R>
 where
     T: Clone + Num + PartialOrd,
+    R: RingBuffer<T>,
 {
     type Output = Output<T>;
 
@@ -178,7 +290,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "window size N must be > 0")]
     fn zero_window_panics() {
-        let _: MeanVariance<f32, 0> = MeanVariance::default();
+        let _: MeanVarianceArray<f32, 0> = MeanVarianceArray::default();
     }
 
     fn get_input() -> Vec<f32> {
@@ -212,7 +324,7 @@ mod tests {
 
     #[test]
     fn mean() {
-        let filter: MeanVariance<f32, 3> = MeanVariance::default();
+        let filter: MeanVarianceArray<f32, 3> = MeanVarianceArray::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
@@ -224,7 +336,7 @@ mod tests {
 
     #[test]
     fn variance() {
-        let filter: MeanVariance<f32, 3> = MeanVariance::default();
+        let filter: MeanVarianceArray<f32, 3> = MeanVarianceArray::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
@@ -240,7 +352,7 @@ mod tests {
 
     #[test]
     fn variance_always_positive() {
-        let filter: MeanVariance<f32, 5> = MeanVariance::default();
+        let filter: MeanVarianceArray<f32, 5> = MeanVarianceArray::default();
         let input = get_input();
         let output: Vec<_> = input
             .iter()
@@ -253,7 +365,7 @@ mod tests {
 
     #[test]
     fn variance_constant_signal_zero() {
-        let mut filter: MeanVariance<f32, 5> = MeanVariance::default();
+        let mut filter: MeanVarianceArray<f32, 5> = MeanVarianceArray::default();
         for _ in 0..5 {
             filter.filter(42.0);
         }
