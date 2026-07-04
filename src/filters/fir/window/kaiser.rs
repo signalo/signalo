@@ -7,6 +7,7 @@
 #[cfg(any(feature = "libm", feature = "std"))]
 use num_traits::Float;
 
+use crate::storage::AsSlice;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -21,6 +22,10 @@ pub(crate) use crate::math::bessel_i0;
 
 /// The Kaiser window's configuration with precomputed weights and beta parameter.
 ///
+/// `C` is the storage container for the precomputed window weights and must
+/// implement [`AsSlice<T>`]. Use [`KaiserArray`] for stack-allocated, const-generic
+/// storage or [`KaiserVec`] (with the `alloc` feature) for heap-allocated storage.
+///
 /// Weights are computed at construction time using the formula
 /// `w[k] = I₀(β·√(1 − (2k/(N−1) − 1)²)) / I₀(β)`.
 ///
@@ -30,16 +35,16 @@ pub(crate) use crate::math::bessel_i0;
 /// input sample index. This means the same coefficient sequence repeats
 /// every N calls.
 #[derive(Clone, Debug)]
-pub struct Config<T, const N: usize> {
+pub struct Config<T, C> {
     /// Shape parameter β (higher = stronger attenuation, wider main lobe).
     pub beta: T,
     /// Precomputed window weights.
-    pub weights: [T; N],
+    pub weights: C,
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
-impl<T: Float + core::fmt::Debug, const N: usize> Config<T, N> {
+impl<T: Float + core::fmt::Debug, const N: usize> Config<T, [T; N]> {
     /// Create a Kaiser window configuration with the given shape parameter β.
     ///
     /// A larger β produces stronger sidelobe attenuation and a wider main lobe.
@@ -110,7 +115,11 @@ pub struct State {
     k: usize,
 }
 
-/// A Kaiser window.
+/// A Kaiser window backed by a generic flat storage container.
+///
+/// `T` is the numeric type; `C` is the weights container and must implement
+/// [`AsSlice<T>`]. Use the [`KaiserArray`] type alias for fixed-size, stack-allocated
+/// storage or [`KaiserVec`] for heap-allocated, runtime-sized storage.
 ///
 /// Each tap coefficient `w[k] = I₀(β·√(1 − (2k/(N−1) − 1)²)) / I₀(β)`,
 /// producing a flexible window parametrized by β that smoothly trades off
@@ -133,29 +142,42 @@ pub struct State {
 ///
 /// ```rust
 /// # #[cfg(any(feature = "libm", feature = "std"))] {
-/// use signalo::filters::fir::window::kaiser::{Config as KaiserConfig, Kaiser};
+/// use signalo::filters::fir::window::kaiser::{Config as KaiserConfig, KaiserArray};
 /// use signalo::traits::{Filter, WithConfig};
 ///
-/// let mut window = Kaiser::<f64, 4>::with_config(KaiserConfig::<f64, 4>::new(6.0));
+/// let mut window = KaiserArray::<f64, 4>::with_config(KaiserConfig::<f64, [f64; 4]>::new(6.0));
 /// let output = window.filter(1.0);
 /// assert!(output > 0.0);
 /// # }
 /// ```
 #[derive(Clone, Debug)]
-pub struct Kaiser<T, const N: usize> {
-    config: Config<T, N>,
+pub struct Kaiser<T, C> {
+    config: Config<T, C>,
     state: State,
 }
 
-impl<T, const N: usize> ConfigTrait for Kaiser<T, N> {
-    type Config = Config<T, N>;
+/// A [`Kaiser`] window backed by a fixed-size array `[T; N]`.
+///
+/// Provides stack-allocated, `no_std`-friendly storage. Use [`KaiserVec`]
+/// when the number of taps is only known at runtime.
+pub type KaiserArray<T, const N: usize> = Kaiser<T, [T; N]>;
+
+/// A [`Kaiser`] window backed by a heap-allocated `Vec<T>`.
+///
+/// Requires the `alloc` feature. Use [`KaiserArray`] for `no_std` contexts
+/// where the number of taps is known at compile time.
+#[cfg(feature = "alloc")]
+pub type KaiserVec<T> = Kaiser<T, alloc::vec::Vec<T>>;
+
+impl<T, C> ConfigTrait for Kaiser<T, C> {
+    type Config = Config<T, C>;
 }
 
-impl<T, const N: usize> StateTrait for Kaiser<T, N> {
+impl<T, C> StateTrait for Kaiser<T, C> {
     type State = State;
 }
 
-impl<T, const N: usize> WithConfig for Kaiser<T, N> {
+impl<T, const N: usize> WithConfig for KaiserArray<T, N> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
@@ -167,64 +189,91 @@ impl<T, const N: usize> WithConfig for Kaiser<T, N> {
     }
 }
 
-impl<T, const N: usize> ConfigRef for Kaiser<T, N> {
+impl<T, C> ConfigRef for Kaiser<T, C> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, const N: usize> ConfigClone for Kaiser<T, N>
+impl<T, C> ConfigClone for Kaiser<T, C>
 where
-    Config<T, N>: Clone,
+    Config<T, C>: Clone,
 {
     fn config(&self) -> Self::Config {
         self.config.clone()
     }
 }
 
-impl<T, const N: usize> StateMut for Kaiser<T, N> {
+impl<T, C> StateMut for Kaiser<T, C> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Kaiser<T, N> {
-    type Guts = (Config<T, N>, State);
+impl<T, C> HasGuts for Kaiser<T, C> {
+    type Guts = (Config<T, C>, State);
 }
 
-impl<T, const N: usize> FromGuts for Kaiser<T, N> {
+impl<T, C> FromGuts for Kaiser<T, C> {
     fn from_guts(guts: Self::Guts) -> Self {
-        assert!(N > 0, "Kaiser: window size N must be > 0");
         let (config, state) = guts;
         Self { config, state }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Kaiser<T, N> {
+impl<T, C> IntoGuts for Kaiser<T, C> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }
 
-impl<T, const N: usize> Reset for Kaiser<T, N> {
+impl<T, const N: usize> Reset for KaiserArray<T, N> {
     fn reset(self) -> Self {
         Self::with_config(self.config)
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Kaiser<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for KaiserArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<T> for Kaiser<T, N>
+impl<T, C> Filter<T> for Kaiser<T, C>
 where
     T: Clone + core::ops::Mul<Output = T>,
+    C: AsSlice<T>,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        let w = self.config.weights[self.state.k].clone();
-        self.state.k = (self.state.k + 1) % N;
+        let weights = self.config.weights.as_slice();
+        let n = weights.len();
+        let w = weights[self.state.k].clone();
+        self.state.k = (self.state.k + 1) % n;
         input * w
+    }
+}
+
+impl<T, C> Kaiser<T, C>
+where
+    C: AsSlice<T>,
+{
+    /// Creates a [`Kaiser`] from a pre-built [`Config`].
+    ///
+    /// This constructor is intended for storage containers whose size is not
+    /// known at compile time (e.g. [`KaiserVec`]). For array-backed storage,
+    /// prefer [`WithConfig::with_config`] on [`KaiserArray`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the weights slice is empty.
+    pub fn from_parts(config: Config<T, C>) -> Self {
+        assert!(
+            !config.weights.as_slice().is_empty(),
+            "Kaiser: window size N must be > 0"
+        );
+        Self {
+            config,
+            state: State::default(),
+        }
     }
 }
 

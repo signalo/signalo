@@ -38,7 +38,7 @@ fn bessel_i0_ten() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn kaiser_n_eq_1() {
-    let config = Config::<f32, 1>::new(6.0);
+    let config = Config::<f32, [f32; 1]>::new(6.0);
     assert_abs_diff_eq!(config.weights[0], 1.0, epsilon = 1e-7);
 }
 
@@ -46,14 +46,14 @@ fn kaiser_n_eq_1() {
 #[test]
 #[should_panic(expected = "window size N must be > 0")]
 fn kaiser_n_eq_0_panics() {
-    let _ = Config::<f64, 0>::new(6.0);
+    let _ = Config::<f64, [f64; 0]>::new(6.0);
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 #[should_panic(expected = "window size N must be > 0")]
 fn config_new_n0_panics() {
-    let _ = Config::<f64, 0>::new(6.0);
+    let _ = Config::<f64, [f64; 0]>::new(6.0);
 }
 
 #[cfg(feature = "std")]
@@ -61,8 +61,8 @@ fn config_new_n0_panics() {
 fn smoke() {
     const N: usize = 8;
     let beta = 1.0f32;
-    let config = Config::<f32, N>::new(beta);
-    let mut window = Kaiser::<f32, N>::with_config(config.clone());
+    let config = Config::<f32, [f32; N]>::new(beta);
+    let mut window = KaiserArray::<f32, N>::with_config(config.clone());
     let input = numeric_fixture();
     let expected: Vec<f32> = input
         .iter()
@@ -78,8 +78,8 @@ fn smoke() {
 fn periodicity() {
     const N: usize = 8;
     let beta = 1.0f32;
-    let config = Config::<f32, N>::new(beta);
-    let mut window = Kaiser::<f32, N>::with_config(config);
+    let config = Config::<f32, [f32; N]>::new(beta);
+    let mut window = KaiserArray::<f32, N>::with_config(config);
     let input: Vec<f32> = std::iter::repeat(1.0).take(3 * N).collect();
     let output: Vec<_> = input.iter().map(|&x| window.filter(x)).collect();
     for block in 0..3 {
@@ -94,8 +94,8 @@ fn periodicity() {
 fn reset_restarts_counter() {
     const N: usize = 8;
     let beta = 1.0f32;
-    let config = Config::<f32, N>::new(beta);
-    let mut window = Kaiser::<f32, N>::with_config(config);
+    let config = Config::<f32, [f32; N]>::new(beta);
+    let mut window = KaiserArray::<f32, N>::with_config(config);
 
     let first_half: Vec<f32> = (0..N as u32).map(|i| i as f32).collect();
     let output_a: Vec<_> = first_half.iter().map(|&x| window.filter(x)).collect();
@@ -111,8 +111,8 @@ fn reset_restarts_counter() {
 fn endpoints() {
     const N: usize = 8;
     let beta = 1.0f32;
-    let config = Config::<f32, N>::new(beta);
-    let mut window = Kaiser::<f32, N>::with_config(config.clone());
+    let config = Config::<f32, [f32; N]>::new(beta);
+    let mut window = KaiserArray::<f32, N>::with_config(config.clone());
 
     let input: Vec<f32> = (0..N as u32).map(|i| i as f32).collect();
     let output: Vec<_> = input.iter().map(|&x| window.filter(x)).collect();
@@ -128,14 +128,14 @@ fn endpoints() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn beta_for_attenuation_40() {
-    let beta = Config::<f64, 8>::beta_for_attenuation(40.0);
+    let beta = Config::<f64, [f64; 8]>::beta_for_attenuation(40.0);
     assert_abs_diff_eq!(beta, 3.3953, epsilon = 1e-4);
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn beta_for_attenuation_60() {
-    let beta = Config::<f64, 8>::beta_for_attenuation(60.0);
+    let beta = Config::<f64, [f64; 8]>::beta_for_attenuation(60.0);
     assert_abs_diff_eq!(beta, 5.65326, epsilon = 1e-4);
 }
 
@@ -143,7 +143,7 @@ fn beta_for_attenuation_60() {
 #[test]
 fn beta_for_attenuation_boundary_21() {
     // Attenuation = 21 dB is the boundary of the zero-return region.
-    let beta = Config::<f64, 8>::beta_for_attenuation(21.0);
+    let beta = Config::<f64, [f64; 8]>::beta_for_attenuation(21.0);
     assert_abs_diff_eq!(beta, 0.0, epsilon = 1e-12);
 }
 
@@ -151,7 +151,7 @@ fn beta_for_attenuation_boundary_21() {
 #[test]
 fn beta_for_attenuation_boundary_50() {
     // Attenuation = 50 dB is the boundary between mid- and high-attenuation formulas.
-    let beta = Config::<f64, 8>::beta_for_attenuation(50.0);
+    let beta = Config::<f64, [f64; 8]>::beta_for_attenuation(50.0);
     // Expected from formula: 0.1102 * (50.0 - 8.7) = 0.1102 * 41.3 = 4.55126
     assert_abs_diff_eq!(beta, 4.55126, epsilon = 1e-3);
 }
@@ -159,7 +159,7 @@ fn beta_for_attenuation_boundary_50() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn beta_for_attenuation_below_21_returns_zero() {
-    let beta = Config::<f64, 8>::beta_for_attenuation(10.0);
+    let beta = Config::<f64, [f64; 8]>::beta_for_attenuation(10.0);
     assert_abs_diff_eq!(beta, 0.0, epsilon = 1e-12);
 }
 
@@ -170,7 +170,7 @@ fn sidelobe_attenuation() {
     const ZP: usize = 8;
     const L: usize = N * ZP;
 
-    let config = Config::<f64, N>::new(6.0);
+    let config = Config::<f64, [f64; N]>::new(6.0);
     let weights = &config.weights;
 
     let two_pi = core::f64::consts::PI * 2.0;
@@ -210,7 +210,7 @@ fn sidelobe_attenuation() {
 fn kaiser_weights_consistency() {
     const N: usize = 33;
     let beta = 6.0_f64;
-    let config = Config::<f64, N>::new(beta);
+    let config = Config::<f64, [f64; N]>::new(beta);
     let weights = config.weights;
 
     // Center tap must be 1.0 by definition
@@ -236,7 +236,7 @@ fn kaiser_parity_with_windowed_sinc() {
     const N: usize = 33;
     let beta = 6.0_f64;
 
-    let config = Config::<f64, N>::new(beta);
+    let config = Config::<f64, [f64; N]>::new(beta);
     let win_fn = kaiser::<f64>(beta);
 
     for k in 0..N {
@@ -249,7 +249,7 @@ fn kaiser_parity_with_windowed_sinc() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn all_weights_are_finite() {
-    let config = Config::<f32, 16>::new(6.0);
+    let config = Config::<f32, [f32; 16]>::new(6.0);
     for weight in &config.weights {
         assert!(weight.is_finite());
         assert!(*weight >= 0.0);
@@ -260,13 +260,13 @@ fn all_weights_are_finite() {
 #[test]
 #[should_panic(expected = "Kaiser beta must be non-negative")]
 fn negative_beta_panics() {
-    let _ = Config::<f64, 8>::new(-1.0);
+    let _ = Config::<f64, [f64; 8]>::new(-1.0);
 }
 
 #[test]
 #[should_panic(expected = "window size N must be > 0")]
 fn zero_window_panics() {
-    let _ = Kaiser::<f32, 0>::with_config(Config {
+    let _ = KaiserArray::<f32, 0>::with_config(Config {
         beta: 0.0f32,
         weights: [0.0f32; 0],
     });
