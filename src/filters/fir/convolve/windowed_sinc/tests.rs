@@ -8,7 +8,7 @@ use approx::assert_abs_diff_eq;
 
 use super::*;
 
-fn feed_dc<T, const N: usize>(filter: &mut Convolve<T, N>) -> T
+fn feed_dc<T, const N: usize>(filter: &mut ConvolveArray<T, N>) -> T
 where
     T: num_traits::Num + Clone,
 {
@@ -16,7 +16,11 @@ where
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
-fn feed_sine<T: Float, const N: usize>(filter: &mut Convolve<T, N>, freq: T, n: usize) -> Vec<T> {
+fn feed_sine<T: Float, const N: usize>(
+    filter: &mut ConvolveArray<T, N>,
+    freq: T,
+    n: usize,
+) -> Vec<T> {
     let two_pi = T::from(2.0 * core::f64::consts::PI).unwrap();
     let mut outputs = Vec::with_capacity(n);
     for i in 0..n {
@@ -42,7 +46,7 @@ mod lowpass {
     fn coefficient_symmetry() {
         macro_rules! check_symmetry {
             ($ty:ident) => {
-                let c = $ty::<Convolve<f64, 9>>::lowpass(FC)
+                let c = $ty::<ConvolveArray<f64, 9>>::lowpass(FC)
                     .config_ref()
                     .coefficients;
                 for k in 0..9 {
@@ -63,14 +67,14 @@ mod lowpass {
 
     #[test]
     fn dc_gain() {
-        let mut filter = HannSinc::<Convolve<f64, 33>>::lowpass(FC);
+        let mut filter = HannSinc::<ConvolveArray<f64, 33>>::lowpass(FC);
         let out = feed_dc(&mut filter);
         assert_abs_diff_eq!(out, 1.0, epsilon = 1e-10);
     }
 
     #[test]
     fn stopband_rejection() {
-        let mut filter = HannSinc::<Convolve<f64, 33>>::lowpass(FC_STOP);
+        let mut filter = HannSinc::<ConvolveArray<f64, 33>>::lowpass(FC_STOP);
         let f_stop = 0.4;
         let outputs = feed_sine(&mut filter, f_stop, 200);
         let steady = &outputs[33..];
@@ -86,7 +90,7 @@ mod lowpass {
             0.5 * (1.0 - (two_pi * k as f64 / ((n - 1) as f64)).cos())
         };
         let reference = sinc_lowpass::<f64, 9>(FC, win, true);
-        let filter = HannSinc::<Convolve<f64, 9>>::lowpass(FC);
+        let filter = HannSinc::<ConvolveArray<f64, 9>>::lowpass(FC);
         let actual = filter.config_ref().coefficients;
         for (a, b) in actual.iter().zip(reference.iter()) {
             assert_abs_diff_eq!(a, b, epsilon = 1e-15);
@@ -96,13 +100,13 @@ mod lowpass {
     #[test]
     #[should_panic(expected = "N=1 is degenerate")]
     fn n1_panics() {
-        let _ = HannSinc::<Convolve<f64, 1>>::lowpass(0.25);
+        let _ = HannSinc::<ConvolveArray<f64, 1>>::lowpass(0.25);
     }
 
     #[test]
     fn hz_convenience() {
-        let a = HannSinc::<Convolve<f64, 9>>::lowpass(FC);
-        let b = HannSinc::<Convolve<f64, 9>>::lowpass_hz(1.0, FC);
+        let a = HannSinc::<ConvolveArray<f64, 9>>::lowpass(FC);
+        let b = HannSinc::<ConvolveArray<f64, 9>>::lowpass_hz(1.0, FC);
         for (ca, cb) in a
             .config_ref()
             .coefficients
@@ -115,8 +119,8 @@ mod lowpass {
 
     #[test]
     fn unnormalized_differs_from_normalized() {
-        let norm = HannSinc::<Convolve<f64, 9>>::lowpass(FC);
-        let raw = HannSinc::<Convolve<f64, 9>>::lowpass_unnormalized(FC);
+        let norm = HannSinc::<ConvolveArray<f64, 9>>::lowpass(FC);
+        let raw = HannSinc::<ConvolveArray<f64, 9>>::lowpass_unnormalized(FC);
         let c_norm = norm.config_ref().coefficients;
         let c_raw = raw.config_ref().coefficients;
         let sum_norm: f64 = c_norm.iter().sum();
@@ -141,7 +145,7 @@ mod highpass {
 
     #[test]
     fn signed_nyquist_alt_sum_is_one() {
-        let filter = HannSinc::<Convolve<f64, 33>>::highpass(FC);
+        let filter = HannSinc::<ConvolveArray<f64, 33>>::highpass(FC);
         let coeffs = filter.config_ref().coefficients;
 
         let h0 = gain_at_freq(&coeffs, 0.0);
@@ -165,7 +169,7 @@ mod highpass {
     fn signed_nyquist_gain_for_various_n() {
         macro_rules! check_alt_sum_for_n {
             ($n:literal) => {{
-                let filter = HannSinc::<Convolve<f64, $n>>::highpass(0.25);
+                let filter = HannSinc::<ConvolveArray<f64, $n>>::highpass(0.25);
                 let coeffs = filter.config_ref().coefficients;
                 let alt_sum: f64 = coeffs.iter().enumerate().fold(0.0, |acc, (k, &hk)| {
                     if k % 2 == 0 {
@@ -192,24 +196,24 @@ mod highpass {
     #[test]
     #[should_panic(expected = "must be odd")]
     fn even_n_rejected() {
-        let _ = HannSinc::<Convolve<f64, 8>>::highpass(FC);
+        let _ = HannSinc::<ConvolveArray<f64, 8>>::highpass(FC);
     }
 
     #[test]
     #[should_panic(expected = "must be >= 3")]
     fn n1_panics() {
-        let _ = HannSinc::<Convolve<f64, 1>>::highpass(FC);
+        let _ = HannSinc::<ConvolveArray<f64, 1>>::highpass(FC);
     }
 
     #[test]
     #[should_panic(expected = "must be >= 3")]
     fn n_below_3_rejected() {
-        let _ = HannSinc::<Convolve<f64, 2>>::highpass(FC);
+        let _ = HannSinc::<ConvolveArray<f64, 2>>::highpass(FC);
     }
 
     #[test]
     fn nyquist_magnitude() {
-        let f = HannSinc::<Convolve<f64, 33>>::highpass(0.25);
+        let f = HannSinc::<ConvolveArray<f64, 33>>::highpass(0.25);
         let mag = gain_at_freq(&f.config_ref().coefficients, 0.5);
         assert!((mag - 1.0).abs() < 1e-10);
     }
@@ -218,7 +222,7 @@ mod highpass {
     fn nyquist_gain_small_n() {
         macro_rules! check_nyquist_for_n {
             ($n:literal) => {{
-                let filter = HannSinc::<Convolve<f64, $n>>::highpass(0.25);
+                let filter = HannSinc::<ConvolveArray<f64, $n>>::highpass(0.25);
                 let coeffs = filter.config_ref().coefficients;
                 let h_nyq = gain_at_freq(&coeffs, 0.5);
                 assert_abs_diff_eq!(h_nyq, 1.0, epsilon = 1e-10);
@@ -235,8 +239,8 @@ mod highpass {
 
     #[test]
     fn hz_convenience() {
-        let a = HannSinc::<Convolve<f64, 9>>::highpass(FC);
-        let b = HannSinc::<Convolve<f64, 9>>::highpass_hz(1.0, FC);
+        let a = HannSinc::<ConvolveArray<f64, 9>>::highpass(FC);
+        let b = HannSinc::<ConvolveArray<f64, 9>>::highpass_hz(1.0, FC);
         for (ca, cb) in a
             .config_ref()
             .coefficients
@@ -262,7 +266,7 @@ mod bandpass {
 
     #[test]
     fn midband_gain() {
-        let mut filter = HannSinc::<Convolve<f64, 33>>::bandpass(F_LO, F_HI);
+        let mut filter = HannSinc::<ConvolveArray<f64, 33>>::bandpass(F_LO, F_HI);
         let f_c = (F_LO + F_HI) / 2.0;
         let outputs = feed_sine(&mut filter, f_c, 200);
         let steady = &outputs[33..];
@@ -280,7 +284,7 @@ mod bandpass {
         let max_gain = {
             let mut max_g = 0.0_f64;
             for i in 0..=50 {
-                let mut filter = HannSinc::<Convolve<f64, 33>>::bandpass(F_LO, F_HI);
+                let mut filter = HannSinc::<ConvolveArray<f64, 33>>::bandpass(F_LO, F_HI);
                 let f = F_LO + (F_HI - F_LO) * f64::from(i) / 50.0;
                 let outputs = feed_sine(&mut filter, f, 200);
                 let steady = &outputs[33..];
@@ -325,8 +329,8 @@ mod bandpass {
 
     #[test]
     fn hz_convenience() {
-        let a = HannSinc::<Convolve<f64, 9>>::bandpass(F_LO, F_HI);
-        let b = HannSinc::<Convolve<f64, 9>>::bandpass_hz(1.0, F_LO, F_HI);
+        let a = HannSinc::<ConvolveArray<f64, 9>>::bandpass(F_LO, F_HI);
+        let b = HannSinc::<ConvolveArray<f64, 9>>::bandpass_hz(1.0, F_LO, F_HI);
         for (ca, cb) in a
             .config_ref()
             .coefficients
@@ -352,7 +356,7 @@ mod bandstop {
 
     #[test]
     fn dc_gain() {
-        let mut filter = HannSinc::<Convolve<f64, 33>>::bandstop(F_LO, F_HI);
+        let mut filter = HannSinc::<ConvolveArray<f64, 33>>::bandstop(F_LO, F_HI);
         let out = feed_dc(&mut filter);
         assert_abs_diff_eq!(out, 1.0, epsilon = 1e-10);
     }
@@ -360,18 +364,18 @@ mod bandstop {
     #[test]
     #[should_panic(expected = "must be >= 3")]
     fn n_below_3_rejected() {
-        let _ = HannSinc::<Convolve<f64, 1>>::bandstop(F_LO, F_HI);
+        let _ = HannSinc::<ConvolveArray<f64, 1>>::bandstop(F_LO, F_HI);
     }
 
     #[test]
     #[should_panic(expected = "must be odd")]
     fn even_n_rejected() {
-        let _ = HannSinc::<Convolve<f64, 8>>::bandstop(F_LO, F_HI);
+        let _ = HannSinc::<ConvolveArray<f64, 8>>::bandstop(F_LO, F_HI);
     }
 
     #[test]
     fn notch_attenuation() {
-        let mut filter = HannSinc::<Convolve<f64, 33>>::bandstop(F_LO, F_HI);
+        let mut filter = HannSinc::<ConvolveArray<f64, 33>>::bandstop(F_LO, F_HI);
         let f_notch = (F_LO + F_HI) / 2.0;
         let outputs = feed_sine(&mut filter, f_notch, 200);
         let steady = &outputs[33..];
@@ -492,10 +496,10 @@ mod allpass_complement {
             for &n in &[3_usize, 5, 7, 9, 11] {
                 macro_rules! check_arm {
                     ($ty:ident, $n:literal, $m:literal) => {{
-                        let h_lp = $ty::<Convolve<f64, $n>>::lowpass_unnormalized(fc)
+                        let h_lp = $ty::<ConvolveArray<f64, $n>>::lowpass_unnormalized(fc)
                             .config_ref()
                             .coefficients;
-                        let h_hp = $ty::<Convolve<f64, $n>>::highpass_unnormalized(fc)
+                        let h_hp = $ty::<ConvolveArray<f64, $n>>::highpass_unnormalized(fc)
                             .config_ref()
                             .coefficients;
                         for k in 0..$n {
@@ -540,8 +544,8 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_highpass_differs_from_normalized() {
-        let norm = HannSinc::<Convolve<f64, 9>>::highpass(FC);
-        let raw = HannSinc::<Convolve<f64, 9>>::highpass_unnormalized(FC);
+        let norm = HannSinc::<ConvolveArray<f64, 9>>::highpass(FC);
+        let raw = HannSinc::<ConvolveArray<f64, 9>>::highpass_unnormalized(FC);
         let c_norm = norm.config_ref().coefficients;
         let c_raw = raw.config_ref().coefficients;
         let mut differ = false;
@@ -559,8 +563,8 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_bandpass_differs_from_normalized() {
-        let norm = HannSinc::<Convolve<f64, 9>>::bandpass(F_LO, F_HI);
-        let raw = HannSinc::<Convolve<f64, 9>>::bandpass_unnormalized(F_LO, F_HI);
+        let norm = HannSinc::<ConvolveArray<f64, 9>>::bandpass(F_LO, F_HI);
+        let raw = HannSinc::<ConvolveArray<f64, 9>>::bandpass_unnormalized(F_LO, F_HI);
         let c_norm = norm.config_ref().coefficients;
         let c_raw = raw.config_ref().coefficients;
         let mut differ = false;
@@ -578,8 +582,8 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_bandstop_differs_from_normalized() {
-        let norm = HannSinc::<Convolve<f64, 9>>::bandstop(F_LO, F_HI);
-        let raw = HannSinc::<Convolve<f64, 9>>::bandstop_unnormalized(F_LO, F_HI);
+        let norm = HannSinc::<ConvolveArray<f64, 9>>::bandstop(F_LO, F_HI);
+        let raw = HannSinc::<ConvolveArray<f64, 9>>::bandstop_unnormalized(F_LO, F_HI);
         let c_norm = norm.config_ref().coefficients;
         let c_raw = raw.config_ref().coefficients;
         let mut differ = false;
@@ -645,7 +649,7 @@ mod integration_window_convolve {
 
         let sinc_coeffs = sinc_lowpass::<f64, N>(fc, |_, _| 1.0, false);
 
-        let hann_config = hann::Config::<f64, N>::new();
+        let hann_config = hann::Config::<[f64; N]>::new();
         let win = hann_config.weights;
 
         let mut manual = [0.0_f64; N];
@@ -658,7 +662,7 @@ mod integration_window_convolve {
             *coeff /= sum;
         }
 
-        let filter = HannSinc::<Convolve<f64, N>>::lowpass(fc);
+        let filter = HannSinc::<ConvolveArray<f64, N>>::lowpass(fc);
         let expected = filter.config_ref().coefficients;
 
         for (a, b) in manual.iter().zip(expected.iter()) {
@@ -681,8 +685,8 @@ mod kaiser_sinc {
 
     #[test]
     fn highpass_with_beta_matches_default() {
-        let custom = KaiserSinc::<Convolve<f64, 9>>::highpass_with_beta(6.0, FC);
-        let default = KaiserSinc::<Convolve<f64, 9>>::highpass(FC);
+        let custom = KaiserSinc::<ConvolveArray<f64, 9>>::highpass_with_beta(6.0, FC);
+        let default = KaiserSinc::<ConvolveArray<f64, 9>>::highpass(FC);
         let cc = custom.config_ref().coefficients;
         let cd = default.config_ref().coefficients;
         for (a, b) in cc.iter().zip(cd.iter()) {
@@ -693,12 +697,12 @@ mod kaiser_sinc {
     #[test]
     #[should_panic(expected = "Kaiser beta must be non-negative")]
     fn lowpass_with_beta_rejects_negative_beta() {
-        let _ = KaiserSinc::<Convolve<f64, 33>>::lowpass_with_beta(-1.0, 0.25);
+        let _ = KaiserSinc::<ConvolveArray<f64, 33>>::lowpass_with_beta(-1.0, 0.25);
     }
 
     #[test]
     fn lowpass_with_beta_dc_gain() {
-        let filter = KaiserSinc::<Convolve<f64, 33>>::lowpass_with_beta(6.0, 0.25);
+        let filter = KaiserSinc::<ConvolveArray<f64, 33>>::lowpass_with_beta(6.0, 0.25);
         let sum: f64 = filter.config_ref().coefficients.iter().sum();
         assert_abs_diff_eq!(sum, 1.0, epsilon = 1e-10);
     }
@@ -706,19 +710,19 @@ mod kaiser_sinc {
     #[test]
     #[should_panic(expected = "frequency must be > 0")]
     fn lowpass_with_beta_hz_freq_zero_panics() {
-        let _ = KaiserSinc::<Convolve<f64, 33>>::lowpass_with_beta_hz(6.0, 44_100.0, 0.0);
+        let _ = KaiserSinc::<ConvolveArray<f64, 33>>::lowpass_with_beta_hz(6.0, 44_100.0, 0.0);
     }
 
     #[test]
     fn bandpass_with_beta_smoke() {
-        let filter = KaiserSinc::<Convolve<f64, 33>>::bandpass_with_beta(6.0, F_LO, F_HI);
+        let filter = KaiserSinc::<ConvolveArray<f64, 33>>::bandpass_with_beta(6.0, F_LO, F_HI);
         let sum: f64 = filter.config_ref().coefficients.iter().sum();
         assert!(sum < 1e-6, "bandpass should have near-zero DC gain");
     }
 
     #[test]
     fn bandstop_with_beta_smoke() {
-        let filter = KaiserSinc::<Convolve<f64, 33>>::bandstop_with_beta(6.0, F_LO, F_HI);
+        let filter = KaiserSinc::<ConvolveArray<f64, 33>>::bandstop_with_beta(6.0, F_LO, F_HI);
         let sum: f64 = filter.config_ref().coefficients.iter().sum();
         assert_abs_diff_eq!(sum, 1.0, epsilon = 1e-10);
     }
