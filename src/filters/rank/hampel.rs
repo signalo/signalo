@@ -15,7 +15,7 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
-use super::median::Median;
+use super::median::MedianArray;
 
 /// The hampel filter's configuration.
 #[derive(Clone, Debug)]
@@ -28,7 +28,7 @@ pub struct Config<T> {
 #[derive(Clone, Debug)]
 pub struct State<T, const N: usize> {
     /// Median filter.
-    pub median: Median<T, N>,
+    pub median: MedianArray<T, N>,
 }
 
 /// A hampel filter of fixed width.
@@ -40,7 +40,7 @@ pub struct State<T, const N: usize> {
 /// - **Time per sample:** O(N); delegates to the internal `Median` filter (O(N)), then
 ///   collects N absolute deviations and sorts them with an insertion sort (O(N²) worst-case,
 ///   but N is a small compile-time constant in practice).
-/// - **Space:** O(N); stores the internal `Median<T, N>` window plus a stack-allocated
+/// - **Space:** O(N); stores the internal `MedianArray<T, N>` window plus a stack-allocated
 ///   deviation array of size N.
 #[derive(Clone, Debug)]
 pub struct Hampel<T, const N: usize> {
@@ -126,14 +126,14 @@ impl<T, const N: usize> StateTrait for Hampel<T, N> {
 
 impl<T, const N: usize> WithConfig for Hampel<T, N>
 where
-    Median<T, N>: Default,
+    MedianArray<T, N>: Default,
 {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "Hampel: window size N must be > 0");
         let state = {
-            let median = Median::default();
+            let median = MedianArray::default();
             State { median }
         };
         Self { config, state }
@@ -180,7 +180,7 @@ impl<T, const N: usize> IntoGuts for Hampel<T, N> {
 
 impl<T, const N: usize> Reset for Hampel<T, N>
 where
-    Median<T, N>: Default,
+    MedianArray<T, N>: Default,
 {
     fn reset(self) -> Self {
         Self::with_config(self.config)

@@ -6,6 +6,7 @@
 
 use core::fmt;
 
+use crate::storage::AsSlice;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Filter, Reset, State as StateTrait, StateMut,
@@ -14,42 +15,16 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
-/// The median filter's state.
-#[derive(Clone)]
-pub struct State<T, const N: usize> {
-    // Buffer of list nodes:
-    buffer: [ListNode<T>; N],
-    // Cursor into circular buffer of data:
-    cursor: usize,
-    // Cursor to beginning of circular list:
-    head: usize,
-    // Cursor to median of circular list:
-    median: usize,
-    filled: usize,
-}
-
-impl<T, const N: usize> fmt::Debug for State<T, N>
-where
-    T: fmt::Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("State")
-            .field("buffer", &self.buffer)
-            .field("cursor", &self.cursor)
-            .field("head", &self.head)
-            .field("median", &self.median)
-            .field("filled", &self.filled)
-            .finish()
-    }
-}
-
 /// Implementation detail.
 /// (Once we have value generics we will hopefully be able to un-leak it.)
 #[doc(hidden)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct ListNode<T> {
+    /// Value stored in the node, or `None` if the slot is vacant.
     value: Option<T>,
+    /// Index of the predecessor node in the sorted linked list.
     previous: usize,
+    /// Index of the successor node in the sorted linked list.
     next: usize,
 }
 
@@ -62,7 +37,47 @@ where
     }
 }
 
-/// A median filter of fixed width with linear complexity.
+/// The median filter's state.
+///
+/// `B` is the buffer storage container and must implement [`AsSlice<ListNode<T>>`].
+/// Use [`MedianArray`] for stack-allocated, const-generic storage or [`MedianVec`]
+/// (with the `alloc` feature) for heap-allocated, runtime-sized storage.
+#[derive(Clone)]
+pub struct State<T, B> {
+    /// Buffer of list nodes.
+    buffer: B,
+    /// Cursor into the circular buffer of data.
+    cursor: usize,
+    /// Cursor to the beginning of the sorted circular list.
+    head: usize,
+    /// Cursor to the median of the sorted circular list.
+    median: usize,
+    /// Number of slots filled so far (saturates at window length).
+    filled: usize,
+    _phantom: core::marker::PhantomData<T>,
+}
+
+impl<T, B> fmt::Debug for State<T, B>
+where
+    T: fmt::Debug,
+    B: AsSlice<ListNode<T>>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("State")
+            .field("buffer", &self.buffer.as_slice())
+            .field("cursor", &self.cursor)
+            .field("head", &self.head)
+            .field("median", &self.median)
+            .field("filled", &self.filled)
+            .finish()
+    }
+}
+
+/// A moving median filter backed by a generic flat storage container.
+///
+/// `T` is the value type; `B` is the node-buffer storage and must implement
+/// [`AsSlice<ListNode<T>>`]. Use the [`MedianArray`] type alias for fixed-size,
+/// stack-allocated storage or [`MedianVec`] for heap-allocated, runtime-sized storage.
 ///
 /// While the common naïve implementation of a median filter
 /// has a worst-case complexity of `O(n^2)` (due to having to sort the sliding window)
@@ -108,82 +123,135 @@ where
 /// - **Time per sample:** O(N); one linear scan to find the insertion point in the sorted
 ///   linked list, plus an O(N) walk to recompute the median pointer from `head`.
 /// - **Space:** O(N); fixed-size array of N `ListNode` entries embedded in-place.
-#[derive(Clone, Debug)]
-pub struct Median<T, const N: usize> {
-    state: State<T, N>,
+#[derive(Clone)]
+pub struct Median<T, B> {
+    state: State<T, B>,
 }
 
-impl<T, const N: usize> Default for Median<T, N> {
-    fn default() -> Self {
-        assert!(N > 0, "Median: window size N must be > 0");
-        let state = {
-            let buffer = core::array::from_fn(|index| ListNode {
-                value: None,
-                previous: (index + N - 1) % N,
-                next: (index + 1) % N,
-            });
-
-            let cursor = 0;
-            let head = 0;
-            let median = 0;
-            let filled = 0;
-
-            State {
-                buffer,
-                cursor,
-                head,
-                median,
-                filled,
-            }
-        };
-        Self { state }
+impl<T, B> fmt::Debug for Median<T, B>
+where
+    T: fmt::Debug,
+    B: AsSlice<ListNode<T>>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Median")
+            .field("state", &self.state)
+            .finish()
     }
 }
 
-impl<T, const N: usize> StateTrait for Median<T, N> {
-    type State = State<T, N>;
+/// A [`Median`] filter backed by a fixed-size array `[ListNode<T>; N]`.
+///
+/// Provides stack-allocated, `no_std`-friendly storage. Use [`MedianVec`]
+/// when the window size is only known at runtime.
+pub type MedianArray<T, const N: usize> = Median<T, [ListNode<T>; N]>;
+
+/// A [`Median`] filter backed by a heap-allocated `Vec<ListNode<T>>`.
+///
+/// Requires the `alloc` feature. Use [`MedianArray`] for `no_std` contexts
+/// where the window size is known at compile time.
+#[cfg(feature = "alloc")]
+pub type MedianVec<T> = Median<T, alloc::vec::Vec<ListNode<T>>>;
+
+impl<T, const N: usize> Default for MedianArray<T, N> {
+    fn default() -> Self {
+        assert!(N > 0, "Median: window size N must be > 0");
+        let buffer = core::array::from_fn(|index| ListNode {
+            value: None,
+            previous: (index + N - 1) % N,
+            next: (index + 1) % N,
+        });
+
+        Self {
+            state: State {
+                buffer,
+                cursor: 0,
+                head: 0,
+                median: 0,
+                filled: 0,
+                _phantom: core::marker::PhantomData,
+            },
+        }
+    }
 }
 
-impl<T, const N: usize> StateMut for Median<T, N> {
+#[cfg(feature = "alloc")]
+impl<T> MedianVec<T> {
+    /// Initialises an empty median filter.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `n` is 0.
+    #[must_use]
+    pub fn new(n: usize) -> Self {
+        assert!(n > 0, "Median: window size N must be > 0");
+        let buffer = (0..n)
+            .map(|index| ListNode {
+                value: None,
+                previous: (index + n - 1) % n,
+                next: (index + 1) % n,
+            })
+            .collect();
+
+        Self {
+            state: State {
+                buffer,
+                cursor: 0,
+                head: 0,
+                median: 0,
+                filled: 0,
+                _phantom: core::marker::PhantomData,
+            },
+        }
+    }
+}
+
+impl<T, B> StateTrait for Median<T, B> {
+    type State = State<T, B>;
+}
+
+impl<T, B> StateMut for Median<T, B> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Median<T, N> {
-    type Guts = State<T, N>;
+impl<T, B> HasGuts for Median<T, B> {
+    type Guts = State<T, B>;
 }
 
-impl<T, const N: usize> FromGuts for Median<T, N> {
+impl<T, B> FromGuts for Median<T, B> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Median<T, N> {
+impl<T, B> IntoGuts for Median<T, B> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, const N: usize> Reset for Median<T, N> {
+impl<T, const N: usize> Reset for MedianArray<T, N> {
     fn reset(self) -> Self {
         Self::default()
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Median<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for MedianArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<T> for Median<T, N>
+impl<T, B> Filter<T> for Median<T, B>
 where
     T: Clone + PartialOrd,
+    B: AsSlice<ListNode<T>>,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
-        if self.state.filled < N {
+        let n = self.state.buffer.as_slice().len();
+        if self.state.filled < n {
             self.state.filled += 1;
         }
 
@@ -221,37 +289,38 @@ where
             self.increment_cursor();
         }
 
-        // Read node value from buffer at `self.medium`:
+        // Read node value from buffer at `self.median`:
         unsafe { self.median_unchecked() }
     }
 }
 
-impl<T, const N: usize> Median<T, N>
+impl<T, B> Median<T, B>
 where
     T: Clone,
+    B: AsSlice<ListNode<T>>,
 {
     /// Returns the window size of the filter.
     pub fn len(&self) -> usize {
-        self.state.buffer.len()
+        self.state.buffer.as_slice().len()
     }
 
     /// Returns `true` if the filter's buffer is empty, `false` otherwise.
     pub fn is_empty(&self) -> bool {
-        self.state.buffer.is_empty()
+        self.state.buffer.as_slice().is_empty()
     }
 
     /// Returns the filter buffer's current median value,
     /// or `None` if the filter has not yet received any values.
     pub fn median(&self) -> Option<T> {
         let index = self.state.median;
-        self.state.buffer[index].value.clone()
+        self.state.buffer.as_slice()[index].value.clone()
     }
 
     /// Returns the filter buffer's current minimum value,
     /// or `None` if the filter has not yet received any values.
     pub fn min(&self) -> Option<T> {
         let index = self.state.head;
-        self.state.buffer[index].value.clone()
+        self.state.buffer.as_slice()[index].value.clone()
     }
 
     /// Returns the filter buffer's current maximum value,
@@ -259,8 +328,9 @@ where
     pub fn max(&self) -> Option<T> {
         // head points to the minimum in the sorted linked list;
         // its predecessor in the circular list is therefore the maximum.
-        let index = self.state.buffer[self.state.head].previous;
-        self.state.buffer[index].value.clone()
+        let buf = self.state.buffer.as_slice();
+        let index = buf[self.state.head].previous;
+        buf[index].value.clone()
     }
 
     /// Iterates the current window values.
@@ -268,19 +338,52 @@ where
     pub fn window_iter(&self) -> impl Iterator<Item = &T> {
         self.state
             .buffer
+            .as_slice()
             .iter()
             .filter_map(|node| node.value.as_ref())
     }
+
+    /// Creates a [`Median`] from a pre-initialised node buffer.
+    ///
+    /// This constructor is intended for storage containers whose size is not
+    /// known at compile time (e.g. [`MedianVec`]). For array-backed storage,
+    /// prefer the [`Default`] impl on [`MedianArray`].
+    ///
+    /// The buffer must already be populated with correctly linked `ListNode` entries
+    /// (i.e., each node's `previous`/`next` indices form a valid circular ring of
+    /// length `buffer.len()`). Use [`MedianArray::default`] as a reference for the
+    /// expected initial layout.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the buffer is empty.
+    pub fn from_parts(buffer: B) -> Self {
+        assert!(
+            !buffer.as_slice().is_empty(),
+            "Median: window size N must be > 0"
+        );
+        Self {
+            state: State {
+                buffer,
+                cursor: 0,
+                head: 0,
+                median: 0,
+                filled: 0,
+                _phantom: core::marker::PhantomData,
+            },
+        }
+    }
 }
 
-impl<T, const N: usize> Median<T, N>
+impl<T, B> Median<T, B>
 where
     T: Clone + PartialOrd,
+    B: AsSlice<ListNode<T>>,
 {
     #[inline]
     fn should_insert(&self, value: &T, current: usize, index: usize) -> bool {
         #[allow(clippy::option_if_let_else)]
-        if let Some(ref v) = self.state.buffer[current].value {
+        if let Some(ref v) = self.state.buffer.as_slice()[current].value {
             (index + 1 == self.len()) || (v >= value)
         } else {
             true
@@ -290,23 +393,23 @@ where
     #[inline]
     unsafe fn move_head_forward(&mut self) {
         if self.state.cursor == self.state.head {
-            self.state.head = self.state.buffer[self.state.head].next;
+            self.state.head = self.state.buffer.as_slice()[self.state.head].next;
         }
     }
 
     #[inline]
     unsafe fn remove_node(&mut self) {
         let (predecessor, successor) = {
-            let node = &self.state.buffer[self.state.cursor];
+            let node = &self.state.buffer.as_slice()[self.state.cursor];
             (node.previous, node.next)
         };
-        self.state.buffer[predecessor].next = successor;
-        self.state.buffer[self.state.cursor] = ListNode {
+        self.state.buffer.as_mut_slice()[predecessor].next = successor;
+        self.state.buffer.as_mut_slice()[self.state.cursor] = ListNode {
             previous: usize::MAX,
             value: None,
             next: usize::MAX,
         };
-        self.state.buffer[successor].previous = predecessor;
+        self.state.buffer.as_mut_slice()[successor].previous = predecessor;
     }
 
     #[inline]
@@ -325,32 +428,33 @@ where
                 }
             }
 
-            current = self.state.buffer[current].next;
+            current = self.state.buffer.as_slice()[current].next;
         }
     }
 
     #[inline]
     unsafe fn insert(&mut self, value: &T, current: usize) {
         let successor = current;
-        let predecessor = self.state.buffer[current].previous;
-        debug_assert!(self.state.buffer.len() == 1 || current != self.state.cursor);
-        self.state.buffer[predecessor].next = self.state.cursor;
-        self.state.buffer[self.state.cursor] = ListNode {
+        let predecessor = self.state.buffer.as_slice()[current].previous;
+        debug_assert!(self.state.buffer.as_slice().len() == 1 || current != self.state.cursor);
+        self.state.buffer.as_mut_slice()[predecessor].next = self.state.cursor;
+        self.state.buffer.as_mut_slice()[self.state.cursor] = ListNode {
             previous: predecessor,
             value: Some(value.clone()),
             next: successor,
         };
-        self.state.buffer[successor].previous = self.state.cursor;
+        self.state.buffer.as_mut_slice()[successor].previous = self.state.cursor;
     }
 
     #[inline]
     unsafe fn update_head(&mut self, value: &T) {
         #[allow(clippy::option_if_let_else)]
-        let should_update_head = if let Some(ref head) = self.state.buffer[self.state.head].value {
-            value <= head
-        } else {
-            true
-        };
+        let should_update_head =
+            if let Some(ref head) = self.state.buffer.as_slice()[self.state.head].value {
+                value <= head
+            } else {
+                true
+            };
 
         if should_update_head {
             self.state.head = self.state.cursor;
@@ -362,13 +466,13 @@ where
         let target = (self.state.filled.saturating_sub(1)) / 2;
         self.state.median = self.state.head;
         for _ in 0..target {
-            self.state.median = self.state.buffer[self.state.median].next;
+            self.state.median = self.state.buffer.as_slice()[self.state.median].next;
         }
     }
 
     #[inline]
     unsafe fn increment_cursor(&mut self) {
-        self.state.cursor = (self.state.cursor + 1) % (self.len());
+        self.state.cursor = (self.state.cursor + 1) % self.len();
     }
 
     #[inline]

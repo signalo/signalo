@@ -6,29 +6,42 @@
 
 use core::fmt;
 
-use circular_buffer::CircularBuffer;
+use circular_buffer::FixedCircularBuffer;
 use num_traits::Num;
 
+use crate::storage::RingBuffer;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Filter, Reset, State as StateTrait, StateMut,
 };
 
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
+
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
 /// The min filter's state.
+///
+/// Generic over the ring-buffer backend `R` that stores the monotonic-deque
+/// window. The element type stored in the deque is `(T, usize)` — a
+/// `(value, timestamp)` pair. Use [`MinArray`] for stack-allocated storage
+/// or [`MinVec`] for heap-allocated storage.
 #[derive(Clone)]
-pub struct State<T, const N: usize> {
+pub struct State<T, R> {
     /// The discrete timestamp of the latest input.
     pub time: usize,
-    /// The current taps buffer.
-    pub taps: CircularBuffer<N, (T, usize)>,
+    /// The current taps buffer (monotonic deque of `(value, timestamp)` pairs).
+    pub taps: R,
+    /// Marker to associate the value type `T` with the state without storing
+    /// it directly (the element type `(T, usize)` is carried by `R`).
+    _pd: core::marker::PhantomData<T>,
 }
 
-impl<T, const N: usize> fmt::Debug for State<T, N>
+impl<T, R> fmt::Debug for State<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -40,87 +53,145 @@ where
 
 /// A min filter producing the moving minimum over a given signal.
 ///
+/// The filter maintains a monotone increasing deque of `(value, timestamp)`
+/// pairs, evicting out-of-window entries from the front and larger-than-input
+/// entries from the back on each call to [`Filter::filter`]. This gives
+/// amortised O(1) time per sample.
+///
+/// # Storage
+///
+/// The tap ring-buffer backend is selected by the `R` type parameter.
+/// Prefer the concrete aliases for common use:
+///
+/// - [`MinArray<T, N>`] — stack-allocated, `no_std`-friendly.
+/// - [`MinVec<T>`] — heap-allocated, requires the `alloc` feature.
+///
 /// # Complexity
 ///
 /// - **Time per sample:** O(N) amortised O(1); same monotone-deque argument as `Max`.
 /// - **Space:** O(N); deque holds at most N `(value, timestamp)` pairs.
 #[derive(Clone)]
-pub struct Min<T, const N: usize> {
-    state: State<T, N>,
+pub struct Min<T, R> {
+    state: State<T, R>,
 }
 
-impl<T, const N: usize> Default for Min<T, N> {
+/// A min filter backed by a const-generic [`FixedCircularBuffer`] tap buffer.
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. The tap
+/// ring-buffer lives entirely on the stack.
+pub type MinArray<T, const N: usize> = Min<T, FixedCircularBuffer<(T, usize), N>>;
+
+/// A min filter backed by a heap-allocated [`HeapCircularBuffer`] tap buffer.
+///
+/// Requires the `alloc` feature. Use [`Min::from_parts`] to construct
+/// this variant, since the tap buffer cannot be `Default`-constructed without
+/// knowing the desired capacity at compile time.
+#[cfg(feature = "alloc")]
+pub type MinVec<T> = Min<T, HeapCircularBuffer<(T, usize)>>;
+
+impl<T, const N: usize> Default for MinArray<T, N> {
     fn default() -> Self {
         assert!(N > 0, "Min: window size N must be > 0");
         Self {
             state: State {
                 time: 0,
-                taps: CircularBuffer::default(),
+                taps: FixedCircularBuffer::default(),
+                _pd: core::marker::PhantomData,
             },
         }
     }
 }
 
-impl<T, const N: usize> fmt::Debug for Min<T, N>
+impl<T, R> Min<T, R>
+where
+    R: RingBuffer<(T, usize)>,
+{
+    /// Creates a [`Min`] filter from an already-constructed `taps` ring-buffer.
+    ///
+    /// Use this constructor when the tap storage is not `Default`-constructible,
+    /// e.g. for [`MinVec`] whose capacity must be known at runtime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `taps.capacity()` is zero.
+    pub fn from_parts(taps: R) -> Self {
+        assert!(
+            taps.capacity() > 0,
+            "Min: window size (taps capacity) must be > 0"
+        );
+        Self {
+            state: State {
+                time: 0,
+                taps,
+                _pd: core::marker::PhantomData,
+            },
+        }
+    }
+}
+
+impl<T, R> fmt::Debug for Min<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Min").field("state", &self.state).finish()
     }
 }
 
-impl<T, const N: usize> StateTrait for Min<T, N> {
-    type State = State<T, N>;
+impl<T, R> StateTrait for Min<T, R> {
+    type State = State<T, R>;
 }
 
-impl<T, const N: usize> StateMut for Min<T, N> {
+impl<T, R> StateMut for Min<T, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Min<T, N> {
-    type Guts = State<T, N>;
+impl<T, R> HasGuts for Min<T, R> {
+    type Guts = State<T, R>;
 }
 
-impl<T, const N: usize> FromGuts for Min<T, N> {
+impl<T, R> FromGuts for Min<T, R> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Min<T, N> {
+impl<T, R> IntoGuts for Min<T, R> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, const N: usize> Reset for Min<T, N> {
+impl<T, const N: usize> Reset for MinArray<T, N> {
     fn reset(self) -> Self {
         Self::default()
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Min<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for MinArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<T> for Min<T, N>
+impl<T, R> Filter<T> for Min<T, R>
 where
     T: Clone + Num + PartialOrd,
+    R: RingBuffer<(T, usize)>,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
         let current_time = self.state.time;
+        let n = self.state.taps.capacity();
 
         // pop all items that have left the moving window, from the front:
         while self
             .state
             .taps
             .front()
-            .map_or(false, |(_, time)| time + N <= current_time)
+            .is_some_and(|(_, time)| time + n <= current_time)
         {
             let _ = self.state.taps.pop_front();
         }
@@ -142,11 +213,11 @@ where
             self.state.time += 1;
         } else {
             // Time has overflown, so we need to adjust our state accordingly:
-            let offset = self.state.time - N;
+            let offset = self.state.time - n;
             for (_, time) in self.state.taps.iter_mut() {
                 *time -= offset;
             }
-            self.state.time = N + 1;
+            self.state.time = n + 1;
         }
 
         self.state
@@ -168,7 +239,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "window size N must be > 0")]
     fn zero_window_panics() {
-        let _: Min<f32, 0> = Min::default();
+        let _: MinArray<f32, 0> = MinArray::default();
     }
 
     fn get_input() -> Vec<f32> {
@@ -192,7 +263,7 @@ mod tests {
     #[test]
     fn overflow_monotonicity() {
         const N: usize = 3;
-        let mut filter: Min<usize, N> = Min::default();
+        let mut filter: MinArray<usize, N> = MinArray::default();
         // Pump N values so the deque has realistic content, then wind time forward.
         filter.filter(0);
         filter.filter(0);
@@ -211,7 +282,7 @@ mod tests {
     fn test() {
         const N: usize = 3;
 
-        let filter: Min<f32, N> = Min::default();
+        let filter: MinArray<f32, N> = MinArray::default();
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();

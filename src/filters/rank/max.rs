@@ -4,31 +4,43 @@
 
 //! Moving maximum filters.
 
+use circular_buffer::FixedCircularBuffer;
 use core::fmt;
-
-use circular_buffer::CircularBuffer;
 use num_traits::Num;
 
+use crate::storage::RingBuffer;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Filter, Reset, State as StateTrait, StateMut,
 };
 
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
+
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
 /// The max filter's state.
+///
+/// Generic over the ring-buffer backend `R` that stores the monotonic-deque
+/// window. The element type stored in the deque is `(T, usize)` — a
+/// `(value, timestamp)` pair. Use [`MaxArray`] for stack-allocated storage
+/// or [`MaxVec`] for heap-allocated storage.
 #[derive(Clone)]
-pub struct State<T, const N: usize> {
+pub struct State<T, R> {
     /// The discrete timestamp of the latest input.
     pub time: usize,
-    /// The current taps buffer.
-    pub taps: CircularBuffer<N, (T, usize)>,
+    /// The current taps buffer (monotonic deque of `(value, timestamp)` pairs).
+    pub taps: R,
+    /// Marker to associate the value type `T` with the state without storing
+    /// it directly (the element type `(T, usize)` is carried by `R`).
+    _pd: core::marker::PhantomData<T>,
 }
 
-impl<T, const N: usize> fmt::Debug for State<T, N>
+impl<T, R> fmt::Debug for State<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -40,88 +52,146 @@ where
 
 /// A max filter producing the moving maximum over a given signal.
 ///
+/// The filter maintains a monotone decreasing deque of `(value, timestamp)`
+/// pairs, evicting out-of-window entries from the front and smaller-than-input
+/// entries from the back on each call to [`Filter::filter`]. This gives
+/// amortised O(1) time per sample.
+///
+/// # Storage
+///
+/// The tap ring-buffer backend is selected by the `R` type parameter.
+/// Prefer the concrete aliases for common use:
+///
+/// - [`MaxArray<T, N>`] — stack-allocated, `no_std`-friendly.
+/// - [`MaxVec<T>`] — heap-allocated, requires the `alloc` feature.
+///
 /// # Complexity
 ///
 /// - **Time per sample:** O(N) amortised O(1); each element is pushed and popped at most once
 ///   across N calls (monotone deque); O(N) only on the rare `usize::MAX` timestamp recovery.
 /// - **Space:** O(N); deque holds at most N `(value, timestamp)` pairs.
 #[derive(Clone)]
-pub struct Max<T, const N: usize> {
-    state: State<T, N>,
+pub struct Max<T, R> {
+    state: State<T, R>,
 }
 
-impl<T, const N: usize> Default for Max<T, N> {
+/// A max filter backed by a const-generic [`FixedCircularBuffer`] tap buffer.
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. The tap
+/// ring-buffer lives entirely on the stack.
+pub type MaxArray<T, const N: usize> = Max<T, FixedCircularBuffer<(T, usize), N>>;
+
+/// A max filter backed by a heap-allocated [`HeapCircularBuffer`] tap buffer.
+///
+/// Requires the `alloc` feature. Use [`Max::from_parts`] to construct
+/// this variant, since the tap buffer cannot be `Default`-constructed without
+/// knowing the desired capacity at compile time.
+#[cfg(feature = "alloc")]
+pub type MaxVec<T> = Max<T, HeapCircularBuffer<(T, usize)>>;
+
+impl<T, const N: usize> Default for MaxArray<T, N> {
     fn default() -> Self {
         assert!(N > 0, "Max: window size N must be > 0");
         Self {
             state: State {
                 time: 0,
-                taps: CircularBuffer::default(),
+                taps: FixedCircularBuffer::default(),
+                _pd: core::marker::PhantomData,
             },
         }
     }
 }
 
-impl<T, const N: usize> fmt::Debug for Max<T, N>
+impl<T, R> Max<T, R>
+where
+    R: RingBuffer<(T, usize)>,
+{
+    /// Creates a [`Max`] filter from an already-constructed `taps` ring-buffer.
+    ///
+    /// Use this constructor when the tap storage is not `Default`-constructible,
+    /// e.g. for [`MaxVec`] whose capacity must be known at runtime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `taps.capacity()` is zero.
+    pub fn from_parts(taps: R) -> Self {
+        assert!(
+            taps.capacity() > 0,
+            "Max: window size (taps capacity) must be > 0"
+        );
+        Self {
+            state: State {
+                time: 0,
+                taps,
+                _pd: core::marker::PhantomData,
+            },
+        }
+    }
+}
+
+impl<T, R> fmt::Debug for Max<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Max").field("state", &self.state).finish()
     }
 }
 
-impl<T, const N: usize> StateTrait for Max<T, N> {
-    type State = State<T, N>;
+impl<T, R> StateTrait for Max<T, R> {
+    type State = State<T, R>;
 }
 
-impl<T, const N: usize> StateMut for Max<T, N> {
+impl<T, R> StateMut for Max<T, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Max<T, N> {
-    type Guts = State<T, N>;
+impl<T, R> HasGuts for Max<T, R> {
+    type Guts = State<T, R>;
 }
 
-impl<T, const N: usize> FromGuts for Max<T, N> {
+impl<T, R> FromGuts for Max<T, R> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Max<T, N> {
+impl<T, R> IntoGuts for Max<T, R> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, const N: usize> Reset for Max<T, N> {
+impl<T, const N: usize> Reset for MaxArray<T, N> {
     fn reset(self) -> Self {
         Self::default()
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Max<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for MaxArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<T> for Max<T, N>
+impl<T, R> Filter<T> for Max<T, R>
 where
     T: Clone + Num + PartialOrd,
+    R: RingBuffer<(T, usize)>,
 {
     type Output = T;
 
     fn filter(&mut self, input: T) -> Self::Output {
         let current_time = self.state.time;
+        let n = self.state.taps.capacity();
 
         // pop all items that have left the moving window, from the front:
         while self
             .state
             .taps
             .front()
-            .map_or(false, |(_, time)| time + N <= current_time)
+            .is_some_and(|(_, time)| time + n <= current_time)
         {
             let _ = self.state.taps.pop_front();
         }
@@ -143,11 +213,11 @@ where
             self.state.time += 1;
         } else {
             // Time has overflown, so we need to adjust our state accordingly:
-            let offset = self.state.time - N;
+            let offset = self.state.time - n;
             for (_, time) in self.state.taps.iter_mut() {
                 *time -= offset;
             }
-            self.state.time = N + 1;
+            self.state.time = n + 1;
         }
 
         self.state
@@ -169,7 +239,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "window size N must be > 0")]
     fn zero_window_panics() {
-        let _: Max<f32, 0> = Max::default();
+        let _: MaxArray<f32, 0> = MaxArray::default();
     }
 
     fn get_input() -> Vec<f32> {
@@ -193,7 +263,7 @@ mod tests {
     #[test]
     fn overflow_monotonicity() {
         const N: usize = 3;
-        let mut filter: Max<usize, N> = Max::default();
+        let mut filter: MaxArray<usize, N> = MaxArray::default();
         // Pump N values so the deque has realistic content, then wind time forward.
         filter.filter(0);
         filter.filter(0);
@@ -213,7 +283,7 @@ mod tests {
     fn test() {
         const N: usize = 3;
 
-        let filter: Max<f32, N> = Max::default();
+        let filter: MaxArray<f32, N> = MaxArray::default();
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
