@@ -5,10 +5,15 @@
 //! Delay filters.
 
 use core::fmt;
+use core::marker::PhantomData;
 
-use circular_buffer::CircularBuffer;
+use circular_buffer::FixedCircularBuffer;
 use num_traits::Num;
 
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
+
+use crate::storage::RingBuffer;
 use crate::traits::Filter;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
@@ -17,87 +22,143 @@ use crate::traits::{
 
 /// The delay filter's state.
 #[derive(Clone)]
-pub struct State<T, const N: usize> {
+pub struct State<R> {
     /// The current taps buffer.
-    pub taps: CircularBuffer<N, T>,
+    pub taps: R,
 }
 
-impl<T, const N: usize> fmt::Debug for State<T, N>
+impl<R> fmt::Debug for State<R>
 where
-    T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State").field("taps", &self.taps).finish()
     }
 }
 
-/// A delay filter producing the moving median over a given signal.
+/// A delay filter that delays the input signal by a fixed number of samples.
+///
+/// The filter uses a ring-buffer `R` as its tap storage. On each call to
+/// [`Filter::filter`], the newest sample is pushed into the buffer and the
+/// oldest sample is returned. Until the buffer is full the filter re-inserts
+/// the current input in a loop until the buffer wraps and an evicted element
+/// is available.
 ///
 /// # Complexity
 ///
 /// - **Time per sample:** O(N) only on the first N calls (buffer fill); O(1) thereafter;
 ///   one `push_back` to the circular buffer.
 /// - **Space:** O(N); circular buffer of N delayed samples.
+///
+/// # Type aliases
+///
+/// Prefer the concrete aliases for common use:
+/// - [`DelayArray<T, N>`] — stack-allocated, `no_std`-friendly.
+/// - [`DelayVec<T>`] — heap-allocated, requires the `alloc` feature.
 #[derive(Clone)]
-pub struct Delay<T, const N: usize> {
-    state: State<T, N>,
+pub struct Delay<T, R> {
+    state: State<R>,
+    _pd: PhantomData<T>,
 }
 
-impl<T, const N: usize> Default for Delay<T, N> {
-    fn default() -> Self {
-        let state = {
-            let taps = CircularBuffer::default();
-            State { taps }
-        };
-        Self { state }
+/// A delay filter backed by a const-generic [`FixedCircularBuffer`] tap buffer.
+///
+/// This alias is the `no_std`-friendly, zero-allocation form. The tap
+/// ring-buffer lives entirely on the stack.
+pub type DelayArray<T, const N: usize> = Delay<T, FixedCircularBuffer<T, N>>;
+
+/// A delay filter backed by a heap-allocated [`HeapCircularBuffer`] tap buffer.
+///
+/// Requires the `alloc` feature. Use [`Delay::from_parts`] to construct this
+/// variant, since the tap buffer cannot be `Default`-constructed without
+/// knowing the desired capacity at compile time.
+#[cfg(feature = "alloc")]
+pub type DelayVec<T> = Delay<T, HeapCircularBuffer<T>>;
+
+impl<T, R> Delay<T, R>
+where
+    R: RingBuffer<T>,
+{
+    /// Creates a [`Delay`] filter from an already-constructed `taps` ring-buffer.
+    ///
+    /// Use this constructor when the tap storage is not `Default`-constructible,
+    /// e.g. for [`DelayVec`] whose capacity must be known at runtime.
+    pub fn from_parts(taps: R) -> Self {
+        Self {
+            state: State { taps },
+            _pd: PhantomData,
+        }
     }
 }
 
-impl<T, const N: usize> fmt::Debug for Delay<T, N>
+impl<T, const N: usize> Default for DelayArray<T, N>
 where
-    T: fmt::Debug,
+    T: Num,
+{
+    fn default() -> Self {
+        let state = {
+            let taps = FixedCircularBuffer::default();
+            State { taps }
+        };
+        Self {
+            state,
+            _pd: PhantomData,
+        }
+    }
+}
+
+impl<T, R> fmt::Debug for Delay<T, R>
+where
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Delay").field("state", &self.state).finish()
     }
 }
 
-impl<T, const N: usize> StateTrait for Delay<T, N> {
-    type State = State<T, N>;
+impl<T, R> StateTrait for Delay<T, R> {
+    type State = State<R>;
 }
 
-impl<T, const N: usize> StateMut for Delay<T, N> {
+impl<T, R> StateMut for Delay<T, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Delay<T, N> {
-    type Guts = State<T, N>;
+impl<T, R> HasGuts for Delay<T, R> {
+    type Guts = State<R>;
 }
 
-impl<T, const N: usize> FromGuts for Delay<T, N> {
+impl<T, R> FromGuts for Delay<T, R> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
-        Self { state }
+        Self {
+            state,
+            _pd: PhantomData,
+        }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Delay<T, N> {
+impl<T, R> IntoGuts for Delay<T, R> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, const N: usize> Reset for Delay<T, N> {
+impl<T, const N: usize> Reset for DelayArray<T, N>
+where
+    T: Num,
+{
     fn reset(self) -> Self {
         Self::default()
     }
 }
 
-impl<T, const N: usize> Filter<T> for Delay<T, N>
+impl<T, R> Filter<T> for Delay<T, R>
 where
     T: Clone + Num,
+    R: RingBuffer<T>,
 {
     type Output = T;
 
@@ -143,7 +204,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Delay<f32, 2> = Delay::default();
+        let filter: DelayArray<f32, 2> = DelayArray::default();
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
@@ -155,7 +216,7 @@ mod tests {
 
     #[test]
     fn test_state_mut() {
-        let mut filter: Delay<i32, 2> = Delay::default();
+        let mut filter: DelayArray<i32, 2> = DelayArray::default();
         filter.filter(1);
         filter.filter(2);
 
@@ -170,14 +231,14 @@ mod tests {
 
     #[test]
     fn test_from_into_guts() {
-        let filter: Delay<i32, 2> = Delay::default();
+        let filter: DelayArray<i32, 2> = DelayArray::default();
         let guts = filter.into_guts();
-        let _new_filter: Delay<i32, 2> = FromGuts::from_guts(guts);
+        let _new_filter: DelayArray<i32, 2> = FromGuts::from_guts(guts);
     }
 
     #[test]
     fn test_reset() {
-        let mut filter: Delay<i32, 2> = Delay::default();
+        let mut filter: DelayArray<i32, 2> = DelayArray::default();
         filter.filter(10);
         filter.filter(20);
 
