@@ -83,12 +83,14 @@ pub fn safe_normalise_divisor<T: Float + core::fmt::Debug>(den: T, msg: &'static
 mod tests {
     use super::*;
 
+    #[cfg(any(feature = "libm", feature = "std"))]
     #[test]
     #[should_panic(expected = "floor")]
     fn safe_normalise_divisor_rejects_subnormal() {
         let _ = safe_normalise_divisor(f32::from_bits(1), "test");
     }
 
+    #[cfg(any(feature = "libm", feature = "std"))]
     #[test]
     fn safe_normalise_divisor_accepts_one() {
         assert_eq!(safe_normalise_divisor(1.0_f32, "test"), 1.0);
