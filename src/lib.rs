@@ -60,6 +60,8 @@ extern crate alloc;
 
 pub mod math;
 
+pub mod storage;
+
 pub mod traits;
 
 pub mod filters;
