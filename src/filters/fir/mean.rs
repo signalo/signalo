@@ -132,7 +132,10 @@ where
     R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Mean").field("state", &self.state).finish()
+        f.debug_struct("Mean")
+            .field("config", &self.config)
+            .field("state", &self.state)
+            .finish()
     }
 }
 

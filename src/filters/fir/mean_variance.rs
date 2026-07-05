@@ -148,6 +148,7 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("MeanVariance")
+            .field("config", &self.config)
             .field("state", &self.state)
             .finish()
     }

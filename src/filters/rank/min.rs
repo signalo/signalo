@@ -241,7 +241,7 @@ where
             .state
             .taps
             .back()
-            .map_or(false, |(value, _)| &input < value)
+            .is_some_and(|(value, _)| &input < value)
         {
             let _ = self.state.taps.pop_back();
         }
