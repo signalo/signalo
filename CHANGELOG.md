@@ -27,6 +27,12 @@ Please make sure to add your changes to the appropriate categories:
 - Added "libm" feature for `#![no_std]` float support
 - Added FIR window functions: `Blackman`, `BlackmanHarris`, `FlatTop`, `Hamming`, `Hann`, `Kaiser`, `Rectangular`, and `Triangular`
 - Added FIR filter implementations: differentiator (Fornberg), Lagrange fractional-delay, moving-sum, and windowed-sinc (lowpass, highpass, bandpass, bandstop)
+- Added `crate::storage` module with `AsSlice` and `RingBuffer` traits for abstracting over array-based, vec-based, and borrowed storage backends
+- Added `AsSlice` impls for `[T; N]`, `Vec<T>`, and `&mut [T]`
+- Added `*Array` (stack-allocated) type aliases for all applicable storage-generic filters, sinks, and window functions
+- Added `*Vec` (heap-allocated, requires `alloc` feature) type aliases for all applicable storage-generic filters, sinks, and window functions
+- Added `*RefMut` (borrowed) type aliases for all applicable storage-generic filters, sinks, and window functions
+- Added `from_parts()` constructors to all storage-generic types for constructing with pre-initialized storage
 
 ### Changed
 
@@ -37,6 +43,16 @@ Please make sure to add your changes to the appropriate categories:
 - Renamed `UnitSystem` to `Uom` and moved to `util::uom`
 - Renamed `observe` module to `estimate`
 - `Convolve::normalized()` now normalizes all non-zero coefficient sums (was `sum > 0` only), with `debug_assert!` guards against non-finite sums
+- Made all filters, sinks, and window functions generic over their storage backends — old concrete `Type<T, const N: usize>` signatures replaced with generic `Type<T, S>` plus `TypeArray<T, N>` / `TypeVec<T>` aliases
+- `BiquadCascade` is now generic over its config and state section storage backends
+- `FeedbackComb` switched from manual `[T; D]` delay-line array to generic `RingBuffer`-based delay line
+- `Config` type added to `Mean` and `MeanVariance` filters (was bare struct without config)
+- `Histogram` now generic over bin storage backend (array, vec, or custom `AsSlice<u32>`)
+- Bumped MSRV from "1.68.2" to "1.93.0" (driven by `circular-buffer` 2.0.0)
+- `alloc` feature now enables `circular-buffer/alloc`
+- `Mean` and `MeanVariance` `Debug` output now includes the `config` field
+- Updated dependencies:
+  - `circular-buffer` from `1.0.0` to `2.0.0`
 
 ### Deprecated
 
