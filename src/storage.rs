@@ -23,7 +23,7 @@
 
 #[cfg(feature = "alloc")]
 use circular_buffer::HeapCircularBuffer;
-use circular_buffer::{CircularBuffer, FixedCircularBuffer, IterMut};
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 
 /// A contiguous, flat storage backend.
 ///
@@ -107,7 +107,9 @@ pub trait RingBuffer<T> {
         T: 'a;
 
     /// Returns a mutable iterator over the elements, from oldest to newest.
-    fn iter_mut(&mut self) -> IterMut<'_, T>;
+    fn iter_mut<'a>(&'a mut self) -> impl Iterator<Item = &'a mut T>
+    where
+        T: 'a;
 
     /// Returns the number of elements currently in the buffer.
     fn len(&self) -> usize;
@@ -157,7 +159,10 @@ impl<T, const N: usize> RingBuffer<T> for FixedCircularBuffer<T, N> {
         (**self).iter()
     }
 
-    fn iter_mut(&mut self) -> IterMut<'_, T> {
+    fn iter_mut<'a>(&'a mut self) -> impl Iterator<Item = &'a mut T>
+    where
+        T: 'a,
+    {
         (**self).iter_mut()
     }
 
@@ -207,7 +212,10 @@ impl<T> RingBuffer<T> for HeapCircularBuffer<T> {
         (**self).iter()
     }
 
-    fn iter_mut(&mut self) -> IterMut<'_, T> {
+    fn iter_mut<'a>(&'a mut self) -> impl Iterator<Item = &'a mut T>
+    where
+        T: 'a,
+    {
         (**self).iter_mut()
     }
 
@@ -256,7 +264,10 @@ impl<T> RingBuffer<T> for &mut CircularBuffer<T> {
         (**self).iter()
     }
 
-    fn iter_mut(&mut self) -> IterMut<'_, T> {
+    fn iter_mut<'a>(&'a mut self) -> impl Iterator<Item = &'a mut T>
+    where
+        T: 'a,
+    {
         (**self).iter_mut()
     }
 
