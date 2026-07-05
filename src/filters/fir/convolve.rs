@@ -9,7 +9,7 @@ use core::marker::PhantomData;
 use circular_buffer::FixedCircularBuffer;
 use num_traits::Num;
 
-use crate::storage::{AsSlice, RingBuffer};
+use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -191,10 +191,7 @@ where
             "Convolve: coefficients length must equal N"
         );
         let state = {
-            let mut taps: FixedCircularBuffer<T, N> = FixedCircularBuffer::new();
-            for _ in 0..N {
-                let _ = taps.push_back(T::zero());
-            }
+            let taps = zero_filled_fixed_ring::<T, N>();
             State { taps }
         };
         Self {
