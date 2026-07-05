@@ -28,11 +28,8 @@ use num_traits::Num;
 
 /// A contiguous, flat storage backend.
 ///
-/// Implemented for any type that can be viewed as a shared and mutable
-/// slice of `T`, such as `[T; N]` or (with the `alloc` feature)
-/// `alloc::vec::Vec<T>`. This is the storage contract used by DSP types
-/// that hold a flat buffer of fixed logical length (e.g. FIR coefficient
-/// tables, histogram bins).
+/// Implemented explicitly for `[T; N]` and (with `alloc`) `Vec<T>`. Downstream
+/// types wrapping either can either implement `AsSlice` directly or delegate.
 pub trait AsSlice<T> {
     /// Returns a shared slice view over the storage.
     fn as_slice(&self) -> &[T];
@@ -51,16 +48,34 @@ pub trait AsSlice<T> {
     }
 }
 
-impl<T, S> AsSlice<T> for S
-where
-    S: AsRef<[T]> + AsMut<[T]>,
-{
+impl<T, const N: usize> AsSlice<T> for [T; N] {
     fn as_slice(&self) -> &[T] {
-        self.as_ref()
+        self.as_slice()
     }
 
     fn as_mut_slice(&mut self) -> &mut [T] {
-        self.as_mut()
+        self.as_mut_slice()
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> AsSlice<T> for alloc::vec::Vec<T> {
+    fn as_slice(&self) -> &[T] {
+        self.as_slice()
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [T] {
+        self.as_mut_slice()
+    }
+}
+
+impl<T> AsSlice<T> for &mut [T] {
+    fn as_slice(&self) -> &[T] {
+        self
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [T] {
+        self
     }
 }
 
