@@ -83,6 +83,15 @@ where
     ///
     /// Use this constructor when the tap storage is not `Default`-constructible,
     /// e.g. for [`DelayVec`] whose capacity must be known at runtime.
+    ///
+    /// The `taps` buffer is taken as-is with their current contents.
+    /// If it contains pre-existing samples, those values are treated as past
+    /// input history and will be output before any newly filtered samples.
+    ///
+    /// # Expected storage state
+    ///
+    /// For an idiomatic cold-start (where the first `N` outputs are re-inserted
+    /// input), pass an empty buffer.
     pub fn from_parts(taps: R) -> Self {
         Self {
             state: State { taps },

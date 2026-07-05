@@ -83,6 +83,13 @@ pub type HistogramVec<T> = Histogram<T, alloc::vec::Vec<u32>>;
 impl<T: Clone, B: AsSlice<u32>> Histogram<T, B> {
     /// Creates a new histogram from a config and caller-supplied bin storage.
     ///
+    /// The `bins` array is taken as-is with their current contents. If the bins contain
+    /// non-zero counts, those values contribute to the histogram from the first sample.
+    ///
+    /// # Expected storage state
+    ///
+    /// For a clean start, pass a zero-initialized bin array.
+    ///
     /// # Panics
     ///
     /// Panics if `bins` is empty.
