@@ -125,9 +125,15 @@ where
     /// Use this constructor when the ring buffer storage is not `Default`-constructible,
     /// for example for [`FeedbackCombVec`] whose capacity must be known at runtime.
     ///
-    /// The caller is responsible for pre-filling `output_delay` with `D` zeros (or the
-    /// desired initial state) before passing it here; otherwise the filter's first output
-    /// samples may be incorrect.
+    /// The `output_delay` buffer is taken as-is with their current contents. If it contains
+    /// non-zero content, the filter's first output samples incorporate the pre-existing
+    /// delay-line content into the feedback path.
+    ///
+    /// # Expected storage state
+    ///
+    /// For an idiomatic cold-start (where the feedback path starts silent),
+    /// pre-fill `output_delay` with `D` zeros or the desired initial state
+    /// before passing.
     pub fn from_parts(config: Config<T>, output_delay: R) -> Self {
         Self {
             config,

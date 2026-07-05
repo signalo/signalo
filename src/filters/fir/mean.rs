@@ -133,6 +133,15 @@ where
     /// Use this constructor when the tap storage is not `Default`-constructible,
     /// e.g. for [`MeanVec`] whose capacity must be known at runtime.
     ///
+    /// The `taps` buffer is taken as-is with its current contents. The
+    /// accumulator (`mean` and `weight`) starts fresh, so the mean will
+    /// converge to the correct value over `N` samples as pre-existing entries
+    /// are evicted.
+    ///
+    /// # Expected storage state
+    ///
+    /// For predictable output from the first sample, pass an empty buffer.
+    ///
     /// # Panics
     ///
     /// Panics if `taps.capacity()` is zero.

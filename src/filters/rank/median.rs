@@ -346,13 +346,17 @@ where
     /// Creates a [`Median`] from a pre-initialised node buffer.
     ///
     /// This constructor is intended for storage containers whose size is not
-    /// known at compile time (e.g. [`MedianVec`]). For array-backed storage,
-    /// prefer the [`Default`] impl on [`MedianArray`].
+    /// known at compile time (e.g. [`MedianVec`]).
     ///
-    /// The buffer must already be populated with correctly linked `ListNode` entries
-    /// (i.e., each node's `previous`/`next` indices form a valid circular ring of
-    /// length `buffer.len()`). Use [`MedianArray::default`] as a reference for the
-    /// expected initial layout.
+    /// The buffer is taken as-is with their current contents. Each node's `previous`
+    /// and `next` indices must form a valid circular linked list
+    /// (i.e. `node[node[i].next].previous == i` for all `i`, with all indices in bounds).
+    ///
+    /// # Expected storage state
+    ///
+    /// For the idiomatic initial state, the buffer should contain correctly
+    /// linked nodes with all values set to `None`. Use
+    /// [`MedianVec::new_buffer`] to construct such a buffer.
     ///
     /// # Panics
     ///
@@ -362,6 +366,20 @@ where
             !buffer.as_slice().is_empty(),
             "Median: window size N must be > 0"
         );
+
+        debug_assert!(
+            {
+                let slice = buffer.as_slice();
+                let n = slice.len();
+                (0..n).all(|i| {
+                    let next = slice[i].next;
+                    let prev = slice[i].previous;
+                    next < n && prev < n && slice[next].previous == i && slice[prev].next == i
+                })
+            },
+            "Median: buffer nodes must form a valid circular linked list (next < n, prev < n, node[node[i].next].previous == i, node[node[i].prev].next == i for all i)"
+        );
+
         Self {
             state: State {
                 buffer,

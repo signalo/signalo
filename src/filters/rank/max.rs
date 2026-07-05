@@ -104,12 +104,21 @@ impl<T, const N: usize> Default for MaxArray<T, N> {
 
 impl<T, R> Max<T, R>
 where
+    T: PartialOrd,
     R: RingBuffer<(T, usize)>,
 {
     /// Creates a [`Max`] filter from an already-constructed `taps` ring-buffer.
     ///
     /// Use this constructor when the tap storage is not `Default`-constructible,
     /// e.g. for [`MaxVec`] whose capacity must be known at runtime.
+    ///
+    /// The `taps` deque is taken as-is with their current contents. For correct results,
+    /// the deque must be empty or monotonically decreasing (`value_i >= value_{i+1}`)
+    /// with strictly increasing timestamps.
+    ///
+    /// # Expected storage state
+    ///
+    /// For an idiomatic cold-start, pass an empty buffer.
     ///
     /// # Panics
     ///
@@ -119,6 +128,25 @@ where
             taps.capacity() > 0,
             "Max: window size (taps capacity) must be > 0"
         );
+
+        debug_assert!(
+            {
+                let mut prev: Option<&(T, usize)> = None;
+                let mut ok = true;
+                for current in taps.iter() {
+                    if let Some((prev_val, prev_ts)) = prev {
+                        if prev_val < &current.0 || *prev_ts >= current.1 {
+                            ok = false;
+                            break;
+                        }
+                    }
+                    prev = Some(current);
+                }
+                ok
+            },
+            "Max: the taps deque must be empty or monotonically decreasing with strictly increasing timestamps"
+        );
+
         Self {
             state: State {
                 time: 0,

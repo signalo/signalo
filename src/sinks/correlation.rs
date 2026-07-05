@@ -81,6 +81,14 @@ where
     /// Use this constructor when the buffers are not `Default`-constructible,
     /// e.g. for [`CorrelationVec`] whose capacity must be known at runtime.
     ///
+    /// Both buffers are taken as-is with their current contents. If they
+    /// contain pre-existing samples, the correlation computation will reflect
+    /// those values from the first call.
+    ///
+    /// # Expected storage state
+    ///
+    /// For an idiomatic cold-start, pass two empty buffers.
+    ///
     /// # Panics
     ///
     /// Panics if the two buffers do not have the same capacity, or if that

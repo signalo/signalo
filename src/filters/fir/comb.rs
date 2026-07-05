@@ -110,6 +110,16 @@ where
     ///
     /// Use this constructor when the delay storage is not `Default`-constructible,
     /// e.g. for [`FeedforwardCombVec`] whose capacity must be known at runtime.
+    ///
+    /// The `input_delay` buffer is taken as-is with their current contents. If it contains
+    /// pre-existing samples, those values are treated as past input history and the
+    /// filter's first `D` outputs will include the delayed term `ff·x[n−D]`
+    /// immediately.
+    ///
+    /// # Expected storage state
+    ///
+    /// For an idiomatic cold-start (where the first `D` outputs are just
+    /// `x[n]` with no delayed term), pass an empty buffer.
     pub fn from_parts(config: Config<T>, input_delay: R) -> Self {
         Self {
             config,

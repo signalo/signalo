@@ -110,6 +110,15 @@ where
     /// Use this constructor when the tap storage is not `Default`-constructible,
     /// e.g. for [`ConvolveVec`] whose capacity must be known at runtime.
     ///
+    /// The `taps` buffer is taken as-is with their current contents. If it contains
+    /// non-zero initial content, the first `N − 1` outputs will not reflect implicit
+    /// zero-padding (`x[n] = 0` for `n < 0`).
+    ///
+    /// # Expected storage state
+    ///
+    /// For the idiomatic zero-padded cold-start, pre-fill the buffer with
+    /// `N` zeros before passing.
+    ///
     /// # Panics
     ///
     /// Panics if `config.coefficients.as_slice().len()` does not equal
