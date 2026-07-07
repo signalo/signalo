@@ -10,7 +10,7 @@
 //! Computes the normalized cross-correlation coefficient between two signals
 //! over a fixed-size sliding window.
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{cast::NumCast, Num};
 
 use crate::storage::RingBuffer;
@@ -70,6 +70,14 @@ pub type CorrelationArray<T, const N: usize> =
 /// this variant, since the buffer capacities must be known at runtime.
 #[cfg(feature = "alloc")]
 pub type CorrelationVec<T> = Correlation<T, HeapCircularBuffer<T>, HeapCircularBuffer<T>>;
+
+/// A cross-correlation sink that borrows two [`CircularBuffer`]s.
+///
+/// This alias allows sharing a caller-owned pair of ring buffers without
+/// taking ownership of them. Construct via [`Correlation::from_parts`],
+/// passing `&mut CircularBuffer<T>` for both signal buffers.
+pub type CorrelationRefMut<'a, T> =
+    Correlation<T, &'a mut CircularBuffer<T>, &'a mut CircularBuffer<T>>;
 
 impl<T, Rx, Ry> Correlation<T, Rx, Ry>
 where

@@ -126,6 +126,13 @@ pub type BlackmanHarrisArray<T, const N: usize> = BlackmanHarris<T, [T; N]>;
 #[cfg(feature = "alloc")]
 pub type BlackmanHarrisVec<T> = BlackmanHarris<T, alloc::vec::Vec<T>>;
 
+/// A Blackman-Harris window that borrows a caller-owned weights slice.
+///
+/// This alias allows sharing precomputed window weights without taking
+/// ownership. Construct via [`BlackmanHarris::from_parts`], passing a
+/// `Config { weights: &mut weights_array }`.
+pub type BlackmanHarrisRefMut<'a, T> = BlackmanHarris<T, &'a mut [T]>;
+
 impl<T, C> BlackmanHarris<T, C>
 where
     C: AsSlice<T>,

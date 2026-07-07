@@ -6,7 +6,7 @@
 
 use core::fmt;
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::Num;
 
 use crate::storage::RingBuffer;
@@ -88,6 +88,13 @@ pub type MinArray<T, const N: usize> = Min<T, FixedCircularBuffer<(T, usize), N>
 /// knowing the desired capacity at compile time.
 #[cfg(feature = "alloc")]
 pub type MinVec<T> = Min<T, HeapCircularBuffer<(T, usize)>>;
+
+/// A moving-minimum filter that borrows a [`CircularBuffer`] tap buffer.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. Construct via [`Min::from_parts`], passing
+/// a `&mut CircularBuffer<(T, usize)>` for the tap buffer.
+pub type MinRefMut<'a, T> = Min<T, &'a mut CircularBuffer<(T, usize)>>;
 
 impl<T, const N: usize> Default for MinArray<T, N> {
     fn default() -> Self {

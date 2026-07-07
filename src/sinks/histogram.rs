@@ -80,6 +80,13 @@ pub type HistogramArray<T, const N: usize> = Histogram<T, [u32; N]>;
 #[cfg(feature = "alloc")]
 pub type HistogramVec<T> = Histogram<T, alloc::vec::Vec<u32>>;
 
+/// A [`Histogram`] that borrows a `[u32]` slice for its bin storage.
+///
+/// This alias allows sharing a caller-owned bin-counter slice without taking
+/// ownership of it. Construct via [`Histogram::from_parts`], passing a
+/// zero-initialized `&mut [u32]` slice.
+pub type HistogramRefMut<'a, T> = Histogram<T, &'a mut [u32]>;
+
 impl<T: Clone, B: AsSlice<u32>> Histogram<T, B> {
     /// Creates a new histogram from a config and caller-supplied bin storage.
     ///

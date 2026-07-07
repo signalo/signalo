@@ -59,6 +59,12 @@ pub struct Analyze<T, C, R> {
     state: State<T, C, R>,
 }
 
+/// A wavelet analysis filter that borrows a [`CircularBuffer`] tap buffer.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. The coefficient storage `C` remains generic.
+pub type AnalyzeRefMut<'a, T, C> = Analyze<T, C, &'a mut circular_buffer::CircularBuffer<T>>;
+
 impl<T, C, R> ConfigTrait for Analyze<T, C, R> {
     type Config = Config<T, C>;
 }

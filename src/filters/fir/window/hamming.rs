@@ -124,6 +124,13 @@ pub type HammingArray<T, const N: usize> = Hamming<T, [T; N]>;
 #[cfg(feature = "alloc")]
 pub type HammingVec<T> = Hamming<T, alloc::vec::Vec<T>>;
 
+/// A Hamming window that borrows a caller-owned weights slice.
+///
+/// This alias allows sharing precomputed window weights without taking
+/// ownership. Construct via [`Hamming::from_parts`], passing a
+/// `Config { weights: &mut weights_array }`.
+pub type HammingRefMut<'a, T> = Hamming<T, &'a mut [T]>;
+
 impl<T, C> Hamming<T, C>
 where
     C: AsSlice<T>,

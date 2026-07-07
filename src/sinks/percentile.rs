@@ -67,6 +67,13 @@ pub struct Percentile<T: Clone, B> {
     histogram: super::histogram::Histogram<T, B>,
 }
 
+/// A [`Percentile`] that borrows a `[u32]` slice for its bin storage.
+///
+/// This alias allows sharing a caller-owned bin-counter slice without taking
+/// ownership of it. Construct via [`Percentile::from_parts`], passing a
+/// `&mut [u32]` slice and a corresponding [`Histogram`](super::histogram::Histogram).
+pub type PercentileRefMut<'a, T> = Percentile<T, &'a mut [u32]>;
+
 impl<T: Clone, B: crate::storage::AsSlice<u32>> Percentile<T, B> {
     /// Creates a new percentile sink from a config and caller-supplied histogram.
     ///

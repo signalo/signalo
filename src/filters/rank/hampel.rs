@@ -76,6 +76,9 @@ where
     }
 }
 
+/// A [`Hampel`] filter that borrows caller-owned slices.
+pub type HampelRefMut<'a, T> = Hampel<T, &'a mut [ListNode<T>], &'a mut [T]>;
+
 impl<T: Clone, B, S> Hampel<T, B, S>
 where
     B: AsSlice<ListNode<T>>,

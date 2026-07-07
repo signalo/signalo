@@ -10,7 +10,7 @@
 //! Computes the mean square value over a fixed-size sliding window.
 //! Returns mean square value. Apply `sqrt()` (requires `std`) for true RMS.
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{cast::NumCast, Num};
 
 use crate::storage::RingBuffer;
@@ -69,6 +69,13 @@ pub type RmsArray<T, const N: usize> = Rms<T, FixedCircularBuffer<T, N>>;
 /// variant, since the buffer capacity must be known at runtime.
 #[cfg(feature = "alloc")]
 pub type RmsVec<T> = Rms<T, HeapCircularBuffer<T>>;
+
+/// An RMS sink that borrows a [`CircularBuffer`].
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. Construct via [`Rms::from_parts`], passing
+/// a `&mut CircularBuffer<T>` for the sample buffer.
+pub type RmsRefMut<'a, T> = Rms<T, &'a mut CircularBuffer<T>>;
 
 impl<T, R> Rms<T, R>
 where

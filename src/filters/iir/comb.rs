@@ -16,7 +16,7 @@
 
 use num_traits::Num;
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 
 #[cfg(feature = "alloc")]
 use circular_buffer::HeapCircularBuffer;
@@ -115,6 +115,13 @@ pub type FeedbackCombArray<T, const D: usize> = FeedbackComb<T, FixedCircularBuf
 /// this variant, providing a pre-allocated and pre-filled ring buffer.
 #[cfg(feature = "alloc")]
 pub type FeedbackCombVec<T> = FeedbackComb<T, HeapCircularBuffer<T>>;
+
+/// A feedback comb filter that borrows a [`CircularBuffer`] delay line.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. Construct via [`FeedbackComb::from_parts`], passing
+/// a `&mut CircularBuffer<T>` for the delay line.
+pub type FeedbackCombRefMut<'a, T> = FeedbackComb<T, &'a mut CircularBuffer<T>>;
 
 impl<T, R> FeedbackComb<T, R>
 where

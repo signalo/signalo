@@ -121,6 +121,13 @@ pub type TriangularArray<T, const N: usize> = Triangular<T, [T; N]>;
 #[cfg(feature = "alloc")]
 pub type TriangularVec<T> = Triangular<T, alloc::vec::Vec<T>>;
 
+/// A triangular window that borrows a caller-owned weights slice.
+///
+/// This alias allows sharing precomputed window weights without taking
+/// ownership. Construct via [`Triangular::from_parts`], passing a
+/// `Config { weights: &mut weights_array }`.
+pub type TriangularRefMut<'a, T> = Triangular<T, &'a mut [T]>;
+
 impl<T, C> Triangular<T, C>
 where
     C: AsSlice<T>,

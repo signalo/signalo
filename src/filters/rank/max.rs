@@ -4,7 +4,7 @@
 
 //! Moving maximum filters.
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use core::fmt;
 use num_traits::Num;
 
@@ -88,6 +88,13 @@ pub type MaxArray<T, const N: usize> = Max<T, FixedCircularBuffer<(T, usize), N>
 /// knowing the desired capacity at compile time.
 #[cfg(feature = "alloc")]
 pub type MaxVec<T> = Max<T, HeapCircularBuffer<(T, usize)>>;
+
+/// A moving-maximum filter that borrows a [`CircularBuffer`] tap buffer.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. Construct via [`Max::from_parts`], passing
+/// a `&mut CircularBuffer<(T, usize)>` for the tap buffer.
+pub type MaxRefMut<'a, T> = Max<T, &'a mut CircularBuffer<(T, usize)>>;
 
 impl<T, const N: usize> Default for MaxArray<T, N> {
     fn default() -> Self {

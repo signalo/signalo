@@ -58,6 +58,9 @@ pub struct Bounds<T, R> {
     state: State<T, R>,
 }
 
+/// A bounds filter that borrows a [`CircularBuffer`] tap buffer.
+pub type BoundsRefMut<'a, T> = Bounds<T, &'a mut CircularBuffer<(T, usize)>>;
+
 impl<T, const N: usize> Default for BoundsArray<T, N> {
     fn default() -> Self {
         Self {

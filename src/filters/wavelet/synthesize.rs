@@ -58,6 +58,12 @@ pub struct Synthesize<T, C, R> {
     state: State<T, C, R>,
 }
 
+/// A wavelet synthesis filter that borrows a [`CircularBuffer`] tap buffer.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. The coefficient storage `C` remains generic.
+pub type SynthesizeRefMut<'a, T, C> = Synthesize<T, C, &'a mut circular_buffer::CircularBuffer<T>>;
+
 impl<T, C, R> ConfigTrait for Synthesize<T, C, R> {
     type Config = Config<T, C>;
 }

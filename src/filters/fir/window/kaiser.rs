@@ -169,6 +169,13 @@ pub type KaiserArray<T, const N: usize> = Kaiser<T, [T; N]>;
 #[cfg(feature = "alloc")]
 pub type KaiserVec<T> = Kaiser<T, alloc::vec::Vec<T>>;
 
+/// A Kaiser window that borrows a caller-owned weights slice.
+///
+/// This alias allows sharing precomputed Kaiser window weights without taking
+/// ownership. Construct via [`Kaiser::from_parts`], passing a
+/// `Config { beta, weights: &mut weights_array }`.
+pub type KaiserRefMut<'a, T> = Kaiser<T, &'a mut [T]>;
+
 impl<T, C> ConfigTrait for Kaiser<T, C> {
     type Config = Config<T, C>;
 }

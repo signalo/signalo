@@ -4,7 +4,7 @@
 
 //! Moving average filters.
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use core::fmt;
 
 use num_traits::{Num, Zero};
@@ -109,6 +109,13 @@ pub type MeanVarianceArray<T, const N: usize> = MeanVariance<T, FixedCircularBuf
 /// knowing the desired capacity at compile time.
 #[cfg(feature = "alloc")]
 pub type MeanVarianceVec<T> = MeanVariance<T, HeapCircularBuffer<T>>;
+
+/// A mean/variance filter that borrows a [`CircularBuffer`] tap buffer.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. Construct via [`MeanVariance::from_parts`], passing
+/// a `&mut CircularBuffer<T>` for the tap buffer.
+pub type MeanVarianceRefMut<'a, T> = MeanVariance<T, &'a mut CircularBuffer<T>>;
 
 impl<T, const N: usize> Default for MeanVarianceArray<T, N>
 where
