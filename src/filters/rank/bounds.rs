@@ -58,6 +58,9 @@ pub struct Bounds<T, R> {
     state: State<T, R>,
 }
 
+/// A bounds filter backed by a const-generic [`FixedCircularBuffer`] tap buffer.
+pub type BoundsArray<T, const N: usize> = Bounds<T, FixedCircularBuffer<(T, usize), N>>;
+
 /// A bounds filter backed by a heap-allocated [`HeapCircularBuffer`] tap buffer.
 #[cfg(feature = "alloc")]
 pub type BoundsVec<T> = Bounds<T, HeapCircularBuffer<(T, usize)>>;

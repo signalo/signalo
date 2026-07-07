@@ -59,6 +59,9 @@ pub struct Analyze<T, C, R> {
     state: State<T, C, R>,
 }
 
+/// A wavelet analysis filter backed by const-generic arrays.
+pub type AnalyzeArray<T, const N: usize> = Analyze<T, [T; N], FixedCircularBuffer<T, N>>;
+
 /// A wavelet analysis filter backed by heap-allocated [`Vec`](alloc::vec::Vec) coefficients
 /// and a [`HeapCircularBuffer`] tap buffer.
 ///
