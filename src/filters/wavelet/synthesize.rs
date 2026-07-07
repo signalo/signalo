@@ -58,6 +58,13 @@ pub struct Synthesize<T, C, R> {
     state: State<T, C, R>,
 }
 
+/// A wavelet synthesis filter backed by heap-allocated [`Vec`](alloc::vec::Vec) coefficients
+/// and a [`HeapCircularBuffer`] tap buffer.
+///
+/// Requires the `alloc` feature.
+#[cfg(feature = "alloc")]
+pub type SynthesizeVec<T> = Synthesize<T, alloc::vec::Vec<T>, HeapCircularBuffer<T>>;
+
 /// A wavelet synthesis filter that borrows a [`CircularBuffer`] tap buffer.
 ///
 /// This alias allows sharing a caller-owned ring buffer without taking

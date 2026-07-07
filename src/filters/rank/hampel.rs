@@ -76,6 +76,10 @@ where
     }
 }
 
+/// A [`Hampel`] filter backed by heap-allocated `Vec`s.
+#[cfg(feature = "alloc")]
+pub type HampelVec<T> = Hampel<T, alloc::vec::Vec<ListNode<T>>, alloc::vec::Vec<T>>;
+
 /// A [`Hampel`] filter that borrows caller-owned slices.
 pub type HampelRefMut<'a, T> = Hampel<T, &'a mut [ListNode<T>], &'a mut [T]>;
 
