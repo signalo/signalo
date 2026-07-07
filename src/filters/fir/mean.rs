@@ -357,4 +357,11 @@ mod tests {
         let result = filter.filter(2.0);
         assert!((result - 2.25).abs() < 1e-10, "mean drifted to {result}");
     }
+
+    #[test]
+    #[should_panic(expected = "Mean: window size (taps capacity) must be > 0")]
+    fn from_parts_zero_capacity_panics() {
+        let taps = FixedCircularBuffer::<f32, 0>::new();
+        let _ = Mean::<f32, _>::from_parts(Config::default(), taps);
+    }
 }

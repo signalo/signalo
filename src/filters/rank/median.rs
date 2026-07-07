@@ -21,11 +21,11 @@ use crate::traits::ResetMut;
 #[derive(Clone, PartialEq, Eq)]
 pub struct ListNode<T> {
     /// Value stored in the node, or `None` if the slot is vacant.
-    value: Option<T>,
+    pub(crate) value: Option<T>,
     /// Index of the predecessor node in the sorted linked list.
-    previous: usize,
+    pub(crate) previous: usize,
     /// Index of the successor node in the sorted linked list.
-    next: usize,
+    pub(crate) next: usize,
 }
 
 impl<T> fmt::Debug for ListNode<T>

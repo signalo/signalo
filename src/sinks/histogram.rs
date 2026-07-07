@@ -339,6 +339,27 @@ mod tests {
         assert_eq!(bins[19], 3);
     }
 
+    #[test]
+    #[should_panic(expected = "Histogram requires at least one bin")]
+    fn from_parts_empty_bins_panics() {
+        let config = Config::new(0.0, 10.0);
+        let empty: &mut [u32] = &mut [];
+        let _ = HistogramRefMut::from_parts(config, empty);
+    }
+
+    #[test]
+    fn histogram_ref_mut_records_bins() {
+        let config = Config::new(0.0, 3.0);
+        let mut bins: [u32; 3] = [0; 3];
+        let mut hist = HistogramRefMut::from_parts(config, &mut bins);
+        hist.sink(0.5);
+        hist.sink(1.5);
+        hist.sink(2.5);
+        hist.sink(0.5);
+        let result = hist.finalize();
+        assert_eq!(result.as_slice(), &[2, 1, 1]);
+    }
+
     #[cfg(feature = "alloc")]
     #[test]
     fn test_vec_backend_from_parts() {

@@ -295,6 +295,7 @@ mod tests {
     use approx::assert_abs_diff_eq;
 
     use super::*;
+    use crate::filters::rank::median::MedianRefMut;
 
     fn get_input() -> Vec<f32> {
         vec![
@@ -346,5 +347,52 @@ mod tests {
             "second outlier not rejected: {}",
             output[7]
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "Hampel: scratch length must equal median window length")]
+    fn from_parts_scratch_length_mismatch_panics() {
+        let mut buffer: [ListNode<f32>; 3] = core::array::from_fn(|index| ListNode {
+            value: None,
+            previous: (index + 2) % 3,
+            next: (index + 1) % 3,
+        });
+        let median = MedianRefMut::from_parts(&mut buffer);
+        let mut scratch: [f32; 5] = [0.0; 5];
+        let config = Config { threshold: 3.0 };
+        let _ = HampelRefMut::from_parts(config, median, &mut scratch);
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn hampel_vec_filters_without_panic() {
+        let buffer: Vec<ListNode<f32>> = (0..3)
+            .map(|index| ListNode {
+                value: None,
+                previous: (index + 2) % 3,
+                next: (index + 1) % 3,
+            })
+            .collect();
+        let median = Median::from_parts(buffer);
+        let scratch = vec![0.0_f32; 3];
+        let config = Config { threshold: 3.0 };
+        let mut filter: HampelVec<f32> = Hampel::from_parts(config, median, scratch);
+        let out = filter.filter(1.0);
+        assert_eq!(out, 1.0);
+    }
+
+    #[test]
+    fn hampel_ref_mut_filters_without_panic() {
+        let mut buffer: [ListNode<f32>; 3] = core::array::from_fn(|index| ListNode {
+            value: None,
+            previous: (index + 2) % 3,
+            next: (index + 1) % 3,
+        });
+        let median = MedianRefMut::from_parts(&mut buffer);
+        let mut scratch: [f32; 3] = [0.0; 3];
+        let config = Config { threshold: 3.0 };
+        let mut filter = HampelRefMut::from_parts(config, median, &mut scratch);
+        let out = filter.filter(1.0);
+        assert_eq!(out, 1.0);
     }
 }

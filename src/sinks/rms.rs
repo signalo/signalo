@@ -365,6 +365,13 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "Rms: window size must be > 0")]
+    fn from_parts_zero_capacity_panics() {
+        let buffer = circular_buffer::FixedCircularBuffer::<f32, 0>::new();
+        let _ = Rms::<f32, _>::from_parts(buffer);
+    }
+
+    #[test]
     fn test() {
         let input = [
             0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0,

@@ -291,4 +291,41 @@ mod tests {
         let output = reset_filter.filter(20.0);
         assert_eq!(output, (10.0, 20.0));
     }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn bounds_vec_emits_min_max() {
+        use crate::filters::rank::{max::MaxVec, min::MinVec};
+        use crate::traits::guts::FromGuts;
+
+        let ring_min = HeapCircularBuffer::<(i32, usize)>::with_capacity(3);
+        let ring_max = HeapCircularBuffer::<(i32, usize)>::with_capacity(3);
+        let min: MinVec<i32> = MinVec::from_parts(ring_min);
+        let max: MaxVec<i32> = MaxVec::from_parts(ring_max);
+        let state = State { min, max };
+        let mut bounds: BoundsVec<i32> = Bounds::from_guts(state);
+        bounds.filter(5);
+        bounds.filter(3);
+        bounds.filter(7);
+        let result = bounds.filter(1337);
+        assert_eq!(result, (3, 1337));
+    }
+
+    #[test]
+    fn bounds_ref_mut_emits_min_max() {
+        use crate::filters::rank::{max::MaxRefMut, min::MinRefMut};
+        use crate::traits::guts::FromGuts;
+
+        let mut ring_min = FixedCircularBuffer::<(i32, usize), 3>::new();
+        let mut ring_max = FixedCircularBuffer::<(i32, usize), 3>::new();
+        let min = MinRefMut::from_parts(&mut ring_min);
+        let max = MaxRefMut::from_parts(&mut ring_max);
+        let state = State { min, max };
+        let mut bounds = BoundsRefMut::from_guts(state);
+        bounds.filter(5);
+        bounds.filter(3);
+        bounds.filter(7);
+        let result = bounds.filter(1337);
+        assert_eq!(result, (3, 1337));
+    }
 }

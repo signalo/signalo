@@ -181,6 +181,44 @@ fn get_output() -> Vec<f32> {
 }
 
 #[test]
+#[should_panic(expected = "Median: window size N must be > 0")]
+fn from_parts_empty_buffer_panics() {
+    let empty: &mut [ListNode<f32>] = &mut [];
+    let _ = MedianRefMut::from_parts(empty);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+#[should_panic(expected = "Median: window size N must be > 0")]
+fn median_vec_new_zero_panics() {
+    let _ = MedianVec::<f32>::new(0);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn median_vec_new_filters_correctly() {
+    let mut filter = MedianVec::<i32>::new(3);
+    assert_eq!(filter.filter(10), 10);
+    assert_eq!(filter.filter(20), 10);
+    assert_eq!(filter.filter(30), 20);
+    assert_eq!(filter.filter(100), 30);
+}
+
+#[test]
+fn median_ref_mut_filters_correctly() {
+    let mut buffer: [ListNode<i32>; 3] = core::array::from_fn(|index| ListNode {
+        value: None,
+        previous: (index + 2) % 3,
+        next: (index + 1) % 3,
+    });
+    let mut filter = MedianRefMut::from_parts(&mut buffer);
+    assert_eq!(filter.filter(10), 10);
+    assert_eq!(filter.filter(20), 10);
+    assert_eq!(filter.filter(30), 20);
+    assert_eq!(filter.filter(100), 30);
+}
+
+#[test]
 fn test() {
     let filter: MedianArray<_, 5> = MedianArray::default();
     // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture

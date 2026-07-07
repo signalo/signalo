@@ -129,6 +129,22 @@ fn empty_sink() {
 }
 
 #[test]
+#[should_panic(expected = "Correlation: window size must be > 0")]
+fn from_parts_zero_capacity_panics() {
+    let bx = circular_buffer::FixedCircularBuffer::<f32, 0>::new();
+    let by = circular_buffer::FixedCircularBuffer::<f32, 0>::new();
+    let _ = Correlation::<f32, _, _>::from_parts(bx, by);
+}
+
+#[test]
+#[should_panic(expected = "must equal buffer_y capacity")]
+fn from_parts_capacity_mismatch_panics() {
+    let bx = circular_buffer::FixedCircularBuffer::<f32, 3>::new();
+    let by = circular_buffer::FixedCircularBuffer::<f32, 2>::new();
+    let _ = Correlation::<f32, _, _>::from_parts(bx, by);
+}
+
+#[test]
 fn test() {
     let input = [
         0.0, 1.0, 7.0, 2.0, 5.0, 8.0, 16.0, 3.0, 19.0, 6.0, 14.0, 9.0, 9.0, 17.0, 17.0, 4.0, 12.0,

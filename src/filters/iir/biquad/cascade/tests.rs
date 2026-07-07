@@ -2,6 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+use alloc::vec;
 use alloc::vec::Vec;
 
 use approx::assert_abs_diff_eq;
@@ -194,4 +195,31 @@ fn test_two_stages_nonidentity() {
         let sequential_out = biquad_b.filter(biquad_a.filter(x));
         assert_abs_diff_eq!(cascade_out, sequential_out, epsilon = 1e-12);
     }
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn biquad_cascade_vec_filters_without_panic() {
+    use crate::traits::guts::FromGuts;
+
+    let configs: Vec<BiquadConfig<f32>> = vec![BiquadConfig::default(); 2];
+    let states: Vec<BiquadState<f32>> = vec![BiquadState::default(); 2];
+    let config: Config<f32, Vec<BiquadConfig<f32>>> = Config::new(configs);
+    let state: State<f32, Vec<BiquadState<f32>>> = State::new(states);
+    let mut cascade: BiquadCascadeVec<f32> = BiquadCascade::from_guts((config, state));
+    let out = cascade.filter(1.5);
+    assert_eq!(out, 1.5);
+}
+
+#[test]
+fn biquad_cascade_ref_mut_filters_without_panic() {
+    use crate::traits::guts::FromGuts;
+
+    let mut configs: [BiquadConfig<f32>; 2] = core::array::from_fn(|_| BiquadConfig::default());
+    let mut states: [BiquadState<f32>; 2] = core::array::from_fn(|_| BiquadState::default());
+    let config: Config<f32, &mut [BiquadConfig<f32>]> = Config::new(&mut configs[..]);
+    let state: State<f32, &mut [BiquadState<f32>]> = State::new(&mut states[..]);
+    let mut cascade = BiquadCascadeRefMut::from_guts((config, state));
+    let out = cascade.filter(1.5);
+    assert_eq!(out, 1.5);
 }

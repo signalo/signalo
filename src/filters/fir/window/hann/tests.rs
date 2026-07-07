@@ -176,3 +176,29 @@ fn hann_parity_with_windowed_sinc_n2() {
 fn config_new_n0_panics() {
     let _ = Config::<[f64; 0]>::new();
 }
+
+#[cfg(feature = "alloc")]
+#[test]
+fn hann_vec_filters_without_panic() {
+    let weights = alloc::vec![0.0_f32, 0.5, 1.0, 0.5];
+    let config = Config { weights };
+    let mut filter: HannVec<f32> = Hann::from_parts(config);
+    let output = filter.filter(1.0);
+    assert_abs_diff_eq!(output, 0.0, epsilon = 1e-5);
+}
+
+#[test]
+fn hann_ref_mut_filters_without_panic() {
+    let mut weights: [f32; 4] = [0.0; 4];
+    weights[0] = 0.0;
+    weights[1] = 0.5;
+    weights[2] = 1.0;
+    weights[3] = 0.5;
+    let weights_slice: &mut [f32] = &mut weights;
+    let config = Config {
+        weights: weights_slice,
+    };
+    let mut filter = HannRefMut::from_parts(config);
+    let output = filter.filter(1.0);
+    assert_abs_diff_eq!(output, 0.0, epsilon = 1e-5);
+}

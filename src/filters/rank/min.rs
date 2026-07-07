@@ -319,6 +319,34 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "Min: window size (taps capacity) must be > 0")]
+    fn from_parts_zero_capacity_panics() {
+        let taps = circular_buffer::FixedCircularBuffer::<(i32, usize), 0>::new();
+        let _ = Min::<i32, _>::from_parts(taps);
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn min_vec_tracks_minimum() {
+        let ring = HeapCircularBuffer::<(i32, usize)>::with_capacity(3);
+        let mut filter: MinVec<i32> = Min::from_parts(ring);
+        assert_eq!(filter.filter(5), 5);
+        assert_eq!(filter.filter(3), 3);
+        assert_eq!(filter.filter(7), 3);
+        assert_eq!(filter.filter(8), 3);
+    }
+
+    #[test]
+    fn min_ref_mut_tracks_minimum() {
+        let mut ring = circular_buffer::FixedCircularBuffer::<(i32, usize), 3>::new();
+        let mut filter = MinRefMut::from_parts(&mut ring);
+        assert_eq!(filter.filter(5), 5);
+        assert_eq!(filter.filter(3), 3);
+        assert_eq!(filter.filter(7), 3);
+        assert_eq!(filter.filter(8), 3);
+    }
+
+    #[test]
     fn test() {
         const N: usize = 3;
 

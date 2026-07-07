@@ -320,6 +320,13 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "Max: window size (taps capacity) must be > 0")]
+    fn from_parts_zero_capacity_panics() {
+        let taps = circular_buffer::FixedCircularBuffer::<(i32, usize), 0>::new();
+        let _ = Max::<i32, _>::from_parts(taps);
+    }
+
+    #[test]
     fn test() {
         const N: usize = 3;
 
