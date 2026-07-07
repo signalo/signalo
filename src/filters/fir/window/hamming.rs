@@ -166,6 +166,11 @@ impl<T, C> StateTrait for Hamming<T, C> {
 impl<T, const N: usize> WithConfig for HammingArray<T, N> {
     type Output = Self;
 
+    /// Creates a [`HammingArray`] from a configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "Hamming: window size N must be > 0");
         Self {
@@ -205,6 +210,11 @@ impl<T, C> FromGuts for Hamming<T, C>
 where
     C: AsSlice<T>,
 {
+    /// Reconstructs a [`Hamming`] filter from its decomposed state.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the weights slice is empty.
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         let n = config.weights.as_slice().len();

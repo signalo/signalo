@@ -164,6 +164,11 @@ impl<T, C> StateTrait for Hann<T, C> {
 impl<T, const N: usize> WithConfig for HannArray<T, N> {
     type Output = Self;
 
+    /// Creates a [`HannArray`] from a configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "Hann: window size N must be > 0");
         Self {
@@ -203,6 +208,11 @@ impl<T, C> FromGuts for Hann<T, C>
 where
     C: AsSlice<T>,
 {
+    /// Reconstructs a [`Hann`] filter from its decomposed state.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the weights slice is empty.
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         let n = config.weights.as_slice().len();

@@ -168,6 +168,11 @@ impl<T, C> StateTrait for BlackmanHarris<T, C> {
 impl<T, const N: usize> WithConfig for BlackmanHarrisArray<T, N> {
     type Output = Self;
 
+    /// Creates a [`BlackmanHarrisArray`] from a configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "BlackmanHarris: window size N must be > 0");
         Self {
@@ -207,6 +212,11 @@ impl<T, C> FromGuts for BlackmanHarris<T, C>
 where
     C: AsSlice<T>,
 {
+    /// Reconstructs a [`BlackmanHarris`] filter from its decomposed state.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the weights slice is empty.
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         let n = config.weights.as_slice().len();

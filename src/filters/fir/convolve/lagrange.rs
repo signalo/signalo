@@ -70,6 +70,10 @@ pub trait FractionalDelay<T>: Sized {
     ///
     /// `delta` must be in `[0, M−1]`. The best numerical behaviour is for
     /// `delta` near `(M−1)/2`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `M < 2`, `delta < 0`, or `delta > M−1`.
     fn lagrange(delta: T) -> Self;
 }
 

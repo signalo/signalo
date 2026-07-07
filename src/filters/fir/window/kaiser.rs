@@ -187,6 +187,11 @@ impl<T, C> StateTrait for Kaiser<T, C> {
 impl<T, const N: usize> WithConfig for KaiserArray<T, N> {
     type Output = Self;
 
+    /// Creates a [`KaiserArray`] from a configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "Kaiser: window size N must be > 0");
         Self {
