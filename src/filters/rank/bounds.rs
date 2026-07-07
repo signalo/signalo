@@ -58,6 +58,10 @@ pub struct Bounds<T, R> {
     state: State<T, R>,
 }
 
+/// A bounds filter backed by a heap-allocated [`HeapCircularBuffer`] tap buffer.
+#[cfg(feature = "alloc")]
+pub type BoundsVec<T> = Bounds<T, HeapCircularBuffer<(T, usize)>>;
+
 /// A bounds filter that borrows a [`CircularBuffer`] tap buffer.
 pub type BoundsRefMut<'a, T> = Bounds<T, &'a mut CircularBuffer<(T, usize)>>;
 

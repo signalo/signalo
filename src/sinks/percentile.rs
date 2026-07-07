@@ -67,6 +67,10 @@ pub struct Percentile<T: Clone, B> {
     histogram: super::histogram::Histogram<T, B>,
 }
 
+/// A [`Percentile`] backed by a heap-allocated, runtime-sized `Vec` of bins.
+#[cfg(feature = "alloc")]
+pub type PercentileVec<T> = Percentile<T, alloc::vec::Vec<u32>>;
+
 /// A [`Percentile`] that borrows a `[u32]` slice for its bin storage.
 ///
 /// This alias allows sharing a caller-owned bin-counter slice without taking

@@ -59,6 +59,13 @@ pub struct Analyze<T, C, R> {
     state: State<T, C, R>,
 }
 
+/// A wavelet analysis filter backed by heap-allocated [`Vec`](alloc::vec::Vec) coefficients
+/// and a [`HeapCircularBuffer`] tap buffer.
+///
+/// Requires the `alloc` feature.
+#[cfg(feature = "alloc")]
+pub type AnalyzeVec<T> = Analyze<T, alloc::vec::Vec<T>, HeapCircularBuffer<T>>;
+
 /// A wavelet analysis filter that borrows a [`CircularBuffer`] tap buffer.
 ///
 /// This alias allows sharing a caller-owned ring buffer without taking
