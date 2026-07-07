@@ -181,3 +181,54 @@ fn array_and_vec_backends_are_equivalent() {
         assert_abs_diff_eq!(array_out, vec_out, epsilon = 1e-6);
     }
 }
+
+#[test]
+#[should_panic(expected = "Convolve: window size N must be > 0")]
+fn from_parts_zero_coefficients_panics() {
+    let mut empty: [f32; 0] = [];
+    let config = Config {
+        coefficients: &mut empty[..],
+    };
+    let mut taps = circular_buffer::FixedCircularBuffer::<f32, 0>::new();
+    let _ = ConvolveRefMut::from_parts(config, &mut taps);
+}
+
+#[test]
+#[should_panic(expected = "must equal taps capacity")]
+fn from_parts_capacity_mismatch_panics() {
+    let config = Config {
+        coefficients: [1.0_f32, 1.0],
+    };
+    let mut taps = circular_buffer::FixedCircularBuffer::<f32, 3>::new();
+    let _ = ConvolveRefMut::from_parts(config, &mut taps);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn convolve_vec_filters_correctly() {
+    use circular_buffer::HeapCircularBuffer;
+
+    let config = Config {
+        coefficients: vec![1.0_f32, 1.0],
+    };
+    let mut ring = HeapCircularBuffer::<f32>::with_capacity(2);
+    ring.push_back(0.0);
+    ring.push_back(0.0);
+    let mut filter: ConvolveVec<f32> = Convolve::from_parts(config, ring);
+    assert_eq!(filter.filter(4.0), 4.0);
+    assert_eq!(filter.filter(6.0), 10.0);
+}
+
+#[test]
+fn convolve_ref_mut_filters_correctly() {
+    let weights = [1.0_f32, 1.0];
+    let config = Config {
+        coefficients: weights,
+    };
+    let mut ring = circular_buffer::FixedCircularBuffer::<f32, 2>::new();
+    let _ = ring.push_back(0.0);
+    let _ = ring.push_back(0.0);
+    let mut filter = ConvolveRefMut::from_parts(config, &mut ring);
+    assert_eq!(filter.filter(4.0), 4.0);
+    assert_eq!(filter.filter(6.0), 10.0);
+}

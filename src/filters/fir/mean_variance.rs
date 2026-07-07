@@ -400,4 +400,11 @@ mod tests {
             assert_abs_diff_eq!(out.variance, 0.0, epsilon = 1e-6);
         }
     }
+
+    #[test]
+    #[should_panic(expected = "MeanVariance: window size (taps capacity) must be > 0")]
+    fn from_parts_zero_capacity_panics() {
+        let taps = FixedCircularBuffer::<f32, 0>::new();
+        let _ = MeanVariance::<f32, _>::from_parts(Config::default(), taps);
+    }
 }

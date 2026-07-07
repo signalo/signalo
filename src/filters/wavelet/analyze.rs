@@ -217,6 +217,74 @@ mod tests {
         ]
     }
 
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn analyze_vec_decomposes_without_panic() {
+        use crate::filters::fir::convolve::ConvolveVec;
+
+        let lp_weights = vec![0.5_f32, 0.5];
+        let hp_weights = vec![0.5_f32, -0.5];
+        let mut lp_ring = HeapCircularBuffer::<f32>::with_capacity(2);
+        let mut hp_ring = HeapCircularBuffer::<f32>::with_capacity(2);
+        lp_ring.push_back(0.0);
+        lp_ring.push_back(0.0);
+        hp_ring.push_back(0.0);
+        hp_ring.push_back(0.0);
+        let low_pass: ConvolveVec<f32> = Convolve::from_parts(
+            crate::filters::fir::convolve::Config {
+                coefficients: lp_weights,
+            },
+            lp_ring,
+        );
+        let high_pass: ConvolveVec<f32> = Convolve::from_parts(
+            crate::filters::fir::convolve::Config {
+                coefficients: hp_weights,
+            },
+            hp_ring,
+        );
+        let state = State {
+            low_pass,
+            high_pass,
+        };
+        let mut filter: AnalyzeVec<f32> = Analyze::from_parts(state);
+        let _ = filter.filter(4.0);
+    }
+
+    #[test]
+    fn analyze_ref_mut_decomposes_without_panic() {
+        use crate::filters::fir::convolve::{Config as ConvolveConfig, ConvolveRefMut};
+        use circular_buffer::FixedCircularBuffer;
+
+        let lp_weights = [0.5_f32, 0.5];
+        let hp_weights = [0.5_f32, -0.5];
+        let mut lp_ring = FixedCircularBuffer::<f32, 2>::new();
+        let mut hp_ring = FixedCircularBuffer::<f32, 2>::new();
+        let _ = lp_ring.push_back(0.0);
+        let _ = lp_ring.push_back(0.0);
+        let _ = hp_ring.push_back(0.0);
+        let _ = hp_ring.push_back(0.0);
+        let low_pass = ConvolveRefMut::from_parts(
+            ConvolveConfig {
+                coefficients: lp_weights,
+            },
+            &mut lp_ring,
+        );
+        let high_pass = ConvolveRefMut::from_parts(
+            ConvolveConfig {
+                coefficients: hp_weights,
+            },
+            &mut hp_ring,
+        );
+        let state = State {
+            low_pass,
+            high_pass,
+        };
+        let mut filter = AnalyzeRefMut::from_parts(state);
+        let out = filter.filter(4.0);
+        assert!((out.low - 2.0).abs() < 1e-6);
+        assert!((out.high - 2.0).abs() < 1e-6);
+    }
+
     #[test]
     fn low() {
         // Effectively calculates the haar transform:
