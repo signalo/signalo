@@ -57,17 +57,27 @@ impl<T: Clone + Default> Default for Config<T> {
 
 /// A percentile sink that approximates percentiles using histogram binning.
 ///
-/// Internally wraps a [`HistogramArray`] sink and divides the `[min, max]` range into `N`
-/// equal-width bins. The percentile is approximated by finding the bin where the
+/// Internally wraps a [`Histogram`](super::histogram::Histogram) sink and divides the `[min, max]`
+/// range into equal-width bins. The percentile is approximated by finding the bin where the
 /// cumulative count exceeds the target percentage of total samples, then linearly
 /// interpolating within that bin.
 #[derive(Clone, Debug)]
-pub struct Percentile<T: Clone, const N: usize> {
+pub struct Percentile<T: Clone, B> {
     config: Config<T>,
-    histogram: HistogramArray<T, N>,
+    histogram: super::histogram::Histogram<T, B>,
 }
 
-impl<T: Clone + Default, const N: usize> Default for Percentile<T, N> {
+impl<T: Clone, B: crate::storage::AsSlice<u32>> Percentile<T, B> {
+    /// Creates a new percentile sink from a config and caller-supplied histogram.
+    ///
+    /// The histogram's bin storage is taken as-is. For a clean start, pass a
+    /// zero-initialized histogram.
+    pub fn from_parts(config: Config<T>, histogram: super::histogram::Histogram<T, B>) -> Self {
+        Self { config, histogram }
+    }
+}
+
+impl<T: Clone + Default, const N: usize> Default for PercentileArray<T, N> {
     fn default() -> Self {
         Self {
             config: Config::default(),
@@ -76,15 +86,15 @@ impl<T: Clone + Default, const N: usize> Default for Percentile<T, N> {
     }
 }
 
-impl<T: Clone, const N: usize> ConfigTrait for Percentile<T, N> {
+impl<T: Clone, B> ConfigTrait for Percentile<T, B> {
     type Config = Config<T>;
 }
 
-impl<T: Clone, const N: usize> StateTrait for Percentile<T, N> {
-    type State = super::histogram::State<[u32; N]>;
+impl<T: Clone, B> StateTrait for Percentile<T, B> {
+    type State = super::histogram::State<B>;
 }
 
-impl<T: Clone + Default, const N: usize> WithConfig for Percentile<T, N> {
+impl<T: Clone + Default, const N: usize> WithConfig for PercentileArray<T, N> {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
@@ -97,53 +107,53 @@ impl<T: Clone + Default, const N: usize> WithConfig for Percentile<T, N> {
     }
 }
 
-impl<T: Clone, const N: usize> ConfigRef for Percentile<T, N> {
+impl<T: Clone, B> ConfigRef for Percentile<T, B> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T: Clone, const N: usize> ConfigClone for Percentile<T, N> {
+impl<T: Clone, B> ConfigClone for Percentile<T, B> {
     fn config(&self) -> Self::Config {
         self.config.clone()
     }
 }
 
-impl<T: Clone, const N: usize> StateMut for Percentile<T, N> {
+impl<T: Clone, B> StateMut for Percentile<T, B> {
     fn state_mut(&mut self) -> &mut Self::State {
         self.histogram.state_mut()
     }
 }
 
-impl<T: Clone, const N: usize> HasGuts for Percentile<T, N> {
-    type Guts = (Config<T>, HistogramArray<T, N>);
+impl<T: Clone, B> HasGuts for Percentile<T, B> {
+    type Guts = (Config<T>, super::histogram::Histogram<T, B>);
 }
 
-impl<T: Clone, const N: usize> FromGuts for Percentile<T, N> {
+impl<T: Clone, B> FromGuts for Percentile<T, B> {
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, histogram) = guts;
         Self { config, histogram }
     }
 }
 
-impl<T: Clone, const N: usize> IntoGuts for Percentile<T, N> {
+impl<T: Clone, B> IntoGuts for Percentile<T, B> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.histogram)
     }
 }
 
-impl<T: Clone + Default, const N: usize> Reset for Percentile<T, N> {
+impl<T: Clone + Default, const N: usize> Reset for PercentileArray<T, N> {
     fn reset(self) -> Self {
         Self::with_config(self.config)
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T: Clone + Default, const N: usize> ResetMut for Percentile<T, N> where Self: Reset {}
+impl<T: Clone + Default, const N: usize> ResetMut for PercentileArray<T, N> where Self: Reset {}
 
 macro_rules! impl_sink_percentile {
     ($ty:ty) => {
-        impl<const N: usize> Sink<$ty> for Percentile<$ty, N> {
+        impl<B: crate::storage::AsSlice<u32>> Sink<$ty> for Percentile<$ty, B> {
             #[inline]
             fn sink(&mut self, input: $ty) {
                 self.histogram.sink(input);
@@ -155,15 +165,17 @@ macro_rules! impl_sink_percentile {
 impl_sink_percentile!(f32);
 impl_sink_percentile!(f64);
 
-impl<T: Clone + Default + FloatCore, const N: usize> Finalize for Percentile<T, N> {
+impl<T: Clone + Default + FloatCore, B: crate::storage::AsSlice<u32>> Finalize
+    for Percentile<T, B>
+{
     type Output = Option<T>;
 
     #[inline]
     fn finalize(self) -> Self::Output {
-        // HistogramArray's Finalize::Output is [u32; N] (the bin storage B).
-        let bins: [u32; N] = self.histogram.finalize();
+        let bins = self.histogram.finalize();
+        let bins_slice = bins.as_slice();
 
-        let total: u32 = bins.iter().sum();
+        let total: u32 = bins_slice.iter().sum();
         if total == 0 {
             return None;
         }
@@ -173,7 +185,7 @@ impl<T: Clone + Default + FloatCore, const N: usize> Finalize for Percentile<T, 
         let mut cumulative = 0u32;
         let mut bin_index = 0;
         let mut prev_cumulative = 0u32;
-        for (i, &count) in bins.iter().enumerate() {
+        for (i, &count) in bins_slice.iter().enumerate() {
             prev_cumulative = cumulative;
             cumulative += count;
             if NumCast::from(cumulative).unwrap_or(T::zero()) >= target_count {
@@ -187,14 +199,13 @@ impl<T: Clone + Default + FloatCore, const N: usize> Finalize for Percentile<T, 
             return Some(self.config.min);
         }
 
-        // Bin count is the length of the fixed array; cast to T for arithmetic.
-        let n_t: T = NumCast::from(N).unwrap_or(T::zero());
+        let n_t: T = NumCast::from(bins_slice.len()).unwrap_or(T::zero());
         let bin_width = range / n_t;
         let i_t: T = NumCast::from(bin_index).unwrap_or(T::zero());
         let bin_min = self.config.min + i_t * bin_width;
 
         let remainder = target_count - NumCast::from(prev_cumulative).unwrap_or(T::zero());
-        let count_t: T = NumCast::from(bins[bin_index]).unwrap_or(T::one());
+        let count_t: T = NumCast::from(bins_slice[bin_index]).unwrap_or(T::one());
         let fraction_in_bin = remainder / count_t;
         let interpolated = bin_min + fraction_in_bin * bin_width;
 
@@ -213,7 +224,7 @@ mod tests {
         // Test: uniform distribution over [0, 4], N=4, percentile=0.5 → median ≈ 2.0
         const N: usize = 4;
         let config = Config::new(0.0f32, 4.0f32, 0.5f32);
-        let mut percentile: Percentile<f32, N> = Percentile::with_config(config);
+        let mut percentile: PercentileArray<f32, N> = PercentileArray::with_config(config);
 
         // Feed uniform distribution: one value in each bin
         let inputs = vec![0.5f32, 1.5f32, 2.5f32, 3.5f32];
@@ -241,7 +252,7 @@ mod tests {
         // Test: empty input → None
         const N: usize = 4;
         let config = Config::new(0.0f32, 4.0f32, 0.5f32);
-        let percentile: Percentile<f32, N> = Percentile::with_config(config);
+        let percentile: PercentileArray<f32, N> = PercentileArray::with_config(config);
 
         let result = percentile.finalize();
         assert_eq!(result, None, "Empty input should return None");
@@ -255,7 +266,7 @@ mod tests {
         // Test f64 support
         const N: usize = 4;
         let config = Config::new(0.0f64, 4.0f64, 0.5f64);
-        let mut percentile: Percentile<f64, N> = Percentile::with_config(config);
+        let mut percentile: PercentileArray<f64, N> = PercentileArray::with_config(config);
 
         let inputs = vec![0.5f64, 1.5f64, 2.5f64, 3.5f64];
         for input in inputs {
@@ -277,7 +288,7 @@ mod tests {
         // Test: 25th percentile (first quartile)
         const N: usize = 4;
         let config = Config::new(0.0f32, 4.0f32, 0.25f32);
-        let mut percentile: Percentile<f32, N> = Percentile::with_config(config);
+        let mut percentile: PercentileArray<f32, N> = PercentileArray::with_config(config);
 
         let inputs = vec![0.5f32, 1.5f32, 2.5f32, 3.5f32];
         for input in inputs {

@@ -6,26 +6,31 @@
 
 use core::fmt;
 
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::Num;
 
+use crate::storage::RingBuffer;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Filter, Reset, State as StateTrait, StateMut,
 };
+
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
 
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
 /// The bounds filter's state.
 #[derive(Clone)]
-pub struct State<T, const N: usize> {
+pub struct State<T, R> {
     /// The internal `min` filter.
-    pub min: super::min::MinArray<T, N>,
+    pub min: super::min::Min<T, R>,
     /// The internal `max` filter.
-    pub max: super::max::MaxArray<T, N>,
+    pub max: super::max::Max<T, R>,
 }
 
-impl<T, const N: usize> Default for State<T, N> {
+impl<T, const N: usize> Default for State<T, circular_buffer::FixedCircularBuffer<(T, usize), N>> {
     fn default() -> Self {
         Self {
             min: super::min::MinArray::default(),
@@ -34,9 +39,10 @@ impl<T, const N: usize> Default for State<T, N> {
     }
 }
 
-impl<T, const N: usize> fmt::Debug for State<T, N>
+impl<T, R> fmt::Debug for State<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("State")
@@ -48,11 +54,11 @@ where
 
 /// A bounds filter producing the moving bounds over a given signal.
 #[derive(Clone)]
-pub struct Bounds<T, const N: usize> {
-    state: State<T, N>,
+pub struct Bounds<T, R> {
+    state: State<T, R>,
 }
 
-impl<T, const N: usize> Default for Bounds<T, N> {
+impl<T, const N: usize> Default for BoundsArray<T, N> {
     fn default() -> Self {
         Self {
             state: State::default(),
@@ -60,9 +66,10 @@ impl<T, const N: usize> Default for Bounds<T, N> {
     }
 }
 
-impl<T, const N: usize> fmt::Debug for Bounds<T, N>
+impl<T, R> fmt::Debug for Bounds<T, R>
 where
     T: fmt::Debug,
+    R: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Bounds")
@@ -71,45 +78,46 @@ where
     }
 }
 
-impl<T, const N: usize> StateTrait for Bounds<T, N> {
-    type State = State<T, N>;
+impl<T, R> StateTrait for Bounds<T, R> {
+    type State = State<T, R>;
 }
 
-impl<T, const N: usize> StateMut for Bounds<T, N> {
+impl<T, R> StateMut for Bounds<T, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Bounds<T, N> {
-    type Guts = State<T, N>;
+impl<T, R> HasGuts for Bounds<T, R> {
+    type Guts = State<T, R>;
 }
 
-impl<T, const N: usize> FromGuts for Bounds<T, N> {
+impl<T, R> FromGuts for Bounds<T, R> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Bounds<T, N> {
+impl<T, R> IntoGuts for Bounds<T, R> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, const N: usize> Reset for Bounds<T, N> {
+impl<T, const N: usize> Reset for BoundsArray<T, N> {
     fn reset(self) -> Self {
         Self::default()
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Bounds<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for BoundsArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<T> for Bounds<T, N>
+impl<T, R> Filter<T> for Bounds<T, R>
 where
     T: Clone + Num + PartialOrd,
+    R: RingBuffer<(T, usize)>,
 {
     type Output = (T, T);
 
@@ -195,7 +203,7 @@ mod tests {
     fn test() {
         const N: usize = 3;
 
-        let filter: Bounds<f32, N> = Bounds::default();
+        let filter: BoundsArray<f32, N> = BoundsArray::default();
 
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
@@ -213,7 +221,7 @@ mod tests {
 
         const N: usize = 5;
 
-        let state: State<f32, N> = State::default();
+        let state: State<f32, FixedCircularBuffer<(f32, usize), N>> = State::default();
         let bounds = Bounds::from_guts(state);
 
         // Filter should work correctly after default initialization
@@ -226,7 +234,7 @@ mod tests {
     fn test_state_mut() {
         const N: usize = 3;
 
-        let mut filter: Bounds<f32, N> = Bounds::default();
+        let mut filter: BoundsArray<f32, N> = BoundsArray::default();
         filter.filter(10.0);
         filter.filter(20.0);
 
@@ -242,7 +250,7 @@ mod tests {
 
         const N: usize = 3;
 
-        let mut filter: Bounds<f32, N> = Bounds::default();
+        let mut filter: BoundsArray<f32, N> = BoundsArray::default();
         filter.filter(5.0);
         filter.filter(15.0);
         filter.filter(10.0);
@@ -260,7 +268,7 @@ mod tests {
     fn test_reset() {
         const N: usize = 3;
 
-        let mut filter: Bounds<f32, N> = Bounds::default();
+        let mut filter: BoundsArray<f32, N> = BoundsArray::default();
         filter.filter(100.0);
         filter.filter(200.0);
         filter.filter(50.0);

@@ -137,7 +137,7 @@ fn daubechies_analysis_2() {
 
     let input = with_padding(get_input(), PADDING, PADDING);
 
-    let analyze: Analyze<f32, 2> = Analyze::daubechies();
+    let analyze: AnalyzeArray<f32, 2> = AnalyzeArray::daubechies();
     let padded_analysis: Vec<_> = input
         .into_iter()
         .scan(analyze, |filter, input| Some(filter.filter(input)))
@@ -155,7 +155,7 @@ fn daubechies_synthesis_2() {
 
     let input = with_padding(get_analysis_2(), PADDING, PADDING);
 
-    let synthesize: Synthesize<f32, 2> = Synthesize::daubechies();
+    let synthesize: SynthesizeArray<f32, 2> = SynthesizeArray::daubechies();
     let padded_synthesis: Vec<_> = input
         .into_iter()
         .scan(synthesize, |filter, input| Some(filter.filter(input)))
@@ -175,7 +175,7 @@ fn daubechies_analysis_4() {
 
     let input = with_padding(get_input(), PADDING, PADDING);
 
-    let analyze: Analyze<f32, 4> = Analyze::daubechies();
+    let analyze: AnalyzeArray<f32, 4> = AnalyzeArray::daubechies();
 
     let padded_analysis: Vec<_> = input
         .into_iter()
@@ -194,7 +194,7 @@ fn daubechies_synthesis_4() {
 
     let input = with_padding(get_analysis_4(), PADDING, PADDING);
 
-    let synthesize: Synthesize<f32, 4> = Synthesize::daubechies();
+    let synthesize: SynthesizeArray<f32, 4> = SynthesizeArray::daubechies();
 
     let padded_synthesis: Vec<_> = input
         .into_iter()
