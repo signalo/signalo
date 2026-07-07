@@ -97,6 +97,11 @@ pub type MinVec<T> = Min<T, HeapCircularBuffer<(T, usize)>>;
 pub type MinRefMut<'a, T> = Min<T, &'a mut CircularBuffer<(T, usize)>>;
 
 impl<T, const N: usize> Default for MinArray<T, N> {
+    /// Creates a [`MinArray`] with an empty tap buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn default() -> Self {
         assert!(N > 0, "Min: window size N must be > 0");
         Self {

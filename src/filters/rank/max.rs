@@ -97,6 +97,11 @@ pub type MaxVec<T> = Max<T, HeapCircularBuffer<(T, usize)>>;
 pub type MaxRefMut<'a, T> = Max<T, &'a mut CircularBuffer<(T, usize)>>;
 
 impl<T, const N: usize> Default for MaxArray<T, N> {
+    /// Creates a [`MaxArray`] with an empty tap buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn default() -> Self {
         assert!(N > 0, "Max: window size N must be > 0");
         Self {

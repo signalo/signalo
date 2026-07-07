@@ -201,6 +201,11 @@ where
 {
     type Output = Self;
 
+    /// Creates a [`ConvolveArray`] from a configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero or if the coefficients length does not equal `N`.
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "Convolve: window size N must be > 0");
         assert_eq!(

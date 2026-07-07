@@ -107,6 +107,11 @@ impl<T, const N: usize> Default for MeanArray<T, N>
 where
     T: Zero,
 {
+    /// Creates a [`MeanArray`] with an empty tap buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn default() -> Self {
         assert!(N > 0, "Mean: window size N must be > 0");
         let state = State {
@@ -183,6 +188,11 @@ where
 {
     type Output = Self;
 
+    /// Creates a [`MeanArray`] from a configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "Mean: window size N must be > 0");
         let state = State {

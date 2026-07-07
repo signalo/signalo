@@ -145,6 +145,12 @@ macro_rules! central_difference_runtime_impl {
             /// For `N ≤ 9`, outputs are identical to the table-lookup constructors.
             /// If you need `N ≥ 11` and better than 6-digit accuracy, prefer the `f64`
             /// instantiation.
+            ///
+            /// # Panics
+            ///
+            /// Panics if `N` is even, `N < 3`, or `N > 19`.
+            ///
+            /// When instantiated for `f32`, also panics if `N > 9`.
             #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
             pub fn central_difference_runtime() -> Self {
                 assert!(N % 2 == 1, "central_difference_runtime requires odd N");

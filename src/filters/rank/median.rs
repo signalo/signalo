@@ -162,6 +162,11 @@ pub type MedianVec<T> = Median<T, alloc::vec::Vec<ListNode<T>>>;
 pub type MedianRefMut<'a, T> = Median<T, &'a mut [ListNode<T>]>;
 
 impl<T, const N: usize> Default for MedianArray<T, N> {
+    /// Creates a [`MedianArray`] with a correctly-linked `N`-node buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn default() -> Self {
         assert!(N > 0, "Median: window size N must be > 0");
         let buffer = core::array::from_fn(|index| ListNode {

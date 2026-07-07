@@ -121,6 +121,11 @@ impl<T, const N: usize> Default for MeanVarianceArray<T, N>
 where
     T: Zero,
 {
+    /// Creates a [`MeanVarianceArray`] with an empty tap buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn default() -> Self {
         assert!(N > 0, "MeanVariance: window size N must be > 0");
         let state = State {
@@ -201,6 +206,11 @@ where
 {
     type Output = Self;
 
+    /// Creates a [`MeanVarianceArray`] from a configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "MeanVariance: window size N must be > 0");
         let state = State {

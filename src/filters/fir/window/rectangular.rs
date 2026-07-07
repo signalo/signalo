@@ -76,6 +76,11 @@ impl<T, const N: usize> StateTrait for Rectangular<T, N> {
 impl<T, const N: usize> WithConfig for Rectangular<T, N> {
     type Output = Self;
 
+    /// Creates a [`Rectangular`] filter from a configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` is zero.
     fn with_config(config: Self::Config) -> Self::Output {
         assert!(N > 0, "Rectangular: window size N must be > 0");
         Self {
