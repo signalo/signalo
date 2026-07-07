@@ -76,6 +76,9 @@ where
     }
 }
 
+/// A [`Hampel`] filter backed by fixed-size arrays.
+pub type HampelArray<T, const N: usize> = Hampel<T, [ListNode<T>; N], [T; N]>;
+
 /// A [`Hampel`] filter backed by heap-allocated `Vec`s.
 #[cfg(feature = "alloc")]
 pub type HampelVec<T> = Hampel<T, alloc::vec::Vec<ListNode<T>>, alloc::vec::Vec<T>>;

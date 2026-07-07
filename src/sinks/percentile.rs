@@ -67,6 +67,9 @@ pub struct Percentile<T: Clone, B> {
     histogram: super::histogram::Histogram<T, B>,
 }
 
+/// A [`Percentile`] backed by a fixed-size array of `N` bins.
+pub type PercentileArray<T, const N: usize> = Percentile<T, [u32; N]>;
+
 /// A [`Percentile`] backed by a heap-allocated, runtime-sized `Vec` of bins.
 #[cfg(feature = "alloc")]
 pub type PercentileVec<T> = Percentile<T, alloc::vec::Vec<u32>>;

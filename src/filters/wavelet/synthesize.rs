@@ -58,6 +58,9 @@ pub struct Synthesize<T, C, R> {
     state: State<T, C, R>,
 }
 
+/// A wavelet synthesis filter backed by const-generic arrays.
+pub type SynthesizeArray<T, const N: usize> = Synthesize<T, [T; N], FixedCircularBuffer<T, N>>;
+
 /// A wavelet synthesis filter backed by heap-allocated [`Vec`](alloc::vec::Vec) coefficients
 /// and a [`HeapCircularBuffer`] tap buffer.
 ///
