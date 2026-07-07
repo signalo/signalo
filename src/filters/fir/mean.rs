@@ -6,7 +6,7 @@
 
 use core::fmt;
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{Num, Zero};
 
 use crate::storage::RingBuffer;
@@ -95,6 +95,13 @@ pub type MeanArray<T, const N: usize> = Mean<T, FixedCircularBuffer<T, N>>;
 /// knowing the desired capacity at compile time.
 #[cfg(feature = "alloc")]
 pub type MeanVec<T> = Mean<T, HeapCircularBuffer<T>>;
+
+/// A mean filter that borrows a [`CircularBuffer`] tap buffer.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. Construct via [`Mean::from_parts`], passing
+/// a `&mut CircularBuffer<T>` for the tap buffer.
+pub type MeanRefMut<'a, T> = Mean<T, &'a mut CircularBuffer<T>>;
 
 impl<T, const N: usize> Default for MeanArray<T, N>
 where

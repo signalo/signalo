@@ -137,6 +137,13 @@ pub type FlatTopArray<T, const N: usize> = FlatTop<T, [T; N]>;
 #[cfg(feature = "alloc")]
 pub type FlatTopVec<T> = FlatTop<T, alloc::vec::Vec<T>>;
 
+/// A flat-top window that borrows a caller-owned weights slice.
+///
+/// This alias allows sharing precomputed window weights without taking
+/// ownership. Construct via [`FlatTop::from_parts`], passing a
+/// `Config { weights: &mut weights_array }`.
+pub type FlatTopRefMut<'a, T> = FlatTop<T, &'a mut [T]>;
+
 impl<T, C> FlatTop<T, C>
 where
     C: AsSlice<T>,

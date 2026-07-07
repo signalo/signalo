@@ -11,7 +11,7 @@
 //!
 //! where D is the delay in samples. The feedforward path is always stable (FIR).
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::Num;
 
 #[cfg(feature = "alloc")]
@@ -100,6 +100,13 @@ pub type FeedforwardCombArray<T, const D: usize> = FeedforwardComb<T, FixedCircu
 /// variant, since the delay buffer capacity must be known at runtime.
 #[cfg(feature = "alloc")]
 pub type FeedforwardCombVec<T> = FeedforwardComb<T, HeapCircularBuffer<T>>;
+
+/// A feedforward comb filter that borrows a [`CircularBuffer`] delay line.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. Construct via [`FeedforwardComb::from_parts`], passing
+/// a `&mut CircularBuffer<T>` for the delay line.
+pub type FeedforwardCombRefMut<'a, T> = FeedforwardComb<T, &'a mut CircularBuffer<T>>;
 
 impl<T, R> FeedforwardComb<T, R>
 where

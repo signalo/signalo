@@ -122,6 +122,13 @@ pub type HannArray<T, const N: usize> = Hann<T, [T; N]>;
 #[cfg(feature = "alloc")]
 pub type HannVec<T> = Hann<T, alloc::vec::Vec<T>>;
 
+/// A Hann window that borrows a caller-owned weights slice.
+///
+/// This alias allows sharing precomputed window weights without taking
+/// ownership. Construct via [`Hann::from_parts`], passing a
+/// `Config { weights: &mut weights_array }`.
+pub type HannRefMut<'a, T> = Hann<T, &'a mut [T]>;
+
 impl<T, C> Hann<T, C>
 where
     C: AsSlice<T>,

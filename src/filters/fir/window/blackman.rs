@@ -128,6 +128,13 @@ pub type BlackmanArray<T, const N: usize> = Blackman<T, [T; N]>;
 #[cfg(feature = "alloc")]
 pub type BlackmanVec<T> = Blackman<T, alloc::vec::Vec<T>>;
 
+/// A Blackman window that borrows a caller-owned weights slice.
+///
+/// This alias allows sharing precomputed window weights without taking
+/// ownership. Construct via [`Blackman::from_parts`], passing a
+/// `Config { weights: &mut weights_array }`.
+pub type BlackmanRefMut<'a, T> = Blackman<T, &'a mut [T]>;
+
 impl<T, C> Blackman<T, C>
 where
     C: AsSlice<T>,

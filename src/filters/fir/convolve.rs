@@ -6,7 +6,7 @@
 
 use core::marker::PhantomData;
 
-use circular_buffer::FixedCircularBuffer;
+use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::Num;
 
 use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
@@ -98,6 +98,15 @@ pub type ConvolveArray<T, const N: usize> = Convolve<T, [T; N], FixedCircularBuf
 /// knowing the desired capacity at compile time.
 #[cfg(feature = "alloc")]
 pub type ConvolveVec<T> = Convolve<T, alloc::vec::Vec<T>, HeapCircularBuffer<T>>;
+
+/// A convolution filter that borrows a [`CircularBuffer`] tap buffer.
+///
+/// This alias allows sharing a caller-owned ring buffer without taking
+/// ownership of it. The coefficient storage `C` remains generic — use
+/// any type implementing [`AsSlice<T>`](crate::storage::AsSlice).
+/// Construct via [`Convolve::from_parts`], passing
+/// a `&mut CircularBuffer<T>` for the tap buffer.
+pub type ConvolveRefMut<'a, T, C> = Convolve<T, C, &'a mut CircularBuffer<T>>;
 
 impl<T, C, R> Convolve<T, C, R>
 where

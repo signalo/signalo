@@ -153,6 +153,14 @@ pub type MedianArray<T, const N: usize> = Median<T, [ListNode<T>; N]>;
 #[cfg(feature = "alloc")]
 pub type MedianVec<T> = Median<T, alloc::vec::Vec<ListNode<T>>>;
 
+/// A [`Median`] filter that borrows a `[ListNode<T>]` slice for its node buffer.
+///
+/// This alias allows sharing a caller-owned node-buffer slice without taking
+/// ownership of it. Construct via [`Median::from_parts`], passing a
+/// correctly-linked `&mut [ListNode<T>]` slice (use [`MedianVec::new_buffer`]
+/// to build one).
+pub type MedianRefMut<'a, T> = Median<T, &'a mut [ListNode<T>]>;
+
 impl<T, const N: usize> Default for MedianArray<T, N> {
     fn default() -> Self {
         assert!(N > 0, "Median: window size N must be > 0");

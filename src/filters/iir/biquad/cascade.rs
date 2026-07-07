@@ -134,6 +134,15 @@ pub type BiquadCascadeArray<T, const N: usize> =
 pub type BiquadCascadeVec<T> =
     BiquadCascade<T, alloc::vec::Vec<BiquadConfig<T>>, alloc::vec::Vec<BiquadState<T>>>;
 
+/// A [`BiquadCascade`] that borrows `[BiquadConfig<T>]` and `[BiquadState<T>]`
+/// slices for its section storage.
+///
+/// This alias allows sharing caller-owned coefficient and state slices without
+/// taking ownership. Construct via [`BiquadCascade::from_guts`], passing
+/// [`Config::new`] and [`State::new`] each wrapping a `&mut [T]` slice.
+pub type BiquadCascadeRefMut<'a, T> =
+    BiquadCascade<T, &'a mut [BiquadConfig<T>], &'a mut [BiquadState<T>]>;
+
 impl<T, const N: usize> Default for BiquadCascadeArray<T, N>
 where
     T: Clone + Num,
