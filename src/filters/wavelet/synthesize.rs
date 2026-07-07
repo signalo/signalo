@@ -7,57 +7,66 @@
 //! Reconstructs signals from low-frequency and high-frequency components, inverse operation
 //! of analysis enabling signal recovery and manipulation in wavelet domain.
 
+use core::marker::PhantomData;
+
+use circular_buffer::FixedCircularBuffer;
 use num_traits::Num;
 
+use crate::storage::{AsSlice, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, Filter, Reset, State as StateTrait, StateMut, WithConfig,
 };
 
+#[cfg(feature = "alloc")]
+use circular_buffer::HeapCircularBuffer;
+
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
 use super::Decomposition;
-use crate::filters::fir::convolve::{Config as ConvolveConfig, ConvolveArray};
+use crate::filters::fir::convolve::{Config as ConvolveConfig, Convolve, ConvolveArray};
 
 /// The wavelet filter's configuration.
 #[derive(Clone, Debug)]
-pub struct Config<T, const N: usize> {
+pub struct Config<T, C> {
     /// The low-pass convolution' configuration.
-    pub low_pass: ConvolveConfig<[T; N]>,
+    pub low_pass: ConvolveConfig<C>,
     /// The high-pass convolution' configuration.
-    pub high_pass: ConvolveConfig<[T; N]>,
+    pub high_pass: ConvolveConfig<C>,
+    /// Ensures `T` is captured in the type signature.
+    pub _phantom: PhantomData<T>,
 }
 
 /// A wavelet filter's internal state.
 #[derive(Clone, Debug)]
-pub struct State<T, const N: usize> {
+pub struct State<T, C, R> {
     /// Low-pass convolution.
-    pub low_pass: ConvolveArray<T, N>,
+    pub low_pass: Convolve<T, C, R>,
     /// High-pass convolution.
-    pub high_pass: ConvolveArray<T, N>,
+    pub high_pass: Convolve<T, C, R>,
 }
 
 /// A wavelet filter.
 ///
 /// # Complexity
 ///
-/// - **Time per sample:** O(N); two independent `ConvolveArray<T, N>` calls, each O(N).
+/// - **Time per sample:** O(N); two independent `Convolve<T, C, R>` calls, each O(N).
 /// - **Space:** O(N); two tap buffers of N elements each.
 #[derive(Clone, Debug)]
-pub struct Synthesize<T, const N: usize> {
-    state: State<T, N>,
+pub struct Synthesize<T, C, R> {
+    state: State<T, C, R>,
 }
 
-impl<T, const N: usize> ConfigTrait for Synthesize<T, N> {
-    type Config = Config<T, N>;
+impl<T, C, R> ConfigTrait for Synthesize<T, C, R> {
+    type Config = Config<T, C>;
 }
 
-impl<T, const N: usize> StateTrait for Synthesize<T, N> {
-    type State = State<T, N>;
+impl<T, C, R> StateTrait for Synthesize<T, C, R> {
+    type State = State<T, C, R>;
 }
 
-impl<T, const N: usize> WithConfig for Synthesize<T, N>
+impl<T, const N: usize> WithConfig for SynthesizeArray<T, N>
 where
     T: Num,
 {
@@ -76,7 +85,7 @@ where
     }
 }
 
-impl<T, const N: usize> ConfigClone for Synthesize<T, N>
+impl<T, const N: usize> ConfigClone for SynthesizeArray<T, N>
 where
     ConvolveArray<T, N>: ConfigClone<Config = ConvolveConfig<[T; N]>>,
 {
@@ -86,37 +95,38 @@ where
         Config {
             low_pass,
             high_pass,
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<T, const N: usize> StateMut for Synthesize<T, N> {
+impl<T, C, R> StateMut for Synthesize<T, C, R> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Synthesize<T, N> {
-    type Guts = State<T, N>;
+impl<T, C, R> HasGuts for Synthesize<T, C, R> {
+    type Guts = State<T, C, R>;
 }
 
-impl<T, const N: usize> FromGuts for Synthesize<T, N> {
+impl<T, C, R> FromGuts for Synthesize<T, C, R> {
     fn from_guts(guts: Self::Guts) -> Self {
         let state = guts;
         Self { state }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Synthesize<T, N> {
+impl<T, C, R> IntoGuts for Synthesize<T, C, R> {
     fn into_guts(self) -> Self::Guts {
         self.state
     }
 }
 
-impl<T, const N: usize> Reset for Synthesize<T, N>
+impl<T, const N: usize> Reset for SynthesizeArray<T, N>
 where
     T: Num,
-    Self: ConfigClone<Config = Config<T, N>> + WithConfig<Output = Self>,
+    Self: ConfigClone<Config = Config<T, [T; N]>> + WithConfig<Output = Self>,
 {
     fn reset(self) -> Self {
         Self::with_config(self.config())
@@ -124,11 +134,25 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Synthesize<T, N> where Self: Reset {}
+impl<T, const N: usize> ResetMut for SynthesizeArray<T, N> where Self: Reset {}
 
-impl<T, const N: usize> Filter<Decomposition<T>> for Synthesize<T, N>
+impl<T, C, R> Synthesize<T, C, R>
 where
     T: Clone + Num,
+    C: AsSlice<T>,
+    R: RingBuffer<T>,
+{
+    /// Creates a [`Synthesize`] filter from an already-constructed [`State`].
+    pub fn from_parts(state: State<T, C, R>) -> Self {
+        Self { state }
+    }
+}
+
+impl<T, C, R> Filter<Decomposition<T>> for Synthesize<T, C, R>
+where
+    T: Clone + Num,
+    C: AsSlice<T>,
+    R: RingBuffer<T>,
 {
     type Output = T;
 
@@ -187,13 +211,14 @@ mod tests {
     #[test]
     fn test() {
         // Effectively calculates the haar transform:
-        let filter = Synthesize::with_config(Config {
+        let filter = SynthesizeArray::with_config(Config {
             low_pass: ConvolveConfig {
                 coefficients: [0.5, 0.5],
             },
             high_pass: ConvolveConfig {
                 coefficients: [-0.5, 0.5],
             },
+            _phantom: PhantomData,
         });
         let input = get_input();
         let output: Vec<_> = input

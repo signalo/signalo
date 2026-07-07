@@ -6,6 +6,7 @@
 
 use num_traits::{Num, Signed};
 
+use crate::storage::AsSlice;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -15,7 +16,7 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
-use super::median::MedianArray;
+use super::median::{ListNode, Median, MedianArray};
 
 /// The hampel filter's configuration.
 #[derive(Clone, Debug)]
@@ -25,10 +26,22 @@ pub struct Config<T> {
 }
 
 /// The hampel filter's state.
-#[derive(Clone, Debug)]
-pub struct State<T, const N: usize> {
+#[derive(Clone)]
+pub struct State<T, B> {
     /// Median filter.
-    pub median: MedianArray<T, N>,
+    pub median: Median<T, B>,
+}
+
+impl<T, B> core::fmt::Debug for State<T, B>
+where
+    T: core::fmt::Debug,
+    B: AsSlice<ListNode<T>>,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("State")
+            .field("median", &self.median)
+            .finish()
+    }
 }
 
 /// A hampel filter of fixed width.
@@ -40,17 +53,61 @@ pub struct State<T, const N: usize> {
 /// - **Time per sample:** O(N); delegates to the internal `Median` filter (O(N)), then
 ///   collects N absolute deviations and sorts them with an insertion sort (O(N²) worst-case,
 ///   but N is a small compile-time constant in practice).
-/// - **Space:** O(N); stores the internal `MedianArray<T, N>` window plus a stack-allocated
-///   deviation array of size N.
-#[derive(Clone, Debug)]
-pub struct Hampel<T, const N: usize> {
+/// - **Space:** O(N); stores the internal `Median<T, B>` window plus a scratch deviation array.
+#[derive(Clone)]
+pub struct Hampel<T: Clone, B, S> {
     config: Config<T>,
-    state: State<T, N>,
+    state: State<T, B>,
+    scratch: S,
 }
 
-impl<T, const N: usize> Hampel<T, N>
+impl<T, B, S> core::fmt::Debug for Hampel<T, B, S>
 where
-    T: Clone + PartialOrd + Num + Signed,
+    T: Clone + core::fmt::Debug,
+    B: AsSlice<ListNode<T>>,
+    S: AsSlice<T>,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("Hampel")
+            .field("config", &self.config)
+            .field("state", &self.state)
+            .field("scratch", &self.scratch.as_slice())
+            .finish()
+    }
+}
+
+impl<T: Clone, B, S> Hampel<T, B, S>
+where
+    B: AsSlice<ListNode<T>>,
+    S: AsSlice<T>,
+{
+    /// Creates a [`Hampel`] from pre-initialised parts.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the median window length is 0 or if the scratch length does not
+    /// equal the median window length.
+    pub fn from_parts(config: Config<T>, median: Median<T, B>, scratch: S) -> Self {
+        let window_len = median.len();
+        assert!(window_len > 0, "Hampel: window size must be > 0");
+        assert_eq!(
+            scratch.as_slice().len(),
+            window_len,
+            "Hampel: scratch length must equal median window length"
+        );
+        Self {
+            config,
+            state: State { median },
+            scratch,
+        }
+    }
+}
+
+impl<T: Clone, B, S> Hampel<T, B, S>
+where
+    T: PartialOrd + Num + Signed,
+    B: AsSlice<ListNode<T>>,
+    S: AsSlice<T>,
 {
     /// The Hampel Filter
     ///
@@ -71,9 +128,10 @@ where
         let post_median = self.state.median.median().unwrap_or_else(|| input.clone());
 
         let mut count = 0usize;
-        let mut devs: [T; N] = core::array::from_fn(|_| T::zero());
+        let median = &self.state.median;
+        let devs = self.scratch.as_mut_slice();
 
-        for val in self.state.median.window_iter() {
+        for val in median.window_iter() {
             let dev = (val.clone() - post_median.clone()).abs();
             devs[count] = dev;
             count += 1;
@@ -116,37 +174,35 @@ where
     }
 }
 
-impl<T, const N: usize> ConfigTrait for Hampel<T, N> {
+impl<T: Clone, B, S> ConfigTrait for Hampel<T, B, S> {
     type Config = Config<T>;
 }
 
-impl<T, const N: usize> StateTrait for Hampel<T, N> {
-    type State = State<T, N>;
+impl<T: Clone, B, S> StateTrait for Hampel<T, B, S> {
+    type State = State<T, B>;
 }
 
-impl<T, const N: usize> WithConfig for Hampel<T, N>
+impl<T: Clone, const N: usize> WithConfig for HampelArray<T, N>
 where
+    T: Num + Signed,
     MedianArray<T, N>: Default,
 {
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        assert!(N > 0, "Hampel: window size N must be > 0");
-        let state = {
-            let median = MedianArray::default();
-            State { median }
-        };
-        Self { config, state }
+        let median = MedianArray::default();
+        let scratch: [T; N] = core::array::from_fn(|_| T::zero());
+        Self::from_parts(config, median, scratch)
     }
 }
 
-impl<T, const N: usize> ConfigRef for Hampel<T, N> {
+impl<T: Clone, B, S> ConfigRef for Hampel<T, B, S> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, const N: usize> ConfigClone for Hampel<T, N>
+impl<T: Clone, B, S> ConfigClone for Hampel<T, B, S>
 where
     Config<T>: Clone,
 {
@@ -155,31 +211,36 @@ where
     }
 }
 
-impl<T, const N: usize> StateMut for Hampel<T, N> {
+impl<T: Clone, B, S> StateMut for Hampel<T, B, S> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, const N: usize> HasGuts for Hampel<T, N> {
-    type Guts = (Config<T>, State<T, N>);
+impl<T: Clone, B, S> HasGuts for Hampel<T, B, S> {
+    type Guts = (Config<T>, State<T, B>, S);
 }
 
-impl<T, const N: usize> FromGuts for Hampel<T, N> {
+impl<T: Clone, B, S> FromGuts for Hampel<T, B, S> {
     fn from_guts(guts: Self::Guts) -> Self {
-        let (config, state) = guts;
-        Self { config, state }
+        let (config, state, scratch) = guts;
+        Self {
+            config,
+            state,
+            scratch,
+        }
     }
 }
 
-impl<T, const N: usize> IntoGuts for Hampel<T, N> {
+impl<T: Clone, B, S> IntoGuts for Hampel<T, B, S> {
     fn into_guts(self) -> Self::Guts {
-        (self.config, self.state)
+        (self.config, self.state, self.scratch)
     }
 }
 
-impl<T, const N: usize> Reset for Hampel<T, N>
+impl<T: Clone, const N: usize> Reset for HampelArray<T, N>
 where
+    T: Num + Signed,
     MedianArray<T, N>: Default,
 {
     fn reset(self) -> Self {
@@ -188,11 +249,20 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for Hampel<T, N> where Self: Reset {}
+impl<T: Clone, const N: usize> ResetMut for HampelArray<T, N>
+where
+    T: Num + Signed,
+    MedianArray<T, N>: Default,
+{
+}
 
 macro_rules! impl_hampel_filter {
     ($t:ty => $f:expr) => {
-        impl<const N: usize> Filter<$t> for Hampel<$t, N> {
+        impl<B, S> Filter<$t> for Hampel<$t, B, S>
+        where
+            B: AsSlice<ListNode<$t>>,
+            S: AsSlice<$t>,
+        {
             type Output = $t;
 
             fn filter(&mut self, input: $t) -> Self::Output {
@@ -236,7 +306,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let filter: Hampel<_, 7> = Hampel::with_config(Config { threshold: 2.0 });
+        let filter: HampelArray<f32, 7> = HampelArray::with_config(Config { threshold: 2.0 });
         // Sequence: https://en.wikipedia.org/wiki/Collatz_conjecture
         let input = get_input();
         let output: Vec<_> = input
@@ -249,7 +319,7 @@ mod tests {
     #[test]
     fn consecutive_outliers_are_both_rejected() {
         // A correct Hampel filter must reject the second outlier too.
-        let filter: Hampel<f64, 7> = Hampel::with_config(Config { threshold: 2.0 });
+        let filter: HampelArray<f64, 7> = HampelArray::with_config(Config { threshold: 2.0 });
         let signal = vec![0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0];
         let output: std::vec::Vec<_> = signal
             .iter()

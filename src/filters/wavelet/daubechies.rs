@@ -13,13 +13,15 @@
     clippy::approx_constant
 )]
 
+use core::marker::PhantomData;
+
 use num_traits::Zero;
 
 use crate::traits::WithConfig;
 
 use super::{
-    analyze::{Analyze, Config as AnalyzeConfig},
-    synthesize::{Config as SynthesizeConfig, Synthesize},
+    analyze::{AnalyzeArray, Config as AnalyzeConfig},
+    synthesize::{Config as SynthesizeConfig, SynthesizeArray},
 };
 use crate::filters::fir::convolve::Config as ConvolveConfig;
 
@@ -35,7 +37,7 @@ macro_rules! daubechies_impl_float {
         daubechies_impl_float!($($tail),*: $n => [$($low_pass),*]);
     };
     ($t:ty: $n:expr => [$($low_pass:expr),* $(,)*]) => {
-        impl Daubechies for Analyze<$t, $n> {
+        impl Daubechies for AnalyzeArray<$t, $n> {
             fn daubechies() -> Self {
                 let mut low_pass = [$($low_pass),*];
                 // Normalize:
@@ -62,12 +64,13 @@ macro_rules! daubechies_impl_float {
                     high_pass: ConvolveConfig {
                         coefficients: high_pass,
                     },
+                    _phantom: PhantomData,
                 };
                 Self::with_config(config)
             }
         }
 
-        impl Daubechies for Synthesize<$t, $n> {
+        impl Daubechies for SynthesizeArray<$t, $n> {
             fn daubechies() -> Self {
                 let mut low_pass = [$($low_pass),*];
                 // Normalize:
@@ -101,6 +104,7 @@ macro_rules! daubechies_impl_float {
                     high_pass: ConvolveConfig {
                         coefficients: high_pass,
                     },
+                    _phantom: PhantomData,
                 };
 
                 Self::with_config(config)
