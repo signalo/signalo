@@ -106,6 +106,30 @@ fn integer_convolution() {
     assert_eq!(filter2.filter(2), 3);
 }
 
+#[cfg(feature = "complex")]
+#[test]
+fn real_taps_complex_samples_match_independent_real_filters() {
+    use crate::complex::Complex32;
+
+    let coefficients = [0.5_f32, -0.25, 0.125, 0.0625];
+    let real_input = [1.0_f32, -2.0, 3.0, 5.0, -8.0, 13.0, -21.0];
+    let imag_input = [34.0_f32, -55.0, 89.0, -144.0, 233.0, -377.0, 610.0];
+
+    let mut real_filter = ConvolveArray::<f32, 4>::with_config(Config { coefficients });
+    let mut imag_filter = ConvolveArray::<f32, 4>::with_config(Config { coefficients });
+    let mut complex_filter =
+        ConvolveArray::<Complex32, 4, f32>::with_config(Config { coefficients });
+
+    for (&real, &imag) in real_input.iter().zip(&imag_input) {
+        let real_output = real_filter.filter(real);
+        let imag_output = imag_filter.filter(imag);
+        let complex_output = complex_filter.filter(Complex32::new(real, imag));
+
+        assert_abs_diff_eq!(complex_output.re, real_output, epsilon = 1e-6);
+        assert_abs_diff_eq!(complex_output.im, imag_output, epsilon = 1e-6);
+    }
+}
+
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 #[should_panic(expected = "denominator magnitude")]

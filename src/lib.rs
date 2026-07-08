@@ -58,6 +58,13 @@ extern crate std;
 #[cfg(any(test, feature = "alloc"))]
 extern crate alloc;
 
+#[cfg(feature = "complex")]
+pub mod complex {
+    //! Complex number types for DSP pipelines.
+
+    pub use num_complex::{Complex, Complex32, Complex64};
+}
+
 pub mod math;
 
 pub mod storage;
