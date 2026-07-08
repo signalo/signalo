@@ -2,7 +2,7 @@
 name = "signalo"
 description = "A DSP toolbox with focus on embedded environments."
 categories = ["no-std", "embedded", "multimedia", "science", "algorithms"]
-keywords = ["dsp", "digital-signal", "signal-processing", "filters", "pipeline"]
+keywords = ["dsp", "digital-signal", "signal-processing", "filters", "pipeline", "software-defined-radio", "sdr"]
 readme = "README.md"
 license = "MPL-2.0"
 repository = "https://github.com/signalo/signalo"
@@ -15,6 +15,7 @@ circular-buffer = { version = "2.0.0", default-features = false }
 dimensioned = { version = "0.8", optional = true, default-features = false }
 guts = { version = "0.2.0", default-features = false }
 libm = { version = "0.2.16", optional = true, default-features = false }
+num-complex = { version = "0.4", optional = true, default-features = false }
 num-traits = { version = "0.2", default-features = false }
 replace_with = { version = "0.1.5", default-features = false }
 
@@ -25,12 +26,14 @@ droptest = "0.2.1"
 [features]
 default = ["std"]
 alloc = ["circular-buffer/alloc"]
-libm = ["dep:libm", "num-traits/libm"]
+complex = ["dep:num-complex"]
+libm = ["dep:libm", "num-complex?/libm", "num-traits/libm"]
 std = [
     "alloc",
     "guts/std",
     "replace_with/std",
     "circular-buffer/std",
+    "num-complex?/std",
     "num-traits/std",
     "dimensioned?/std",
 ]

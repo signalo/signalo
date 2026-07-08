@@ -5,9 +5,10 @@
 //! Convolution filters.
 
 use core::marker::PhantomData;
+use core::ops::{Add, Mul};
 
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
-use num_traits::Num;
+use num_traits::{Num, Zero};
 
 use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
 use crate::traits::{
@@ -29,7 +30,7 @@ pub mod windowed_sinc;
 
 /// The convolution filter's configuration.
 ///
-/// Holds the coefficient storage `C`, which must implement [`AsSlice<T>`]
+/// Holds the coefficient storage `C`, which must implement [`AsSlice<K>`]
 /// on relevant impls. Use [`ConvolveArray`] for stack-allocated coefficients
 /// or [`ConvolveVec`] for heap-allocated ones.
 #[derive(Clone, Debug)]
@@ -48,7 +49,8 @@ pub struct State<R> {
     pub taps: R,
 }
 
-/// A convolution filter generic over coefficient storage `C` and tap storage `R`.
+/// A convolution filter generic over sample type `T`, coefficient storage `C`,
+/// tap storage `R`, and coefficient type `K`.
 ///
 /// # Coefficient ordering
 ///
@@ -77,10 +79,10 @@ pub struct State<R> {
 /// - [`ConvolveArray<T, N>`] — stack-allocated, `no_std`-friendly.
 /// - [`ConvolveVec<T>`] — heap-allocated, requires the `alloc` feature.
 #[derive(Clone, Debug)]
-pub struct Convolve<T, C, R> {
+pub struct Convolve<T, C, R, K = T> {
     config: Config<C>,
     state: State<R>,
-    _pd: PhantomData<T>,
+    _pd: PhantomData<(T, K)>,
 }
 
 /// A convolution filter backed by a const-generic array of coefficients and a
@@ -88,7 +90,8 @@ pub struct Convolve<T, C, R> {
 ///
 /// This alias is the `no_std`-friendly, zero-allocation form. Both the
 /// coefficient array and the tap ring-buffer live entirely on the stack.
-pub type ConvolveArray<T, const N: usize> = Convolve<T, [T; N], FixedCircularBuffer<T, N>>;
+pub type ConvolveArray<T, const N: usize, K = T> =
+    Convolve<T, [K; N], FixedCircularBuffer<T, N>, K>;
 
 /// A convolution filter backed by heap-allocated [`Vec`](alloc::vec::Vec) coefficients
 /// and a [`HeapCircularBuffer`] tap buffer.
@@ -97,20 +100,20 @@ pub type ConvolveArray<T, const N: usize> = Convolve<T, [T; N], FixedCircularBuf
 /// this variant, since the tap buffer cannot be `Default`-constructed without
 /// knowing the desired capacity at compile time.
 #[cfg(feature = "alloc")]
-pub type ConvolveVec<T> = Convolve<T, alloc::vec::Vec<T>, HeapCircularBuffer<T>>;
+pub type ConvolveVec<T, K = T> = Convolve<T, alloc::vec::Vec<K>, HeapCircularBuffer<T>, K>;
 
 /// A convolution filter that borrows a [`CircularBuffer`] tap buffer.
 ///
 /// This alias allows sharing a caller-owned ring buffer without taking
 /// ownership of it. The coefficient storage `C` remains generic — use
-/// any type implementing [`AsSlice<T>`](crate::storage::AsSlice).
+/// any type implementing [`AsSlice<K>`](crate::storage::AsSlice).
 /// Construct via [`Convolve::from_parts`], passing
 /// a `&mut CircularBuffer<T>` for the tap buffer.
-pub type ConvolveRefMut<'a, T, C> = Convolve<T, C, &'a mut CircularBuffer<T>>;
+pub type ConvolveRefMut<'a, T, C, K = T> = Convolve<T, C, &'a mut CircularBuffer<T>, K>;
 
-impl<T, C, R> Convolve<T, C, R>
+impl<T, C, R, K> Convolve<T, C, R, K>
 where
-    C: AsSlice<T>,
+    C: AsSlice<K>,
     R: RingBuffer<T>,
 {
     /// Creates a [`Convolve`] filter from an already-constructed `config` and
@@ -187,15 +190,15 @@ where
     }
 }
 
-impl<T, C, R> ConfigTrait for Convolve<T, C, R> {
+impl<T, C, R, K> ConfigTrait for Convolve<T, C, R, K> {
     type Config = Config<C>;
 }
 
-impl<T, C, R> StateTrait for Convolve<T, C, R> {
+impl<T, C, R, K> StateTrait for Convolve<T, C, R, K> {
     type State = State<R>;
 }
 
-impl<T, const N: usize> WithConfig for ConvolveArray<T, N>
+impl<T, const N: usize, K> WithConfig for ConvolveArray<T, N, K>
 where
     T: Num,
 {
@@ -225,13 +228,13 @@ where
     }
 }
 
-impl<T, C, R> ConfigRef for Convolve<T, C, R> {
+impl<T, C, R, K> ConfigRef for Convolve<T, C, R, K> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T, C, R> ConfigClone for Convolve<T, C, R>
+impl<T, C, R, K> ConfigClone for Convolve<T, C, R, K>
 where
     Config<C>: Clone,
 {
@@ -240,17 +243,17 @@ where
     }
 }
 
-impl<T, C, R> StateMut for Convolve<T, C, R> {
+impl<T, C, R, K> StateMut for Convolve<T, C, R, K> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T, C, R> HasGuts for Convolve<T, C, R> {
+impl<T, C, R, K> HasGuts for Convolve<T, C, R, K> {
     type Guts = (Config<C>, State<R>);
 }
 
-impl<T, C, R> FromGuts for Convolve<T, C, R> {
+impl<T, C, R, K> FromGuts for Convolve<T, C, R, K> {
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self {
@@ -261,13 +264,13 @@ impl<T, C, R> FromGuts for Convolve<T, C, R> {
     }
 }
 
-impl<T, C, R> IntoGuts for Convolve<T, C, R> {
+impl<T, C, R, K> IntoGuts for Convolve<T, C, R, K> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }
 
-impl<T, const N: usize> Reset for ConvolveArray<T, N>
+impl<T, const N: usize, K> Reset for ConvolveArray<T, N, K>
 where
     T: Num,
 {
@@ -277,12 +280,13 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize> ResetMut for ConvolveArray<T, N> where Self: Reset {}
+impl<T, const N: usize, K> ResetMut for ConvolveArray<T, N, K> where Self: Reset {}
 
-impl<T, C, R> Filter<T> for Convolve<T, C, R>
+impl<T, C, R, K> Filter<T> for Convolve<T, C, R, K>
 where
-    T: Clone + Num,
-    C: AsSlice<T>,
+    T: Clone + Zero + Add<Output = T> + Mul<K, Output = T>,
+    K: Clone,
+    C: AsSlice<K>,
     R: RingBuffer<T>,
 {
     type Output = T;
@@ -298,7 +302,7 @@ where
         state_iter
             .zip(coeff_iter)
             .fold(T::zero(), |sum, (state, coeff)| {
-                sum + (state.clone() * coeff.clone())
+                sum + ((*state).clone() * (*coeff).clone())
             })
     }
 }
