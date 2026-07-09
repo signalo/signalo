@@ -4,9 +4,6 @@
 
 //! Polyphase FIR filter banks, executors, and multirate filters.
 
-<<<<<<< HEAD
-pub mod filter_bank;
-=======
 pub mod filter_bank;
 pub mod fir;
->>>>>>> 7c6659b (Add polyphase FIR executor)
+pub mod interpolator;
