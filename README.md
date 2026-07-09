@@ -11,10 +11,11 @@ based on zero-cost, zero-allocation abstractions, which can be **assembled via c
 
 ## About
 
-Signalo basically consists of four basic traits and implementations thereof:
+Signalo basically consists of five basic traits and implementations thereof:
 
 - `Source<T>`: `() -> T`
 - `Filter<T>`: `T -> U`
+- `MultirateFilter<T>`: `(&[T], &mut [U]) -> (usize, usize)`
 - `Sink<T>`: `T -> ()`
 - `Finalize`: `() -> U`
 
@@ -24,6 +25,9 @@ Roughly signalo's traits are equivalent in semantics to the following stdlib API
 - `Filter<…>` ≈ `core::iter::Map<…>`
 - `Sink<…> + Finalize` ≈ `Iterator::fold(…)`
 - `Filter<…> + Finalize` ≈ `core::iter::Scan<…>`
+
+`MultirateFilter<T>` has no direct stdlib iterator equivalent because input
+and output progress can differ on each call.
 
 Types implementing `Finalize` usually also implement either `Filter<T>` or `Sink<T>`.
 
