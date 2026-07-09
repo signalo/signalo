@@ -11,6 +11,8 @@
 //!
 //! - **[`traits::Source`]**: Signal generators that produce values on demand
 //! - **[`traits::Filter`]**: Signal transformers that accept and produce values
+//! - **[`traits::MultirateFilter`]**: Signal transformers with independent
+//!   input and output rates
 //! - **[`traits::Sink`]**: Signal consumers that process values
 //! - **[`traits::Finalize`]**: Extractors that compute final results from sinks
 //!
@@ -20,7 +22,7 @@
 //! use signalo::filters::fir::mean::Mean;
 //! use signalo::sources::constant::Constant;
 //! use signalo::sinks::mean::Mean as MeanSink;
-//! use signalo::traits::{Source, Filter, Sink, Finalize};
+//! use signalo::traits::{Filter, Finalize, Sink, Source};
 //!
 //! // Create a constant source generating 1.0
 //! let source = Constant::new(1.0);
@@ -83,4 +85,4 @@ pub mod sources;
 pub mod sinks;
 
 // Re-export core traits at crate root for convenience
-pub use self::traits::{Filter, Finalize, Sink, Source};
+pub use self::traits::{Filter, Finalize, MultirateFilter, Sink, Source};

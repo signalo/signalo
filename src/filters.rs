@@ -4,8 +4,9 @@
 
 //! Composable signal-processing filters.
 //!
-//! All filters implement the [`Filter<T>`](crate::traits::Filter) trait
-//! and can be chained together in pipelines.
+//! Sample-by-sample filters implement the [`Filter<T>`](crate::traits::Filter)
+//! trait and can be chained together in pipelines. Rate-changing filters use
+//! [`MultirateFilter`](crate::traits::MultirateFilter) instead.
 
 pub use crate::traits;
 

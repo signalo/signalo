@@ -4,8 +4,9 @@
 
 //! Core trait definitions for the signal processing framework.
 //!
-//! Defines the fundamental traits: [`Source`], [`Filter`], [`Sink`],
-//! [`Finalize`], and auxiliary traits for configuration, state, and reset operations.
+//! Defines the fundamental traits: [`Source`], [`Filter`],
+//! [`MultirateFilter`], [`Sink`], [`Finalize`], and auxiliary traits for
+//! configuration, state, and reset operations.
 
 pub use guts;
 
@@ -13,12 +14,15 @@ pub mod filter;
 
 pub mod finalize;
 
+pub mod multirate_filter;
+
 pub mod sink;
 
 pub mod source;
 
 pub use self::filter::Filter;
 pub use self::finalize::Finalize;
+pub use self::multirate_filter::MultirateFilter;
 pub use self::sink::Sink;
 pub use self::source::Source;
 
