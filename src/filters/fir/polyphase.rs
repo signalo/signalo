@@ -7,3 +7,4 @@
 pub mod filter_bank;
 pub mod fir;
 pub mod interpolator;
+pub mod decimator;
