@@ -23,6 +23,18 @@ use crate::traits::ResetMut;
 #[derive(Clone, Debug)]
 pub struct Config<T, const N: usize>(PhantomData<T>);
 
+/// Fill a slice with rectangular window weights.
+pub fn window<T: One>(weights: &mut [T]) {
+    weights.fill_with(T::one);
+}
+
+/// Create heap-backed rectangular window weights.
+#[cfg(feature = "alloc")]
+#[must_use]
+pub fn window_vec<T: One>(num_taps: usize) -> alloc::vec::Vec<T> {
+    core::iter::repeat_with(T::one).take(num_taps).collect()
+}
+
 /// The rectangular window's state (unit struct — no runtime tracking needed).
 #[derive(Clone, Debug, Default)]
 pub struct State;

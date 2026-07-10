@@ -17,9 +17,6 @@ use crate::traits::{
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
 
-#[cfg(any(feature = "libm", feature = "std"))]
-pub(crate) use crate::math::bessel_i0;
-
 /// The Kaiser window's configuration with precomputed weights and beta parameter.
 ///
 /// `C` is the storage container for the precomputed window weights and must
@@ -42,6 +39,36 @@ pub struct Config<T, C> {
     pub weights: C,
 }
 
+/// Fill a slice with Kaiser window weights.
+///
+/// # Panics
+///
+/// Panics if β is negative or NaN and `weights` is not empty.
+#[cfg(any(feature = "libm", feature = "std"))]
+pub fn window<T: Float + core::fmt::Debug>(weights: &mut [T], beta: T) {
+    if weights.is_empty() {
+        return;
+    }
+    assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
+    super::fill(weights, crate::filters::util::window::kaiser(beta));
+}
+
+/// Create heap-backed Kaiser window weights.
+///
+/// # Panics
+///
+/// Panics if β is negative or NaN and `num_taps` is not zero.
+#[cfg(all(feature = "alloc", any(feature = "libm", feature = "std")))]
+#[must_use]
+pub fn window_vec<T: Float + core::fmt::Debug>(num_taps: usize, beta: T) -> alloc::vec::Vec<T> {
+    if num_taps == 0 {
+        return alloc::vec::Vec::new();
+    }
+    assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
+    let window = crate::filters::util::window::kaiser(beta);
+    super::to_vec(num_taps, window)
+}
+
 #[cfg(any(feature = "libm", feature = "std"))]
 #[allow(clippy::unwrap_used, clippy::missing_panics_doc)]
 impl<T: Float + core::fmt::Debug, const N: usize> Config<T, [T; N]> {
@@ -60,23 +87,9 @@ impl<T: Float + core::fmt::Debug, const N: usize> Config<T, [T; N]> {
     /// Panics if β is negative or NaN, or if N is 0.
     #[must_use]
     pub fn new(beta: T) -> Self {
-        assert!(beta >= T::zero(), "Kaiser beta must be non-negative");
         assert!(N > 0, "Kaiser: window size N must be > 0");
-        let one = T::one();
         let mut weights = [T::zero(); N];
-        if N == 1 {
-            weights[0] = one;
-            return Self { beta, weights };
-        }
-        let i0_beta = bessel_i0(beta);
-        let n_minus_1 = T::from(N - 1).unwrap();
-        let two = T::from(2.0).unwrap();
-        for (k, weight) in weights.iter_mut().enumerate() {
-            let k_f = T::from(k).unwrap();
-            let arg = two * k_f / n_minus_1 - one;
-            let root = (one - arg * arg).max(T::zero()).sqrt();
-            *weight = bessel_i0(beta * root) / i0_beta;
-        }
+        window(&mut weights, beta);
         Self { beta, weights }
     }
 

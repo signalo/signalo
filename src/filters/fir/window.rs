@@ -34,6 +34,20 @@ pub mod kaiser;
 pub mod rectangular;
 pub mod triangular;
 
+#[cfg(any(feature = "libm", feature = "std"))]
+fn fill<T>(weights: &mut [T], window: impl Fn(usize, usize) -> T) {
+    let n = weights.len();
+    weights
+        .iter_mut()
+        .enumerate()
+        .for_each(|(k, weight)| *weight = window(k, n));
+}
+
+#[cfg(all(feature = "alloc", any(feature = "libm", feature = "std")))]
+fn to_vec<T>(num_taps: usize, window: impl Fn(usize, usize) -> T) -> alloc::vec::Vec<T> {
+    (0..num_taps).map(|k| window(k, num_taps)).collect()
+}
+
 /// Generate shared behavior tests for window types.
 ///
 /// `$with_config` — expression creating the window for `N=8` (used in

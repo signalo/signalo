@@ -35,6 +35,19 @@ pub struct Config<C> {
     pub weights: C,
 }
 
+/// Fill a slice with triangular window weights.
+#[cfg(any(feature = "libm", feature = "std"))]
+pub fn window<T: num_traits::Float>(weights: &mut [T]) {
+    super::fill(weights, crate::filters::util::window::triangular);
+}
+
+/// Create heap-backed triangular window weights.
+#[cfg(all(feature = "alloc", any(feature = "libm", feature = "std")))]
+#[must_use]
+pub fn window_vec<T: num_traits::Float>(num_taps: usize) -> alloc::vec::Vec<T> {
+    super::to_vec(num_taps, crate::filters::util::window::triangular)
+}
+
 #[cfg(any(feature = "libm", feature = "std"))]
 #[allow(
     clippy::new_without_default,
@@ -51,12 +64,9 @@ impl<T: num_traits::Float, const N: usize> Config<[T; N]> {
     /// Panics if `N == 0`.
     #[must_use]
     pub fn new() -> Self {
-        use crate::filters::util::window::triangular;
         assert!(N > 0, "Triangular: window size N must be > 0");
         let mut weights = [T::zero(); N];
-        for (k, w) in weights.iter_mut().enumerate() {
-            *w = triangular::<T>(k, N);
-        }
+        window(&mut weights);
         Self { weights }
     }
 }

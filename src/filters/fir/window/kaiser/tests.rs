@@ -6,6 +6,9 @@ use std::vec::Vec;
 
 use approx::assert_abs_diff_eq;
 
+#[cfg(any(feature = "libm", feature = "std"))]
+use crate::math::bessel_i0;
+
 use super::*;
 
 fn numeric_fixture() -> Vec<f32> {
