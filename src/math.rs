@@ -4,6 +4,8 @@
 
 //! Mathematical utility functions for DSP operations.
 
+pub mod phase;
+
 #[cfg(any(feature = "libm", feature = "std"))]
 use num_traits::Float;
 
