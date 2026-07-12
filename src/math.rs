@@ -81,6 +81,38 @@ pub fn safe_normalise_divisor<T: Float + core::fmt::Debug>(den: T, msg: &'static
     den
 }
 
+/// Error function support for floating-point types.
+#[cfg(feature = "libm")]
+pub trait Erf: Float {
+    /// Computes the error function.
+    #[must_use]
+    fn erf(self) -> Self;
+}
+
+#[cfg(feature = "libm")]
+impl Erf for f32 {
+    #[inline]
+    fn erf(self) -> Self {
+        libm::erff(self)
+    }
+}
+
+#[cfg(feature = "libm")]
+impl Erf for f64 {
+    #[inline]
+    fn erf(self) -> Self {
+        libm::erf(self)
+    }
+}
+
+/// Computes the error function.
+#[cfg(feature = "libm")]
+#[must_use]
+#[inline]
+pub fn erf<T: Erf>(x: T) -> T {
+    x.erf()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
