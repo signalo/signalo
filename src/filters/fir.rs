@@ -42,6 +42,7 @@
 
 pub mod comb;
 pub mod convolve;
+pub mod design;
 pub mod differentiate;
 pub mod mean;
 pub mod mean_variance;
