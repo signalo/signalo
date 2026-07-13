@@ -11,6 +11,8 @@ pub(crate) mod macros;
 
 pub mod sine;
 
+pub mod nco;
+
 #[cfg(any(feature = "libm", feature = "std"))]
 pub mod chirp;
 
