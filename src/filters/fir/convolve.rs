@@ -77,6 +77,10 @@ pub struct State<R> {
 ///
 /// Prefer the concrete aliases for common use:
 /// - [`ConvolveArray<T, N>`] — stack-allocated, `no_std`-friendly.
+#[cfg_attr(
+    feature = "complex",
+    doc = "- [`ConvolveArray<Complex32, N, f32>`](ConvolveArray) — complex IQ samples with real taps."
+)]
 /// - [`ConvolveVec<T>`] — heap-allocated, requires the `alloc` feature.
 #[derive(Clone, Debug)]
 pub struct Convolve<T, C, R, K = T> {
@@ -201,6 +205,7 @@ impl<T, C, R, K> StateTrait for Convolve<T, C, R, K> {
 impl<T, const N: usize, K> WithConfig for ConvolveArray<T, N, K>
 where
     T: Num,
+    K: Num,
 {
     type Output = Self;
 
@@ -273,6 +278,7 @@ impl<T, C, R, K> IntoGuts for Convolve<T, C, R, K> {
 impl<T, const N: usize, K> Reset for ConvolveArray<T, N, K>
 where
     T: Num,
+    K: Num,
 {
     fn reset(self) -> Self {
         Self::with_config(self.config)
