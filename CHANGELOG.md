@@ -33,6 +33,14 @@ Please make sure to add your changes to the appropriate categories:
 - Added `*Vec` (heap-allocated, requires `alloc` feature) type aliases for all applicable storage-generic filters, sinks, and window functions
 - Added `*RefMut` (borrowed) type aliases for all applicable storage-generic filters, sinks, and window functions
 - Added `from_parts()` constructors to all storage-generic types for constructing with pre-initialized storage
+- Added `MultirateFilter` trait for streaming rate-changing filters with independent input and output progress
+- Added `PolyphaseFilterBank` coefficient container with array, vec, and borrowed storage aliases
+- Added `PolyphaseFir` polyphase FIR executor with shared delay line
+- Added `PolyphaseInterpolator` streaming multirate interpolator
+- Added `PolyphaseDecimator` streaming multirate decimator
+- Added `RationalResampler` streaming multirate resampler with configurable interpolation/decimation ratio
+- Added "complex" feature (opt-in `dep:num-complex`) for `Complex<T>` IQ sample support
+- Made `Convolve` generic over coefficient type `K` to support complex input with real taps (fixes #166)
 
 ### Changed
 
