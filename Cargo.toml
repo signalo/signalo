@@ -2,7 +2,7 @@
 name = "signalo"
 description = "A DSP toolbox with focus on embedded environments."
 categories = ["no-std", "embedded", "multimedia", "science", "algorithms"]
-keywords = ["dsp", "digital-signal-processing", "sdr", "software-defined-radio"]
+keywords = ["dsp", "signal-processing", "sdr", "radio"]
 readme = "README.md"
 license = "MPL-2.0"
 repository = "https://github.com/signalo/signalo"
