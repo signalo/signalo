@@ -47,6 +47,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Erf` trait and `erf()` free function (behind `libm` feature)
 - Added `math::bessel_i0` for modified Bessel function of the first kind, order 0
 - Added `math::safe_normalise_divisor` for validated denominator guarding
+- Added `sources::oscillator::nco` module with fixed-point numerically-controlled oscillator (`Nco`) using wrapping `u32` phase-word state, `(T, T)` sin/cos output, and `Complex<T>` phasor (behind `complex` feature)
 
 ### Changed
 
