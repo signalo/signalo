@@ -41,6 +41,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `RationalResampler` streaming multirate resampler with configurable interpolation/decimation ratio
 - Added "complex" feature (opt-in `dep:num-complex`) for `Complex<T>` IQ sample support
 - Made `Convolve` generic over coefficient type `K` to support complex input with real taps (fixes #166)
+- Added `crate::math::phase` module with 32-bit wrapping phase-word trigonometry: `sin`, `cos`, `sin_cos`, and `phasor` (behind `complex` feature)
 
 ### Changed
 
