@@ -20,6 +20,40 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
+- n/a
+
+### Changed
+
+- n/a
+
+### Deprecated
+
+- n/a
+
+### Removed
+
+- n/a
+
+### Fixed
+
+- n/a
+
+### Performance
+
+- n/a
+
+### Security
+
+- n/a
+
+### Other
+
+- n/a
+
+## [0.9.0] - 2026-07-15
+
+### Added
+
 - Added `BiquadCascade` and `Butterworth` low-pass, high-pass, band-pass, and band-stop biquad filters
 - Added `Allpass`, `Comb`, `DcBlocker`, and `FirstOrder` IIR filters
 - Added `ZeroCrossing` signal filter
@@ -68,30 +102,6 @@ Please make sure to add your changes to the appropriate categories:
 - `Mean` and `MeanVariance` `Debug` output now includes the `config` field
 - Updated dependencies:
   - `circular-buffer` from `1.0.0` to `2.0.0`
-
-### Deprecated
-
-- n/a
-
-### Removed
-
-- n/a
-
-### Fixed
-
-- n/a
-
-### Performance
-
-- n/a
-
-### Security
-
-- n/a
-
-### Other
-
-- n/a
 
 ## [0.8.0] - 2026-06-10
 
