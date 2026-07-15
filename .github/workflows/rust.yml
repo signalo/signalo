@@ -60,6 +60,8 @@ jobs:
         run: cargo test
       - name: Run `cargo test` [libm]
         run: cargo test --no-default-features --features "libm"
+      - name: Run `cargo test` [std, complex]
+        run: cargo test --features "complex"
 
   fmt:
     name: Rustfmt
