@@ -42,6 +42,11 @@ Please make sure to add your changes to the appropriate categories:
 - Added "complex" feature (opt-in `dep:num-complex`) for `Complex<T>` IQ sample support
 - Made `Convolve` generic over coefficient type `K` to support complex input with real taps (fixes #166)
 - Added `crate::math::phase` module with 32-bit wrapping phase-word trigonometry: `sin`, `cos`, `sin_cos`, and `phasor` (behind `complex` feature)
+- Added `fir::design` module with raised-cosine, root-raised-cosine, and GMSK Gaussian pulse-tap generators
+- Added `Normalization` tap-normalization enum (`None`, `UnitEnergy`, `UnitPeak`, `PassbandGain`)
+- Added `Erf` trait and `erf()` free function (behind `libm` feature)
+- Added `math::bessel_i0` for modified Bessel function of the first kind, order 0
+- Added `math::safe_normalise_divisor` for validated denominator guarding
 
 ### Changed
 
