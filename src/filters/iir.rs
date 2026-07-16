@@ -54,4 +54,6 @@ pub mod comb;
 
 pub mod integrate;
 
+pub mod loop_filter;
+
 pub mod dc_blocker;
