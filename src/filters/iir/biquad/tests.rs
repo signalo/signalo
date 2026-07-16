@@ -117,3 +117,50 @@ fn test_reset_clears_state() {
     let mut fresh = Biquad::with_config(config);
     assert_abs_diff_eq!(filter.filter(1.0), fresh.filter(1.0), epsilon = 1e-10);
 }
+
+#[cfg(all(feature = "complex", any(feature = "libm", feature = "std")))]
+#[test]
+fn real_coefficients_filter_complex_step_like_independent_real_filters() {
+    use crate::complex::Complex32;
+
+    let config = Config::from(Butterworth::lowpass(48_000.0_f32, 4_000.0));
+    let mut real_filter = Biquad::with_config(config.clone());
+    let mut imag_filter = Biquad::with_config(config.clone());
+    let mut complex_filter = Biquad::<Complex32, f32>::with_config(config);
+
+    for _ in 0..64 {
+        let real_output = real_filter.filter(1.0);
+        let imag_output = imag_filter.filter(-0.5);
+        let complex_output = complex_filter.filter(Complex32::new(1.0, -0.5));
+
+        assert_eq!(complex_output.re.to_bits(), real_output.to_bits());
+        assert_eq!(complex_output.im.to_bits(), imag_output.to_bits());
+    }
+}
+
+#[cfg(all(feature = "complex", any(feature = "libm", feature = "std")))]
+#[test]
+fn real_coefficients_filter_complex_noise_like_independent_real_filters() {
+    use crate::complex::Complex32;
+
+    let config = Config::from(Butterworth::lowpass(48_000.0_f32, 4_000.0));
+    let mut real_filter = Biquad::with_config(config.clone());
+    let mut imag_filter = Biquad::with_config(config.clone());
+    let mut complex_filter = Biquad::<Complex32, f32>::with_config(config);
+
+    let real_input = [
+        0.125_f32, -0.75, 0.5, 1.25, -1.5, 0.875, -0.25, 0.0625, 1.75, -0.9375,
+    ];
+    let imag_input = [
+        -1.0_f32, 0.375, 1.125, -0.625, 0.25, -1.75, 0.8125, 0.5, -0.125, 1.5,
+    ];
+
+    for (&real, &imag) in real_input.iter().zip(&imag_input) {
+        let real_output = real_filter.filter(real);
+        let imag_output = imag_filter.filter(imag);
+        let complex_output = complex_filter.filter(Complex32::new(real, imag));
+
+        assert_eq!(complex_output.re.to_bits(), real_output.to_bits());
+        assert_eq!(complex_output.im.to_bits(), imag_output.to_bits());
+    }
+}
