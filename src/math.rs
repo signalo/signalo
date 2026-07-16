@@ -6,8 +6,97 @@
 
 pub mod phase;
 
+use core::ops::{Add, AddAssign, Sub, SubAssign};
+
+use num_traits::Zero;
+
 #[cfg(any(feature = "libm", feature = "std"))]
 use num_traits::Float;
+
+/// Kahan compensated summation accumulator.
+///
+/// Tracks a running sum plus a compensation term that estimates floating-point
+/// rounding error. This is useful for long-running accumulators that repeatedly
+/// add small deltas, such as rolling sums and numerically integrated control
+/// terms.
+///
+/// For integer types this behaves like ordinary summation until arithmetic
+/// overflow semantics apply, with additional overhead and no numerical benefit.
+/// For arbitrary numeric types, the usual Kahan error model only applies when
+/// their arithmetic behaves like rounded floating-point arithmetic.
+#[derive(Clone, Debug)]
+pub struct KahanSum<T> {
+    sum: T,
+    compensation: T,
+}
+
+impl<T> Default for KahanSum<T>
+where
+    T: Zero,
+{
+    fn default() -> Self {
+        Self {
+            sum: T::zero(),
+            compensation: T::zero(),
+        }
+    }
+}
+
+impl<T> KahanSum<T>
+where
+    T: Clone + Add<T, Output = T> + Sub<T, Output = T>,
+{
+    /// Add one value to the running sum.
+    pub fn add(&mut self, value: T) {
+        let y = value - self.compensation.clone();
+        let t = self.sum.clone() + y.clone();
+        self.compensation = (t.clone() - self.sum.clone()) - y;
+        self.sum = t;
+    }
+
+    /// Subtract one value from the running sum.
+    pub fn subtract(&mut self, value: T)
+    where
+        T: Zero,
+    {
+        self.add(T::zero() - value);
+    }
+
+    /// Return the current compensated running sum.
+    #[must_use]
+    pub fn value(&self) -> T {
+        self.sum.clone()
+    }
+}
+
+impl<T> KahanSum<T>
+where
+    T: Zero,
+{
+    /// Reset the accumulator to zero.
+    pub fn reset(&mut self) {
+        self.sum = T::zero();
+        self.compensation = T::zero();
+    }
+}
+
+impl<T> AddAssign<T> for KahanSum<T>
+where
+    T: Clone + Add<T, Output = T> + Sub<T, Output = T>,
+{
+    fn add_assign(&mut self, rhs: T) {
+        self.add(rhs);
+    }
+}
+
+impl<T> SubAssign<T> for KahanSum<T>
+where
+    T: Clone + Add<T, Output = T> + Sub<T, Output = T> + Zero,
+{
+    fn sub_assign(&mut self, rhs: T) {
+        self.subtract(rhs);
+    }
+}
 
 /// Modified Bessel function of the first kind, order 0.
 ///
@@ -116,6 +205,51 @@ pub fn erf<T: Erf>(x: T) -> T {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn kahan_sum_accumulates_values() {
+        let mut sum = KahanSum::default();
+
+        sum += 1.0_f32;
+        sum += 2.0;
+        sum += 3.0;
+
+        assert_eq!(sum.value(), 6.0);
+    }
+
+    #[test]
+    fn kahan_sum_subtracts_values() {
+        let mut sum = KahanSum::default();
+
+        sum += 10.0_f32;
+        sum.subtract(3.0);
+        sum -= 2.0;
+
+        assert_eq!(sum.value(), 5.0);
+    }
+
+    #[test]
+    fn kahan_sum_reduces_repeated_small_increment_error() {
+        let mut kahan = KahanSum::default();
+        let mut plain = 0.0_f32;
+        for _ in 0..10_000 {
+            kahan += 0.1;
+            plain += 0.1;
+        }
+
+        let expected = 1_000.0_f32;
+        assert!((kahan.value() - expected).abs() < (plain - expected).abs());
+    }
+
+    #[test]
+    fn kahan_sum_reset_clears_state() {
+        let mut sum = KahanSum::default();
+        sum.add(1.0_f32);
+
+        sum.reset();
+
+        assert_eq!(sum.value(), 0.0);
+    }
 
     #[cfg(any(feature = "libm", feature = "std"))]
     #[test]
