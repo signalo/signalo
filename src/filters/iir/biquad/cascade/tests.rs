@@ -223,3 +223,45 @@ fn biquad_cascade_ref_mut_filters_without_panic() {
     let out = cascade.filter(1.5);
     assert_eq!(out, 1.5);
 }
+
+#[cfg(feature = "complex")]
+#[test]
+fn real_coefficients_filter_complex_samples_like_independent_real_cascades() {
+    use crate::complex::Complex32;
+
+    let config = Config::new([
+        BiquadConfig {
+            b0: 0.5_f32,
+            b1: 0.25,
+            b2: 0.125,
+            a1: -0.375,
+            a2: 0.0625,
+        },
+        BiquadConfig {
+            b0: 0.75_f32,
+            b1: -0.125,
+            b2: 0.03125,
+            a1: 0.25,
+            a2: -0.015625,
+        },
+    ]);
+    let mut real_filter = BiquadCascadeArray::with_config(config.clone());
+    let mut imag_filter = BiquadCascadeArray::with_config(config.clone());
+    let mut complex_filter = BiquadCascadeArray::<Complex32, 2, f32>::with_config(config);
+
+    let real_input = [
+        0.125_f32, -0.75, 0.5, 1.25, -1.5, 0.875, -0.25, 0.0625, 1.75, -0.9375,
+    ];
+    let imag_input = [
+        -1.0_f32, 0.375, 1.125, -0.625, 0.25, -1.75, 0.8125, 0.5, -0.125, 1.5,
+    ];
+
+    for (&real, &imag) in real_input.iter().zip(&imag_input) {
+        let real_output = real_filter.filter(real);
+        let imag_output = imag_filter.filter(imag);
+        let complex_output = complex_filter.filter(Complex32::new(real, imag));
+
+        assert_eq!(complex_output.re.to_bits(), real_output.to_bits());
+        assert_eq!(complex_output.im.to_bits(), imag_output.to_bits());
+    }
+}

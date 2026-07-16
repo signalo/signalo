@@ -21,7 +21,9 @@
 //! the roots of `z^2 + a1*z + a2 = 0` have magnitude less than 1. Hand-crafted coefficients
 //! that violate this condition will produce diverging (unstable) output.
 
-use num_traits::Num;
+use core::ops::{Add, Mul, Sub};
+
+use num_traits::{Num, Zero};
 
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
@@ -45,43 +47,46 @@ pub mod coefficients;
 /// Contains the five coefficients that define the biquad filter's frequency response.
 /// The numerator coefficients (b0, b1, b2) control the zeros, while the denominator
 /// coefficients (a1, a2) control the poles. The coefficient a0 is assumed to be 1.
+///
+/// `K` is the coefficient type. It may differ from the sample type used by
+/// [`Biquad`], provided samples can be multiplied by coefficients.
 #[derive(Clone, Debug)]
-pub struct Config<T> {
+pub struct Config<K> {
     /// Numerator coefficient b0 (feedforward)
-    pub b0: T,
+    pub b0: K,
     /// Numerator coefficient b1 (feedforward)
-    pub b1: T,
+    pub b1: K,
     /// Numerator coefficient b2 (feedforward)
-    pub b2: T,
+    pub b2: K,
     /// Denominator coefficient a1 (feedback)
-    pub a1: T,
+    pub a1: K,
     /// Denominator coefficient a2 (feedback)
-    pub a2: T,
+    pub a2: K,
 }
 
-impl<T> From<[T; 5]> for Config<T> {
-    fn from([b0, b1, b2, a1, a2]: [T; 5]) -> Self {
+impl<K> From<[K; 5]> for Config<K> {
+    fn from([b0, b1, b2, a1, a2]: [K; 5]) -> Self {
         Self { b0, b1, b2, a1, a2 }
     }
 }
 
-impl<T> From<Config<T>> for [T; 5] {
-    fn from(c: Config<T>) -> Self {
+impl<K> From<Config<K>> for [K; 5] {
+    fn from(c: Config<K>) -> Self {
         [c.b0, c.b1, c.b2, c.a1, c.a2]
     }
 }
 
-impl<T> Default for Config<T>
+impl<K> Default for Config<K>
 where
-    T: Num,
+    K: Num,
 {
     fn default() -> Self {
         Self {
-            b0: T::one(),
-            b1: T::zero(),
-            b2: T::zero(),
-            a1: T::zero(),
-            a2: T::zero(),
+            b0: K::one(),
+            b1: K::zero(),
+            b2: K::zero(),
+            a1: K::zero(),
+            a2: K::zero(),
         }
     }
 }
@@ -89,6 +94,7 @@ where
 /// The biquad filter's state.
 ///
 /// Contains the delay line values required for the DF2T implementation.
+/// `T` is the sample type and therefore also the state type.
 #[derive(Clone, Debug)]
 pub struct State<T> {
     /// First delay line value
@@ -99,7 +105,7 @@ pub struct State<T> {
 
 impl<T> Default for State<T>
 where
-    T: Num,
+    T: Zero,
 {
     fn default() -> Self {
         Self {
@@ -110,32 +116,38 @@ where
 }
 
 /// A biquad (second-order IIR) filter using Direct Form II Transposed topology.
+///
+/// Generic over sample/state type `T` and coefficient type `K`. `K` defaults
+/// to `T`, preserving the common `Biquad<f32>`/`Biquad<f64>` usage. Use an
+/// explicit `K` when coefficients have a different type than samples, for
+/// example `Biquad<Complex32, f32>` with the `complex` feature enabled.
 #[derive(Clone, Debug)]
-pub struct Biquad<T> {
-    config: Config<T>,
+pub struct Biquad<T, K = T> {
+    config: Config<K>,
     state: State<T>,
 }
 
-impl<T> Default for Biquad<T>
+impl<T, K> Default for Biquad<T, K>
 where
-    T: Clone + Num,
+    T: Zero,
+    K: Num,
 {
     fn default() -> Self {
         Self::with_config(Config::default())
     }
 }
 
-impl<T> ConfigTrait for Biquad<T> {
-    type Config = Config<T>;
+impl<T, K> ConfigTrait for Biquad<T, K> {
+    type Config = Config<K>;
 }
 
-impl<T> StateTrait for Biquad<T> {
+impl<T, K> StateTrait for Biquad<T, K> {
     type State = State<T>;
 }
 
-impl<T> WithConfig for Biquad<T>
+impl<T, K> WithConfig for Biquad<T, K>
 where
-    T: Clone + Num,
+    T: Zero,
 {
     type Output = Self;
 
@@ -147,47 +159,47 @@ where
     }
 }
 
-impl<T> ConfigRef for Biquad<T> {
+impl<T, K> ConfigRef for Biquad<T, K> {
     fn config_ref(&self) -> &Self::Config {
         &self.config
     }
 }
 
-impl<T> ConfigClone for Biquad<T>
+impl<T, K> ConfigClone for Biquad<T, K>
 where
-    T: Clone,
+    K: Clone,
 {
     fn config(&self) -> Self::Config {
         self.config.clone()
     }
 }
 
-impl<T> StateMut for Biquad<T> {
+impl<T, K> StateMut for Biquad<T, K> {
     fn state_mut(&mut self) -> &mut Self::State {
         &mut self.state
     }
 }
 
-impl<T> HasGuts for Biquad<T> {
-    type Guts = (Config<T>, State<T>);
+impl<T, K> HasGuts for Biquad<T, K> {
+    type Guts = (Config<K>, State<T>);
 }
 
-impl<T> FromGuts for Biquad<T> {
+impl<T, K> FromGuts for Biquad<T, K> {
     fn from_guts(guts: Self::Guts) -> Self {
         let (config, state) = guts;
         Self { config, state }
     }
 }
 
-impl<T> IntoGuts for Biquad<T> {
+impl<T, K> IntoGuts for Biquad<T, K> {
     fn into_guts(self) -> Self::Guts {
         (self.config, self.state)
     }
 }
 
-impl<T> Reset for Biquad<T>
+impl<T, K> Reset for Biquad<T, K>
 where
-    T: Clone + Num,
+    T: Zero,
 {
     fn reset(self) -> Self {
         Self::with_config(self.config)
@@ -195,11 +207,12 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T> ResetMut for Biquad<T> where Self: Reset {}
+impl<T, K> ResetMut for Biquad<T, K> where Self: Reset {}
 
-impl<T> Filter<T> for Biquad<T>
+impl<T, K> Filter<T> for Biquad<T, K>
 where
-    T: Clone + Num,
+    T: Clone + Zero + Add<Output = T> + Sub<Output = T> + Mul<K, Output = T>,
+    K: Clone,
 {
     type Output = T;
 
@@ -208,14 +221,15 @@ where
     }
 }
 
-pub(crate) fn df2t_step<T>(config: &Config<T>, state: &mut State<T>, input: T) -> T
+pub(crate) fn df2t_step<T, K>(config: &Config<K>, state: &mut State<T>, input: T) -> T
 where
-    T: Clone + Num,
+    T: Clone + Add<Output = T> + Sub<Output = T> + Mul<K, Output = T>,
+    K: Clone,
 {
-    let output = config.b0.clone() * input.clone() + state.s1.clone();
+    let output = input.clone() * config.b0.clone() + state.s1.clone();
     state.s1 =
-        config.b1.clone() * input.clone() - config.a1.clone() * output.clone() + state.s2.clone();
-    state.s2 = config.b2.clone() * input - config.a2.clone() * output.clone();
+        input.clone() * config.b1.clone() - output.clone() * config.a1.clone() + state.s2.clone();
+    state.s2 = input * config.b2.clone() - output.clone() * config.a2.clone();
     output
 }
 
