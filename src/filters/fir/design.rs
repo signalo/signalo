@@ -4,10 +4,16 @@
 
 //! FIR coefficient design helpers.
 //!
-//! This module contains functions that generate FIR taps for pulse shaping.
-//! Unlike windows, pulse shapes are specified in symbol-time parameters such as
-//! span and samples per symbol; the allocated helpers derive the tap count as
-//! `span * sps + 1`.
+//! This module contains two FIR tap-design families:
+//!
+//! - Pulse-shaping and matched-filter helpers, specified in symbol-time
+//!   parameters such as span and samples per symbol.
+//! - Windowed-sinc helpers, specified by normalized cutoff or band-edge
+//!   frequencies and named window families.
+//!
+//! The helpers in this module generate coefficients into caller-provided
+//! storage. With `alloc`, matching helpers can return `Vec`s. Use the FIR
+//! convolution or polyphase modules to run those coefficients as filters.
 //!
 //! Here `span` is the full pulse length in symbols, not the per-side delay.
 //! The generated time grid runs from `-span / 2` to `+span / 2` symbols,
@@ -31,6 +37,7 @@
 //! - Raised cosine: [`Normalization::UnitEnergy`].
 //! - Square-root raised cosine: [`Normalization::UnitEnergy`].
 //! - GMSK Gaussian pulse: [`Normalization::PassbandGain`].
+//! - Windowed-sinc low-pass and band-stop: [`Normalization::PassbandGain`].
 //!
 //! # Feature flags
 //!
@@ -47,6 +54,8 @@ pub mod gaussian_pulse;
 pub mod raised_cosine;
 #[cfg(any(feature = "libm", feature = "std"))]
 pub mod root_raised_cosine;
+#[cfg(any(feature = "libm", feature = "std"))]
+pub mod windowed_sinc;
 
 /// Filter-design tap normalization mode.
 #[cfg(any(feature = "libm", feature = "std"))]
@@ -114,11 +123,7 @@ where
 {
     let sum = taps.iter().fold(T::zero(), |sum, tap| sum + (*tap * *tap));
     if !sum.is_zero() {
-        let denom = crate::math::safe_normalise_divisor(sum.sqrt(), "unit-energy normalization");
-        let gain = T::one() / denom;
-        for tap in taps {
-            *tap = *tap * gain;
-        }
+        normalize_by_divisor(taps, sum.sqrt(), "unit-energy normalization");
     }
 }
 
@@ -129,11 +134,7 @@ where
 {
     let max = taps.iter().fold(T::zero(), |max, tap| max.max(tap.abs()));
     if !max.is_zero() {
-        let denom = crate::math::safe_normalise_divisor(max, "unit-peak normalization");
-        let gain = T::one() / denom;
-        for tap in taps {
-            *tap = *tap * gain;
-        }
+        normalize_by_divisor(taps, max, "unit-peak normalization");
     }
 }
 
@@ -144,10 +145,21 @@ where
 {
     let sum = taps.iter().fold(T::zero(), |sum, tap| sum + *tap);
     if !sum.is_zero() {
-        let denom = crate::math::safe_normalise_divisor(sum, "passband-gain normalization");
-        let gain = T::one() / denom;
-        for tap in taps {
-            *tap = *tap * gain;
-        }
+        normalize_by_divisor(taps, sum, "passband-gain normalization");
+    }
+}
+
+#[cfg(any(feature = "libm", feature = "std"))]
+pub(in crate::filters::fir::design) fn normalize_by_divisor<T>(
+    taps: &mut [T],
+    divisor: T,
+    context: &'static str,
+) where
+    T: Float + core::fmt::Debug,
+{
+    let denom = crate::math::safe_normalise_divisor(divisor, context);
+    let gain = T::one() / denom;
+    for tap in taps {
+        *tap = *tap * gain;
     }
 }

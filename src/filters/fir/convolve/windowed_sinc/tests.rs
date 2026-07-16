@@ -6,6 +6,9 @@ use alloc::vec::Vec;
 
 use approx::assert_abs_diff_eq;
 
+#[cfg(any(feature = "libm", feature = "std"))]
+use crate::filters::fir::design::windowed_sinc as tap_design;
+
 use super::*;
 
 fn feed_dc<T, const N: usize>(filter: &mut ConvolveArray<T, N>) -> T
@@ -85,11 +88,8 @@ mod lowpass {
 
     #[test]
     fn golden_table_n9() {
-        let win = |k: usize, n: usize| -> f64 {
-            let two_pi = core::f64::consts::PI * 2.0;
-            0.5 * (1.0 - (two_pi * k as f64 / ((n - 1) as f64)).cos())
-        };
-        let reference = sinc_lowpass::<f64, 9>(FC, win, true);
+        let mut reference = [0.0; 9];
+        tap_design::hann::lowpass(&mut reference, FC);
         let filter = HannSinc::<ConvolveArray<f64, 9>>::lowpass(FC);
         let actual = filter.config_ref().coefficients;
         for (a, b) in actual.iter().zip(reference.iter()) {
@@ -303,31 +303,6 @@ mod bandpass {
     }
 
     #[test]
-    fn signed_centre_gain_preserves_polarity() {
-        const N: usize = 9;
-        let f_lo: f64 = 0.1;
-        let f_hi: f64 = 0.3;
-        let f_c = (f_lo + f_hi) / 2.0;
-        let neg_window = |_: usize, _: usize| -0.5_f64;
-
-        let h_raw = sinc_bandpass::<f64, N>(f_lo, f_hi, neg_window, false);
-        let h_norm = sinc_bandpass::<f64, N>(f_lo, f_hi, neg_window, true);
-
-        let two_pi = 2.0 * core::f64::consts::PI;
-        let m = (N as f64 - 1.0) / 2.0;
-
-        let a_raw: f64 = h_raw.iter().enumerate().fold(0.0, |acc, (k, &hk)| {
-            acc + hk * (two_pi * f_c * (k as f64 - m)).cos()
-        });
-        assert!(a_raw < 0.0, "expected negative raw A(f_c), got {a_raw}");
-
-        let a_norm: f64 = h_norm.iter().enumerate().fold(0.0, |acc, (k, &hk)| {
-            acc + hk * (two_pi * f_c * (k as f64 - m)).cos()
-        });
-        assert_abs_diff_eq!(a_norm, 1.0, epsilon = 1e-10);
-    }
-
-    #[test]
     fn hz_convenience() {
         let a = HannSinc::<ConvolveArray<f64, 9>>::bandpass(F_LO, F_HI);
         let b = HannSinc::<ConvolveArray<f64, 9>>::bandpass_hz(1.0, F_LO, F_HI);
@@ -390,7 +365,8 @@ mod bandstop {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn kernel_hand_derived_n5() {
-    let h = sinc_lowpass::<f64, 5>(0.25, |_, _| 1.0, false);
+    let mut h = [0.0_f64; 5];
+    tap_design::rectangular::lowpass_unnormalized(&mut h, 0.25);
     let expected = [0.0, 0.3183098861837907, 0.5, 0.3183098861837907, 0.0];
     for (a, b) in h.iter().zip(expected.iter()) {
         assert_abs_diff_eq!(a, b, epsilon = 1e-12);
@@ -400,22 +376,17 @@ fn kernel_hand_derived_n5() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn kernel_normalised_dc_gain() {
-    let h = sinc_lowpass::<f64, 9>(0.25, |_, _| 1.0, true);
+    let mut h = [0.0_f64; 9];
+    tap_design::rectangular::lowpass(&mut h, 0.25);
     let sum: f64 = h.iter().sum();
     assert_abs_diff_eq!(sum, 1.0, epsilon = 1e-12);
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
-#[should_panic(expected = "floor")]
-fn sinc_lowpass_rejects_zero_sum_window() {
-    let _ = sinc_lowpass::<f64, 3>(0.25, |_, _| 0.0, true);
-}
-
-#[cfg(any(feature = "libm", feature = "std"))]
-#[test]
 fn kernel_symmetry() {
-    let h = sinc_lowpass::<f64, 9>(0.2, |_, _| 1.0, false);
+    let mut h = [0.0_f64; 9];
+    tap_design::rectangular::lowpass_unnormalized(&mut h, 0.2);
     for k in 0..9 {
         assert_abs_diff_eq!(h[k], h[8 - k], epsilon = 1e-12);
     }
@@ -424,23 +395,28 @@ fn kernel_symmetry() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn kernel_symmetry_even_n() {
-    let h = sinc_lowpass::<f64, 8>(0.2_f64, |_, _| 1.0_f64, false);
+    let mut h = [0.0_f64; 8];
+    tap_design::rectangular::lowpass_unnormalized(&mut h, 0.2_f64);
     for k in 0..8 {
         assert_abs_diff_eq!(h[k], h[7 - k], epsilon = 1e-12);
     }
-    let h = sinc_lowpass::<f64, 8>(0.25_f64, |_, _| 1.0_f64, false);
+    let mut h = [0.0_f64; 8];
+    tap_design::rectangular::lowpass_unnormalized(&mut h, 0.25_f64);
     for k in 0..8 {
         assert_abs_diff_eq!(h[k], h[7 - k], epsilon = 1e-12);
     }
-    let h = sinc_lowpass::<f64, 10>(0.2_f64, |_, _| 1.0_f64, false);
+    let mut h = [0.0_f64; 10];
+    tap_design::rectangular::lowpass_unnormalized(&mut h, 0.2_f64);
     for k in 0..10 {
         assert_abs_diff_eq!(h[k], h[9 - k], epsilon = 1e-12);
     }
-    let h = sinc_lowpass::<f64, 10>(0.25_f64, |_, _| 1.0_f64, false);
+    let mut h = [0.0_f64; 10];
+    tap_design::rectangular::lowpass_unnormalized(&mut h, 0.25_f64);
     for k in 0..10 {
         assert_abs_diff_eq!(h[k], h[9 - k], epsilon = 1e-12);
     }
-    let h = sinc_lowpass::<f64, 10>(0.2_f64, hann::<f64>, false);
+    let mut h = [0.0_f64; 10];
+    tap_design::hann::lowpass_unnormalized(&mut h, 0.2_f64);
     for k in 0..10 {
         assert_abs_diff_eq!(h[k], h[9 - k], epsilon = 1e-12);
     }
@@ -601,8 +577,10 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_highpass_raw_delta_minus_lowpass() {
-        let h_lp = sinc_lowpass::<f64, 9>(FC, hann::<f64>, false);
-        let h_hp = sinc_highpass::<f64, 9>(FC, hann::<f64>, false);
+        let mut h_lp = [0.0_f64; 9];
+        let mut h_hp = [0.0_f64; 9];
+        tap_design::hann::lowpass_unnormalized(&mut h_lp, FC);
+        tap_design::hann::highpass_unnormalized(&mut h_hp, FC);
         let m = 4;
         for k in 0..9 {
             let expected = if k == m { 1.0 - h_lp[k] } else { -h_lp[k] };
@@ -612,9 +590,12 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_bandpass_raw_difference_of_lowpass() {
-        let h_hi = sinc_lowpass::<f64, 9>(F_HI, hann::<f64>, false);
-        let h_lo = sinc_lowpass::<f64, 9>(F_LO, hann::<f64>, false);
-        let h_bp = sinc_bandpass::<f64, 9>(F_LO, F_HI, hann::<f64>, false);
+        let mut h_hi = [0.0_f64; 9];
+        let mut h_lo = [0.0_f64; 9];
+        let mut h_bp = [0.0_f64; 9];
+        tap_design::hann::lowpass_unnormalized(&mut h_hi, F_HI);
+        tap_design::hann::lowpass_unnormalized(&mut h_lo, F_LO);
+        tap_design::hann::bandpass_unnormalized(&mut h_bp, F_LO, F_HI);
         for k in 0..9 {
             assert_abs_diff_eq!(h_bp[k], h_hi[k] - h_lo[k], epsilon = 1e-12);
         }
@@ -622,8 +603,10 @@ mod unnormalized {
 
     #[test]
     fn unnormalized_bandstop_raw_delta_minus_bandpass() {
-        let h_bp = sinc_bandpass::<f64, 9>(F_LO, F_HI, hann::<f64>, false);
-        let h_bs = sinc_bandstop::<f64, 9>(F_LO, F_HI, hann::<f64>, false);
+        let mut h_bp = [0.0_f64; 9];
+        let mut h_bs = [0.0_f64; 9];
+        tap_design::hann::bandpass_unnormalized(&mut h_bp, F_LO, F_HI);
+        tap_design::hann::bandstop_unnormalized(&mut h_bs, F_LO, F_HI);
         let m = 4;
         for k in 0..9 {
             let expected = if k == m { 1.0 - h_bp[k] } else { -h_bp[k] };
@@ -647,7 +630,8 @@ mod integration_window_convolve {
         const N: usize = 9;
         let fc: f64 = 0.25;
 
-        let sinc_coeffs = sinc_lowpass::<f64, N>(fc, |_, _| 1.0, false);
+        let mut sinc_coeffs = [0.0_f64; N];
+        tap_design::rectangular::lowpass_unnormalized(&mut sinc_coeffs, fc);
 
         let hann_config = hann::Config::<[f64; N]>::new();
         let win = hann_config.weights;
