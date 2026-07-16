@@ -6,6 +6,9 @@
 //!
 //! Computes the discrete integral or cumulative sum of input signals, useful for slope
 //! extraction, position tracking, and accumulation operations.
+//!
+//! [`Integrate`] is the minimal plain accumulator. [`KahanIntegrate`] uses
+//! compensated summation for long-running floating-point accumulators.
 
 use core::ops::Add;
 
@@ -18,6 +21,10 @@ use crate::traits::{
 
 #[cfg(feature = "derive")]
 use crate::traits::ResetMut;
+
+pub mod kahan;
+
+pub use kahan::KahanIntegrate;
 
 /// The integration filter's state.
 #[derive(Clone, Debug)]
