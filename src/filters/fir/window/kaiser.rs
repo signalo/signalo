@@ -95,29 +95,15 @@ impl<T: Float + core::fmt::Debug, const N: usize> Config<T, [T; N]> {
 
     /// Compute Kaiser β for a desired sidelobe attenuation in dB.
     ///
-    /// Uses the Kaiser empirical formula:
-    /// - A ≤ 21 dB → β = 0
-    /// - 21 < A < 50 → β = 0.5842·(A−21)^0.4 + 0.07886·(A−21)
-    /// - A ≥ 50 → β = 0.1102·(A−8.7)
+    /// Delegates to [`crate::filters::fir::design::kaiser_beta`] so the
+    /// attenuation-to-β mapping is shared with FIR order design helpers.
     ///
-    /// The two analytic arms join with a small (~0.02) discontinuity at
-    /// `A = 50` dB; this is inherent to Kaiser & Reed's empirical fit and
-    /// not a defect.
+    /// # Panics
+    ///
+    /// Panics if `atten_db` is not finite or is negative.
     #[must_use]
     pub fn beta_for_attenuation(atten_db: T) -> T {
-        let zero = T::zero();
-        let twenty_one = T::from(21.0).unwrap();
-        let fifty = T::from(50.0).unwrap();
-
-        if atten_db <= twenty_one {
-            zero
-        } else if atten_db < fifty {
-            let a_minus_21 = atten_db - twenty_one;
-            T::from(0.5842).unwrap() * a_minus_21.powf(T::from(0.4).unwrap())
-                + T::from(0.07886).unwrap() * a_minus_21
-        } else {
-            T::from(0.1102).unwrap() * (atten_db - T::from(8.7).unwrap())
-        }
+        crate::filters::fir::design::kaiser_beta(atten_db)
     }
 }
 

@@ -220,6 +220,65 @@ windowed_sinc_module!(kaiser, super::default_kaiser::<T>(), "Kaiser (β=6.0)", {
         super::normalize(weights, super::Normalization::PassbandGain);
     }
 
+    /// Fill a slice with Kaiser-windowed low-pass sinc taps from Kaiser order parameters.
+    ///
+    /// `fc` is normalized cutoff frequency in cycles per sample (`0 < fc < 0.5`).
+    /// Taps are normalized to unit DC/passband gain (`sum(h) == 1`).
+    ///
+    /// # Panics
+    ///
+    /// Panics if `weights.len() != order.num_taps`, or if [`lowpass_with_beta`]
+    /// panics.
+    pub fn lowpass_from_order<T>(weights: &mut [T], order: super::super::KaiserOrder<T>, fc: T)
+    where
+        T: Float + core::fmt::Debug,
+    {
+        assert!(
+            weights.len() == order.num_taps,
+            "Kaiser tap count mismatch: expected {}, got {}",
+            order.num_taps,
+            weights.len()
+        );
+        lowpass_with_beta(weights, order.beta, fc);
+    }
+
+    /// Fill a slice with Kaiser-windowed low-pass sinc taps from attenuation and transition width.
+    ///
+    /// `transition_width` is in cycles per sample, where Nyquist is `0.5`. This
+    /// uses [`crate::filters::fir::design::kaiser_order`]. The computed tap
+    /// count is not forced odd.
+    ///
+    /// # Panics
+    ///
+    /// Panics if [`crate::filters::fir::design::kaiser_order`] panics, if
+    /// `weights.len() != order.num_taps`, or if [`lowpass_with_beta`] panics.
+    pub fn lowpass_for_atten<T>(weights: &mut [T], atten_db: T, transition_width: T, fc: T)
+    where
+        T: Float + num_traits::ToPrimitive + core::fmt::Debug,
+    {
+        let order = super::super::kaiser_order(atten_db, transition_width);
+        lowpass_from_order(weights, order, fc);
+    }
+
+    /// Fill a slice with Kaiser-windowed low-pass sinc taps from `SciPy`-style width.
+    ///
+    /// `width_nyq` is normalized to Nyquist, where `1.0` corresponds to
+    /// π radians/sample. This uses [`crate::filters::fir::design::kaiser_order_nyq`]
+    /// and matches `SciPy`'s `scipy.signal.kaiserord` width convention. The
+    /// computed tap count is not forced odd.
+    ///
+    /// # Panics
+    ///
+    /// Panics if [`crate::filters::fir::design::kaiser_order_nyq`] panics, if
+    /// `weights.len() != order.num_taps`, or if [`lowpass_with_beta`] panics.
+    pub fn lowpass_for_atten_nyq<T>(weights: &mut [T], atten_db: T, width_nyq: T, fc: T)
+    where
+        T: Float + num_traits::ToPrimitive + core::fmt::Debug,
+    {
+        let order = super::super::kaiser_order_nyq(atten_db, width_nyq);
+        lowpass_from_order(weights, order, fc);
+    }
+
     /// Fill a slice with Kaiser-windowed high-pass sinc taps using custom β.
     ///
     /// Taps are normalized to unit gain at Nyquist.
@@ -281,6 +340,52 @@ windowed_sinc_module!(kaiser, super::default_kaiser::<T>(), "Kaiser (β=6.0)", {
         let mut weights = alloc::vec![T::zero(); num_taps];
         lowpass_with_beta(&mut weights, beta, fc);
         weights
+    }
+
+    /// Create heap-backed Kaiser-windowed low-pass sinc taps from Kaiser order parameters.
+    ///
+    /// Taps are normalized to unit DC/passband gain (`sum(h) == 1`).
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn lowpass_from_order_vec<T>(
+        order: super::super::KaiserOrder<T>,
+        fc: T,
+    ) -> alloc::vec::Vec<T>
+    where
+        T: Float + core::fmt::Debug,
+    {
+        lowpass_with_beta_vec(order.num_taps, order.beta, fc)
+    }
+
+    /// Create heap-backed Kaiser-windowed low-pass sinc taps from attenuation and transition width.
+    ///
+    /// `transition_width` is in cycles per sample, where Nyquist is `0.5`. This
+    /// uses [`crate::filters::fir::design::kaiser_order`]. The computed tap
+    /// count is not forced odd.
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn lowpass_for_atten_vec<T>(atten_db: T, transition_width: T, fc: T) -> alloc::vec::Vec<T>
+    where
+        T: Float + num_traits::ToPrimitive + core::fmt::Debug,
+    {
+        let order = super::super::kaiser_order(atten_db, transition_width);
+        lowpass_from_order_vec(order, fc)
+    }
+
+    /// Create heap-backed Kaiser-windowed low-pass sinc taps from `SciPy`-style width.
+    ///
+    /// `width_nyq` is normalized to Nyquist, where `1.0` corresponds to
+    /// π radians/sample. This uses [`crate::filters::fir::design::kaiser_order_nyq`]
+    /// and matches `SciPy`'s `scipy.signal.kaiserord` width convention. The
+    /// computed tap count is not forced odd.
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn lowpass_for_atten_nyq_vec<T>(atten_db: T, width_nyq: T, fc: T) -> alloc::vec::Vec<T>
+    where
+        T: Float + num_traits::ToPrimitive + core::fmt::Debug,
+    {
+        let order = super::super::kaiser_order_nyq(atten_db, width_nyq);
+        lowpass_from_order_vec(order, fc)
     }
 
     /// Create heap-backed Kaiser-windowed high-pass sinc taps using custom β.
