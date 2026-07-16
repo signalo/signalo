@@ -153,10 +153,9 @@ fn beta_for_attenuation_boundary_21() {
 #[cfg(any(feature = "libm", feature = "std"))]
 #[test]
 fn beta_for_attenuation_boundary_50() {
-    // Attenuation = 50 dB is the boundary between mid- and high-attenuation formulas.
+    // SciPy uses the mid-attenuation formula at exactly 50 dB.
     let beta = Config::<f64, [f64; 8]>::beta_for_attenuation(50.0);
-    // Expected from formula: 0.1102 * (50.0 - 8.7) = 0.1102 * 41.3 = 4.55126
-    assert_abs_diff_eq!(beta, 4.55126, epsilon = 1e-3);
+    assert_abs_diff_eq!(beta, 4.533_514_120_981_248, epsilon = 1e-12);
 }
 
 #[cfg(any(feature = "libm", feature = "std"))]

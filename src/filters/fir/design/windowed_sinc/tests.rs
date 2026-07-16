@@ -183,6 +183,58 @@ fn kaiser_lowpass_with_beta_vec_helper_matches_in_place() {
     }
 }
 
+#[cfg(feature = "alloc")]
+#[test]
+fn kaiser_lowpass_from_order_vec_uses_order_parameters() {
+    let order = super::super::kaiser_order(65.0_f64, 24.0 / 1000.0);
+    let taps = super::kaiser::lowpass_from_order_vec(order, 0.175);
+
+    assert_eq!(taps.len(), 167);
+    assert_abs_diff_eq!(taps.iter().sum::<f64>(), 1.0, epsilon = 1e-12);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn kaiser_lowpass_for_atten_vec_matches_in_place() {
+    let atten_db = 65.0_f64;
+    let transition_width = 24.0 / 1000.0;
+    let fc = 0.175;
+    let actual = super::kaiser::lowpass_for_atten_vec(atten_db, transition_width, fc);
+    let mut expected = std::vec![0.0; actual.len()];
+
+    super::kaiser::lowpass_for_atten(&mut expected, atten_db, transition_width, fc);
+
+    assert_eq!(actual.len(), 167);
+    for (actual, expected) in actual.iter().zip(expected) {
+        assert_abs_diff_eq!(*actual, expected, epsilon = 1e-12);
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn kaiser_lowpass_for_atten_nyq_vec_matches_cycles_per_sample_wrapper() {
+    let atten_db = 65.0_f64;
+    let width_nyq = 24.0 / 500.0;
+    let transition_width = 24.0 / 1000.0;
+    let fc = 0.175;
+    let actual = super::kaiser::lowpass_for_atten_nyq_vec(atten_db, width_nyq, fc);
+    let expected = super::kaiser::lowpass_for_atten_vec(atten_db, transition_width, fc);
+
+    assert_eq!(actual.len(), 167);
+    for (actual, expected) in actual.iter().zip(expected) {
+        assert_abs_diff_eq!(*actual, expected, epsilon = 1e-12);
+    }
+}
+
+#[test]
+#[should_panic(expected = "Kaiser tap count mismatch")]
+fn kaiser_lowpass_from_order_rejects_wrong_slice_len() {
+    let order = super::super::kaiser_order(65.0_f64, 24.0 / 1000.0);
+    let mut taps = [0.0; 33];
+
+    super::kaiser::lowpass_from_order(&mut taps, order, 0.175);
+}
+
 #[test]
 fn kaiser_with_beta_helpers_have_expected_reference_gain() {
     let beta = 8.0_f64;
