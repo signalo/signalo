@@ -20,11 +20,13 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- n/a
+- Added complex sample support to IIR biquad filters: `Biquad<T, K>` and `BiquadCascade<T, CS, SS, K>` accept an explicit coefficient type `K`, enabling `Biquad<Complex32, f32>` (requires `complex` feature)
 
 ### Changed
 
-- n/a
+- `Biquad<T>` generalized to `Biquad<T, K = T>` with separate coefficient type; `Config<T>` renamed to `Config<K>` (breaks explicit `Config<f32>` references)
+- `BiquadCascade<T, CS, SS>` generalized to `BiquadCascade<T, CS, SS, K = T>` and its type aliases (`BiquadCascadeArray`, `BiquadCascadeVec`, `BiquadCascadeRefMut`) gained a `K` parameter
+- Relaxed `State<T>` / `Biquad<T>` default bounds from `Num` to `Zero` for state initialization
 
 ### Deprecated
 
