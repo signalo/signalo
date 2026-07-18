@@ -21,6 +21,8 @@ Please make sure to add your changes to the appropriate categories:
 ### Added
 
 - Added complex sample support to IIR biquad filters: `Biquad<T, K>` and `BiquadCascade<T, CS, SS, K>` accept an explicit coefficient type `K`, enabling `Biquad<Complex32, f32>` (requires `complex` feature)
+- Added `KahanSum<T>`, a compensated accumulator for long-running sums that repeatedly add small deltas
+- Add `KahanIntegrate<T>`, a compensated cumulative-sum filter backed by `KahanSum<T>`
 
 ### Changed
 
