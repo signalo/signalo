@@ -136,6 +136,12 @@ where
 /// The proportional and integral gains are typically derived from a normalized
 /// loop bandwidth (`Bn * T`, cycles per symbol) and a damping factor using
 /// [`Config::new`]. The integral path uses [`Integrate<T>`].
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); two multiplications and one addition for the PI step, plus one
+///   addition for the integrator update.
+/// - **Space:** O(1); stores one integrator accumulator.
 #[derive(Clone, Debug)]
 pub struct LoopFilter<T = f32> {
     config: Config<T>,

@@ -67,6 +67,11 @@ impl<const N: usize> Default for State<[u32; N]> {
 /// Divides the range [min, max] into equal-width bins (with the bin count taken from
 /// the length of the `bins` storage) and counts how many input values fall into each
 /// bin. Out-of-bounds values are clamped to the edge bins.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one float multiply and a bin index clamp.
+/// - **Space:** O(B) where B is the number of bins.
 #[derive(Clone, Debug)]
 pub struct Histogram<T: Clone, B> {
     config: Config<T>,

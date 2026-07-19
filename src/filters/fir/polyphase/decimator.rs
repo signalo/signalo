@@ -82,6 +82,12 @@ pub struct State<R> {
     not(feature = "alloc"),
     doc = "- `PolyphaseDecimatorVec<T, K>` for heap-allocated coefficients and per-phase delay-line storage."
 )]
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(H/M) amortized, where H is the total tap count and M is the
+///   decimation factor; M input samples trigger one full-filter convolution of H taps.
+/// - **Space:** O(H); H/M delay samples per phase times M phases.
 #[derive(Clone, Debug)]
 pub struct PolyphaseDecimator<T, C, R, B, K = T> {
     bank: PolyphaseFilterBank<C>,

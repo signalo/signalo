@@ -64,6 +64,12 @@ pub struct State<R> {
     doc = "- `PolyphaseFirVec<T, K>` for heap-allocated coefficients and delay-line storage."
 )]
 /// - [`PolyphaseFirRefMut<'_, T, C, K>`] for caller-owned delay-line storage.
+///
+/// # Complexity
+///
+/// - **Time per sample:** [`push`](Self::push) is O(1); [`execute`](Self::execute) is O(H/P),
+///   where H is the total tap count and P the number of phases.
+/// - **Space:** O(H) for coefficients plus O(H/P) for the delay line.
 #[derive(Clone, Debug)]
 pub struct PolyphaseFir<T, C, R, K = T> {
     bank: PolyphaseFilterBank<C>,

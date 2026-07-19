@@ -58,6 +58,11 @@ pub struct State {
 ///
 /// The xorshift32 algorithm is a fast, simple PRNG suitable for DSP and embedded applications.
 ///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); three XOR-and-shift operations.
+/// - **Space:** O(1); stores one 32-bit state word.
+///
 /// ### Example:
 ///
 /// ```

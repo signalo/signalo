@@ -121,6 +121,11 @@ impl<T> State<T> {
 /// The scalar type `T` controls the output sample type only. Internal phase
 /// accumulation and phase-to-sine/cosine conversion use the `u32`/`f32`
 /// [`math::phase`] backend.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one wrapping addition and one lookup/approximation for sin/cos.
+/// - **Space:** O(1); stores one 32-bit phase word.
 #[derive(Clone, Debug)]
 pub struct Nco<T = f32> {
     config: Config<T>,

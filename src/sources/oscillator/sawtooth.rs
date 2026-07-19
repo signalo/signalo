@@ -80,6 +80,11 @@ where
 ///
 /// Outputs a linearly rising ramp from -amplitude to +amplitude per period.
 /// Uses the formula: `output = amplitude * (2.0 * phase - 1.0)`
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one multiply-add and one phase update.
+/// - **Space:** O(1); stores phase, amplitude, and increment.
 #[derive(Clone, Debug)]
 pub struct SawtoothOscillator<T> {
     config: Config<T>,

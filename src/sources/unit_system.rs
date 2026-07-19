@@ -25,7 +25,12 @@ pub struct State<S> {
     pub inner: S,
 }
 
-/// A source wrapper that preserves the signal's dimensional unit.
+/// A source wrapper that attaches a dimensional unit to the inner source's output.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the wrapped source `S`; this type adds only a unit-wrap step.
+/// - **Space:** same as the wrapped source `S`; no additional state.
 #[derive(Clone, Debug)]
 pub struct UnitSystem<S, T> {
     state: State<S>,

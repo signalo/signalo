@@ -9,7 +9,12 @@
 
 use crate::traits::Source;
 
-/// A wrapper type for turning iterators into sources.
+/// A wrapper type that adapts a [`Source`] into a standard [`Iterator`].
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the wrapped source `S`.
+/// - **Space:** same as the wrapped source `S`.
 ///
 /// ### Example:
 ///

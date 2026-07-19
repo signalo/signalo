@@ -21,6 +21,11 @@ pub struct Output<T> {
 }
 
 /// A sink that computes the min and max of all received values of a signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one comparison each for the running min and max.
+/// - **Space:** O(1); stores one running min and one running max.
 #[derive(Clone, Default, Debug)]
 pub struct Bounds<T> {
     min: Min<T>,

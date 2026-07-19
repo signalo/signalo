@@ -18,7 +18,7 @@ enum ChainState {
     Back,
 }
 
-/// A source that returns only a specified number of values.
+/// A source that drains its front source, then drains its back source.
 ///
 /// ### Example:
 ///
@@ -41,6 +41,11 @@ enum ChainState {
 /// // ╰───╯  ╰───╯  ╰───╯  ╰───╯  ╰───╯
 /// # }
 /// ```
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the active source (`F` or `B`); O(1) for the dispatch itself.
+/// - **Space:** same as `F` plus `B`; O(1) for the internal state flag.
 #[derive(Clone, Debug)]
 pub struct Chain<F, B> {
     front: F,

@@ -120,6 +120,12 @@ where
 ///
 /// Use the [`BiquadCascadeArray`] type alias for fixed-size stack allocation or
 /// [`BiquadCascadeVec`] for heap-allocated, runtime-sized storage.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) where N is the number of biquad sections; each section
+///   performs five multiplications and four additions (DF2T topology).
+/// - **Space:** O(N); two delay-line values per section.
 #[derive(Clone, Debug)]
 pub struct BiquadCascade<T, CS, SS, K = T> {
     config: Config<K, CS>,

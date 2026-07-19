@@ -19,7 +19,13 @@ pub struct State<T, U> {
     pub peeked: Option<Option<U>>,
 }
 
-/// A source wrapper that caches the wrapped inner source.
+/// A source wrapper that allows peeking at the next value without consuming it.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the inner source `T`; [`peek`](Self::peek) calls the inner
+///   source at most once per peeked value.
+/// - **Space:** same as `T` plus O(1) for the peeked buffer.
 #[derive(Clone, Debug)]
 pub struct Peek<T, U> {
     state: State<T, U>,

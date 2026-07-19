@@ -19,7 +19,14 @@ struct State<T> {
     mean: T,
 }
 
-/// A sink that computes the mean and variance of all received values of a signal.
+/// A sink that computes the arithmetic mean of all received values.
+///
+/// Uses Welford's one-pass algorithm: O(1) per sample with no accumulated error.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one subtraction and one division.
+/// - **Space:** O(1); stores a running count and mean.
 #[derive(Clone, Default, Debug)]
 pub struct Mean<T> {
     // The sink's state

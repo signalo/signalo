@@ -9,7 +9,12 @@
 
 use crate::traits::Source;
 
-/// A source that repeats an auto-incremented value on each call.
+/// A source that cycles through an inner source, resetting it when exhausted.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the inner source `S`; one clone of `S` per cycle reset.
+/// - **Space:** O(2 × |S|); stores the original and the live copy of the inner source.
 ///
 /// ### Example:
 ///

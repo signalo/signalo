@@ -11,6 +11,11 @@ use core::ops::Neg as StdNeg;
 use crate::traits::Filter;
 
 /// A filter performing a negation operation over a signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one negation.
+/// - **Space:** O(1); no state.
 #[derive(Default, Clone, Debug)]
 pub struct Neg;
 

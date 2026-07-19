@@ -114,6 +114,11 @@ where
 /// as represented by phase increments.
 ///
 /// After `num_samples` samples, the source returns `None`.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one sine evaluation, two additions, and one bounds check.
+/// - **Space:** O(1); stores current phase, sample index, and phase increment.
 #[derive(Clone, Debug)]
 pub struct Chirp<T> {
     config: Config<T>,

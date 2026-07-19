@@ -13,6 +13,11 @@ use crate::traits::Source;
 
 /// A source that returns an auto-incremented value on each call.
 ///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one clone and one `+=`.
+/// - **Space:** O(1); stores current state and interval.
+///
 /// ### Example:
 ///
 /// ```

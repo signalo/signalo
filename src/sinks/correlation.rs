@@ -52,6 +52,11 @@ pub struct State<T, Rx, Ry> {
 /// Prefer the concrete aliases for common use:
 /// - [`CorrelationArray<T, N>`] — stack-allocated, `no_std`-friendly.
 /// - [`CorrelationVec<T>`] — heap-allocated, requires the `alloc` feature.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N); each call computes the dot product over the N-sample window.
+/// - **Space:** O(N); two ring buffers of N samples each.
 #[derive(Clone, Debug)]
 pub struct Correlation<T, Rx, Ry> {
     state: State<T, Rx, Ry>,

@@ -43,6 +43,11 @@ pub struct State<T> {
 }
 
 /// A zero-crossing detector that identifies when a signal crosses zero.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one sign comparison and an optional magnitude check.
+/// - **Space:** O(1); stores one previous sample.
 #[derive(Clone, Debug)]
 pub struct ZeroCrossing<T> {
     /// The filter's configuration.

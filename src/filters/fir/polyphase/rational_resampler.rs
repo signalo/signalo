@@ -109,6 +109,13 @@ pub struct State {
 )]
 /// - [`RationalResamplerRefMut<'_, T, C, K>`] for caller-owned delay-line
 ///   storage.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(H/P) amortized per output, where H is the total tap count and P the
+///   interpolation factor; each output evaluates one phase branch of H/P taps, consuming on
+///   average Q/P inputs (Q = decimation factor).
+/// - **Space:** O(H) for coefficients plus O(H/P) for the shared delay line.
 #[derive(Clone, Debug)]
 pub struct RationalResampler<T, C, R, K = T> {
     fir: PolyphaseFir<T, C, R, K>,

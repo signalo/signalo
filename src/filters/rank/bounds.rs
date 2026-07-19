@@ -53,6 +53,12 @@ where
 }
 
 /// A bounds filter producing the moving bounds over a given signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) amortized; each sample triggers monotonic deque maintenance on
+///   both the min and max windows of length N.
+/// - **Space:** O(N); two deques of at most N elements each.
 #[derive(Clone)]
 pub struct Bounds<T, R> {
     state: State<T, R>,

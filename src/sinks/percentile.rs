@@ -61,6 +61,12 @@ impl<T: Clone + Default> Default for Config<T> {
 /// range into equal-width bins. The percentile is approximated by finding the bin where the
 /// cumulative count exceeds the target percentage of total samples, then linearly
 /// interpolating within that bin.
+///
+/// # Complexity
+///
+/// - **Time per sample (sink):** O(1); delegates to the underlying histogram bin lookup.
+/// - **Time (finalize):** O(B) where B is the number of bins; scans bins to find the target quantile.
+/// - **Space:** O(B) for the bin counters.
 #[derive(Clone, Debug)]
 pub struct Percentile<T: Clone, B> {
     config: Config<T>,

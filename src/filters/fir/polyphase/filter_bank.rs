@@ -76,6 +76,12 @@ pub struct Config<C> {
     doc = "- `PolyphaseFilterBankVec<K>` — heap-allocated, requires the `alloc` feature."
 )]
 /// - [`PolyphaseFilterBankRefMut<'_, K>`] — caller-owned coefficient storage.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(H/P) per [`Self::execute`] call, where H is the total tap count and
+///   P the number of phases; each call convolves one phase branch of H/P coefficients.
+/// - **Space:** O(H); stores all H coefficients, but owns no delay-line state.
 #[derive(Clone, Debug)]
 pub struct PolyphaseFilterBank<C> {
     config: Config<C>,

@@ -20,6 +20,11 @@ enum PadState {
 
 /// A source that pads an inner source with a specified number of constant values at the edges.
 ///
+/// # Complexity
+///
+/// - **Time per sample:** same as the inner source `S` during the inner phase; O(1) during padding.
+/// - **Space:** same as `S` plus O(1) for two [`Repeat`] padding counters.
+///
 /// ### Example:
 ///
 /// ```

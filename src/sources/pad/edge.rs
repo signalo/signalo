@@ -22,7 +22,12 @@ enum PadState<T> {
     After,
 }
 
-/// A source that pads an inner source with a specified number of constant values at the edges.
+/// A source that pads an inner source with copies of the edge values.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the inner source `S` during the inner phase; O(1) during padding.
+/// - **Space:** same as `S` plus O(1) for the padding count and edge value.
 ///
 /// ### Example:
 ///

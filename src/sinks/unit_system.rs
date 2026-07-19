@@ -19,6 +19,11 @@ use dimensioned::{
 use crate::traits::{Finalize, Sink};
 
 /// A sink wrapper that preserves the signal's dimensional unit.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the wrapped sink `S`; this type adds only a unit-strip step.
+/// - **Space:** same as the wrapped sink `S`; no additional state.
 #[derive(Clone, Debug)]
 pub struct UnitSystem<S, T> {
     /// Inner sink.

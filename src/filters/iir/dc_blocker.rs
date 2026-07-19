@@ -58,6 +58,11 @@ pub type State<T> = first_order::State<T>;
 ///
 /// Removes DC bias from a signal using the equation `y[n] = x[n] - x[n-1] + r·y[n-1]`.
 /// Implemented internally as a `first_order::FirstOrder` with `b0=1, b1=-1, a1=-r`.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); three multiplications and two additions (delegates to [`super::first_order::FirstOrder`]).
+/// - **Space:** O(1); stores one previous input and one previous output.
 #[derive(Clone, Debug)]
 pub struct DcBlocker<T> {
     config: Config<T>,
