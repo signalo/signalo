@@ -23,6 +23,8 @@ Please make sure to add your changes to the appropriate categories:
 - Added complex sample support to IIR biquad filters: `Biquad<T, K>` and `BiquadCascade<T, CS, SS, K>` accept an explicit coefficient type `K`, enabling `Biquad<Complex32, f32>` (requires `complex` feature)
 - Added `KahanSum<T>`, a compensated accumulator for long-running sums that repeatedly add small deltas
 - Add `KahanIntegrate<T>`, a compensated cumulative-sum filter backed by `KahanSum<T>`
+- Added `fir::design::windowed_sinc` module with per-window submodules for slice-filling low-pass, high-pass, band-pass, and band-stop FIR tap generation
+- Added `KaiserSinc::highpass_with_beta`, `KaiserSinc::bandpass_with_beta`, and `KaiserSinc::bandstop_with_beta` constructors (with `_hz` variants) for Kaiser-windowed filters with custom `β`
 
 ### Changed
 
