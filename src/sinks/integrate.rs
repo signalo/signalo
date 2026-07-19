@@ -11,7 +11,12 @@ use num_traits::Num;
 
 use crate::traits::{Filter, Finalize, Sink};
 
-/// A sink that computes the integrate of all received values of a signal.
+/// A sink that computes the cumulative sum of all received values.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one addition.
+/// - **Space:** O(1); stores one running accumulator.
 #[derive(Clone, Default, Debug)]
 pub struct Integrate<T> {
     sum: Option<T>,

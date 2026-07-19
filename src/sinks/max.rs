@@ -9,7 +9,12 @@
 
 use crate::traits::{Filter, Finalize, Sink};
 
-/// A sink that computes the max and max of all received values of a signal.
+/// A sink that computes the maximum of all received values.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one comparison.
+/// - **Space:** O(1); stores one running maximum.
 #[derive(Clone, Default, Debug)]
 pub struct Max<T> {
     max: Option<T>,

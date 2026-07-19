@@ -33,6 +33,11 @@ pub struct State<T> {
 
 /// A peak hold sink that tracks the maximum absolute value of a signal,
 /// with optional decay when no larger signal arrives.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one absolute value, one comparison, and one multiplication.
+/// - **Space:** O(1); stores one peak value.
 #[derive(Clone, Debug)]
 pub struct PeakHold<T> {
     /// The sink's configuration.

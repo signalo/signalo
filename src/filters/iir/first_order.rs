@@ -57,6 +57,11 @@ pub struct State<T> {
 }
 
 /// A first-order IIR filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); three multiplications and two additions.
+/// - **Space:** O(1); stores one previous input and one previous output.
 #[derive(Clone, Debug)]
 pub struct FirstOrder<T> {
     config: Config<T>,

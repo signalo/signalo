@@ -16,6 +16,11 @@ use crate::traits::Source;
 /// Returns a constant amplitude value on each call, implementing the discrete unit step function.
 /// Mathematically: `u[n] = amplitude` for all n >= 0.
 ///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one clone.
+/// - **Space:** O(1); stores one amplitude value.
+///
 /// ### Example:
 ///
 /// ```

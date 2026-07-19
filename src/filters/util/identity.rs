@@ -7,6 +7,11 @@
 use crate::traits::Filter;
 
 /// A filter that simply returns the values it receives.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); pass-through with no computation.
+/// - **Space:** O(1); no state.
 #[derive(Default, Clone, Debug)]
 pub struct Identity;
 

@@ -93,6 +93,11 @@ where
 ///
 /// Outputs a triangle waveform with peaks at period/4 and period*3/4.
 /// Uses the formula: `output = amplitude * (1.0 - 4.0 * |phase - 0.5|)`
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one abs, two multiplications, and one phase update.
+/// - **Space:** O(1); stores phase, amplitude, and increment.
 #[derive(Clone, Debug)]
 pub struct TriangleOscillator<T> {
     config: Config<T>,

@@ -9,8 +9,12 @@
 
 use crate::traits::Source;
 
-/// A source that returns only up to a specified number of values.
-/// A source that returns an auto-incremented value on each call.
+/// A source that discards the first N values from an inner source, then yields the rest.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(N) on the first call (drains N items); O(1) on all subsequent calls.
+/// - **Space:** same as the inner source `S`; O(1) for the remaining count.
 ///
 /// ### Example:
 ///

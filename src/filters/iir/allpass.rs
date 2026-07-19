@@ -57,6 +57,11 @@ pub struct State<T> {
 }
 
 /// A first-order allpass filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one multiply and two additions (Schroeder single-multiply form).
+/// - **Space:** O(1); stores one previous input and one previous output.
 #[derive(Clone, Debug)]
 pub struct Allpass<T> {
     config: Config<T>,

@@ -9,7 +9,12 @@
 
 use crate::traits::Source;
 
-/// A source that returns only up to a specified number of values.
+/// A source that returns at most a specified number of values from an inner source.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the inner source `S`; O(1) for the counter check.
+/// - **Space:** same as `S` plus O(1) for the remaining count.
 ///
 /// ### Example:
 ///

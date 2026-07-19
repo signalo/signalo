@@ -101,6 +101,12 @@ where
 ///
 /// This oscillator uses stable quadrature phase tracking to generate sine waves
 /// without accumulation of phase drift over long sequences.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); four multiplications and two additions for the rotation update,
+///   plus occasional renormalization every 256 samples.
+/// - **Space:** O(1); stores sine, cosine, and a renormalization counter.
 #[derive(Clone, Debug)]
 pub struct SineOscillator<T> {
     config: Config<T>,

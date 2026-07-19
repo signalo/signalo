@@ -52,6 +52,11 @@ pub struct State<T, R> {
 /// Prefer the concrete aliases for common use:
 /// - [`RmsArray<T, N>`] — stack-allocated, `no_std`-friendly.
 /// - [`RmsVec<T>`] — heap-allocated, requires the `alloc` feature.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one square, one running sum update, and one division.
+/// - **Space:** O(N) for the ring buffer holding the last N samples.
 #[derive(Clone, Debug)]
 pub struct Rms<T, R> {
     state: State<T, R>,

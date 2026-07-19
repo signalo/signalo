@@ -30,7 +30,12 @@ struct State<T> {
     variance: T,
 }
 
-/// A sink that computes the mean and variance of all received values of a signal.
+/// A sink that computes the mean and variance of all received values using Welford's algorithm.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); a constant number of additions, subtractions, and multiplications.
+/// - **Space:** O(1); stores a running count, mean, and squared-deviation accumulator.
 #[derive(Clone, Default, Debug)]
 pub struct MeanVariance<T> {
     state: Option<State<T>>,

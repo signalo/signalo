@@ -87,6 +87,11 @@ where
 ///
 /// Outputs amplitude for the first half of each period (phase < 0.5) and
 /// -amplitude for the second half.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one comparison and one addition.
+/// - **Space:** O(1); stores phase, amplitude, and increment.
 #[derive(Clone, Debug)]
 pub struct SquareOscillator<T> {
     config: Config<T>,

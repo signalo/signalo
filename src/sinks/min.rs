@@ -9,7 +9,12 @@
 
 use crate::traits::{Filter, Finalize, Sink};
 
-/// A sink that computes the min and max of all received values of a signal.
+/// A sink that computes the minimum of all received values.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one comparison.
+/// - **Space:** O(1); stores one running minimum.
 #[derive(Clone, Default, Debug)]
 pub struct Min<T> {
     min: Option<T>,

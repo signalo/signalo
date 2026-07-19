@@ -10,6 +10,11 @@
 use crate::traits::{Finalize, Sink};
 
 /// A sink that memorizes the most recently received value of a signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); overwrites one stored value.
+/// - **Space:** O(1); stores one value.
 #[derive(Default, Clone, Debug)]
 pub struct Last<T> {
     state: Option<T>,

@@ -121,6 +121,11 @@ where
 /// to `T`, preserving the common `Biquad<f32>`/`Biquad<f64>` usage. Use an
 /// explicit `K` when coefficients have a different type than samples, for
 /// example `Biquad<Complex32, f32>` with the `complex` feature enabled.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); five multiplications and four additions (DF2T topology).
+/// - **Space:** O(1); two delay-line values (`s1`, `s2`).
 #[derive(Clone, Debug)]
 pub struct Biquad<T, K = T> {
     config: Config<K>,

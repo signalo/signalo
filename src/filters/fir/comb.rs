@@ -82,6 +82,11 @@ where
 /// Prefer the concrete aliases for common use:
 /// - [`FeedforwardCombArray<T, D>`] — stack-allocated, `no_std`-friendly; delay `D` must be >= 1.
 /// - [`FeedforwardCombVec<T>`] — heap-allocated, requires the `alloc` feature.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one multiplication and one addition, plus a ring-buffer push/pop.
+/// - **Space:** O(D); ring buffer holds D delayed input samples.
 #[derive(Clone, Debug)]
 pub struct FeedforwardComb<T, R> {
     config: Config<T>,

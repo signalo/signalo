@@ -96,6 +96,11 @@ where
 /// Prefer the concrete type aliases for everyday use:
 /// - [`FeedbackCombArray<T, D>`] — stack-allocated, `no_std`-friendly.
 /// - [`FeedbackCombVec<T>`] — heap-allocated, requires the `alloc` feature.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one multiplication and one addition, plus a ring-buffer push/pop.
+/// - **Space:** O(D); ring buffer holds D delayed output samples.
 #[derive(Clone, Debug)]
 pub struct FeedbackComb<T, R> {
     config: Config<T>,

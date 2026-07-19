@@ -11,6 +11,11 @@ use core::ops::Mul;
 use crate::traits::Filter;
 
 /// A filter performing a squaring operation over a signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one multiplication.
+/// - **Space:** O(1); no state.
 #[derive(Default, Clone, Debug)]
 pub struct Square;
 

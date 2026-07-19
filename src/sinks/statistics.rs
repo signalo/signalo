@@ -36,6 +36,11 @@ struct State<T> {
 }
 
 /// A sink that computes the [descriptive statistics](https://en.wikipedia.org/wiki/Descriptive_statistics) of a signal.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); delegates to [`Bounds`] and [`MeanVariance`], each O(1).
+/// - **Space:** O(1); stores running min, max, mean, and variance.
 #[derive(Clone, Default, Debug)]
 pub struct Statistics<T> {
     state: State<T>,

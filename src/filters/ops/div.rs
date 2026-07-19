@@ -11,6 +11,11 @@ use core::ops::Div as StdDiv;
 use crate::traits::Filter;
 
 /// A filter performing `/` on a pair of values.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one division.
+/// - **Space:** O(1); no state.
 #[derive(Default, Clone, Debug)]
 pub struct Div;
 

@@ -62,6 +62,11 @@ pub struct State<T> {
 ///
 /// The `attack` and `release` coefficients should be in the range [0.0, 1.0].
 /// Typical values: attack ≈ 0.9 (fast), release ≈ 0.1 (slow).
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one absolute value, one comparison, and two multiply-add steps.
+/// - **Space:** O(1); stores one envelope value.
 #[derive(Clone, Debug)]
 pub struct Envelope<T> {
     config: Config<T>,

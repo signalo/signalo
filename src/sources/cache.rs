@@ -19,6 +19,12 @@ pub struct State<T, U> {
 }
 
 /// A source wrapper that caches the wrapped inner source.
+///
+/// # Complexity
+///
+/// - **Time per sample:** same as the wrapped source `T` on the first call; O(1) on subsequent
+///   calls when a cached value is already present.
+/// - **Space:** same as `T` plus O(1) for the cached value.
 #[derive(Clone, Debug)]
 pub struct Cache<T, U> {
     state: State<T, U>,

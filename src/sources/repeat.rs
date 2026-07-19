@@ -13,6 +13,11 @@ use super::{constant::Constant, take::Take};
 
 /// A source that returns a specified number of constant values.
 ///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one counter decrement and one clone.
+/// - **Space:** O(1); stores one value and a remaining count.
+///
 /// ### Example:
 ///
 /// ```

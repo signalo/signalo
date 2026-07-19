@@ -79,6 +79,12 @@ pub struct State {
 )]
 /// - [`PolyphaseInterpolatorRefMut<'_, T, C, K>`] for caller-owned delay-line
 ///   storage.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(H) per input sample, where H is the total tap count; each input
+///   triggers P phase evaluations of H/P taps each.
+/// - **Space:** O(H) for coefficients plus O(H/P) for the shared delay line.
 #[derive(Clone, Debug)]
 pub struct PolyphaseInterpolator<T, C, R, K = T> {
     fir: PolyphaseFir<T, C, R, K>,

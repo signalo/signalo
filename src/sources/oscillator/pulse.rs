@@ -99,6 +99,11 @@ where
 /// Outputs amplitude when `phase < duty_cycle` and `-amplitude` otherwise.
 ///
 /// A duty cycle of 0.5 produces a symmetric square wave.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one comparison and one addition.
+/// - **Space:** O(1); stores phase, amplitude, duty cycle, and increment.
 #[derive(Clone, Debug)]
 pub struct PulseOscillator<T> {
     config: Config<T>,

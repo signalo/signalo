@@ -9,7 +9,12 @@
 
 use crate::traits::Source;
 
-/// A source that returns an constant value on each call.
+/// A source that returns a constant value on each call.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one clone.
+/// - **Space:** O(1); stores one value.
 ///
 /// ### Example:
 ///

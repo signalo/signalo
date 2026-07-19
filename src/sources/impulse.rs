@@ -20,6 +20,11 @@ use crate::traits::ResetMut;
 /// Returns the specified amplitude on the first call, then zero on all subsequent calls.
 /// Mathematically: `δ[n] = amplitude` for n=0, `δ[n] = 0` for n>0.
 ///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one boolean check.
+/// - **Space:** O(1); stores the amplitude and a fired flag.
+///
 /// ### Example:
 ///
 /// ```

@@ -11,6 +11,11 @@ use crate::traits::Source;
 
 /// A wrapper type for turning iterators into sources.
 ///
+/// # Complexity
+///
+/// - **Time per sample:** same as the wrapped iterator's `next()`; typically O(1).
+/// - **Space:** same as the wrapped iterator.
+///
 /// ### Example:
 ///
 /// ```

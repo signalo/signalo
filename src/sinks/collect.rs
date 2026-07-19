@@ -13,7 +13,13 @@ use alloc::vec::Vec;
 
 use crate::traits::{Filter, Finalize, Sink};
 
-/// A sink that computes the integrate of all received values of a signal.
+/// A sink that collects all received values into a `Vec`.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1) amortized via `Vec::push`; [`Filter::filter`] is O(N) due to the
+///   clone of the full vector on each call — prefer [`Sink::sink`] + [`Finalize::finalize`].
+/// - **Space:** O(N) where N is the number of samples received.
 #[derive(Clone, Default, Debug)]
 pub struct Collect<U> {
     collected: U,

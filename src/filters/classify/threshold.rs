@@ -27,6 +27,11 @@ pub struct Config<T, U> {
 }
 
 /// A threshold filter.
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one comparison and an array index.
+/// - **Space:** O(1); no state beyond the configuration.
 #[derive(Clone, Debug)]
 pub struct Threshold<T, U> {
     config: Config<T, U>,
