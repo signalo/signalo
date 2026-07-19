@@ -25,12 +25,15 @@ Please make sure to add your changes to the appropriate categories:
 - Add `KahanIntegrate<T>`, a compensated cumulative-sum filter backed by `KahanSum<T>`
 - Added `fir::design::windowed_sinc` module with per-window submodules for slice-filling low-pass, high-pass, band-pass, and band-stop FIR tap generation
 - Added `KaiserSinc::highpass_with_beta`, `KaiserSinc::bandpass_with_beta`, and `KaiserSinc::bandstop_with_beta` constructors (with `_hz` variants) for Kaiser-windowed filters with custom `β`
+- Added Kaiser FIR order-design helpers in `filters::fir::design`
+- Added Kaiser-windowed low-pass convenience helpers in `windowed_sinc::kaiser`
 
 ### Changed
 
 - `Biquad<T>` generalized to `Biquad<T, K = T>` with separate coefficient type; `Config<T>` renamed to `Config<K>` (breaks explicit `Config<f32>` references)
 - `BiquadCascade<T, CS, SS>` generalized to `BiquadCascade<T, CS, SS, K = T>` and its type aliases (`BiquadCascadeArray`, `BiquadCascadeVec`, `BiquadCascadeRefMut`) gained a `K` parameter
 - Relaxed `State<T>` / `Biquad<T>` default bounds from `Num` to `Zero` for state initialization
+- `Kaiser::Config::beta_for_attenuation` now delegates to `filters::fir::design::kaiser_beta`; the boundary at exactly 50 dB now uses the mid-attenuation formula (matching SciPy) instead of the high-attenuation formula
 
 ### Deprecated
 
