@@ -142,13 +142,7 @@ where
     }
 }
 
-impl<T, C, R, K> PolyphaseFir<T, C, R, K>
-where
-    T: Clone + Zero + Add<Output = T> + Mul<K, Output = T>,
-    K: Clone,
-    C: AsSlice<K>,
-    R: RingBuffer<T>,
-{
+impl<T, C, R, K> PolyphaseFir<T, C, R, K> {
     /// Evaluates `phase` against the current delay line.
     ///
     /// # Panics
@@ -156,7 +150,14 @@ where
     /// Panics if `phase >= self.num_phases()`, or if the current delay-line
     /// length does not equal `self.taps_per_phase()`.
     #[must_use]
-    pub fn execute(&self, phase: usize) -> T {
+    pub fn execute<O>(&self, phase: usize) -> O
+    where
+        T: Clone + Mul<K, Output = O>,
+        K: Clone,
+        C: AsSlice<K>,
+        R: RingBuffer<T>,
+        O: Zero + Add<Output = O>,
+    {
         self.bank.execute(phase, self.state.taps.iter())
     }
 }
@@ -293,6 +294,7 @@ mod tests {
     use super::{PolyphaseFir, PolyphaseFirArray, PolyphaseFirRefMut, State};
     use crate::filters::fir::convolve::{Config as ConvolveConfig, ConvolveArray};
     use crate::filters::fir::polyphase::filter_bank::Config;
+    use crate::filters::fir::polyphase::test_support::Pair;
     use crate::traits::{
         guts::{FromGuts, IntoGuts},
         Filter, Reset, WithConfig,
@@ -319,6 +321,40 @@ mod tests {
         assert_eq!(fir.execute(0), 60);
         assert_eq!(fir.execute(1), 90);
         assert_eq!(fir.execute(2), 120);
+    }
+
+    /// Bundled coefficients can produce an output type different from the input sample type.
+    ///
+    /// This keeps ordinary scalar FIRs unchanged while allowing callers such as ML-TED timing
+    /// recovery to evaluate interpolation and derivative taps over the same owned delay line.
+    #[test]
+    fn execute_can_return_a_different_output_type() {
+        let mut fir = PolyphaseFirArray::<i32, 2, 2, Pair>::with_config(Config {
+            num_phases: 1,
+            taps_per_phase: 2,
+            coefficients: [
+                Pair {
+                    first: 1,
+                    second: 2,
+                },
+                Pair {
+                    first: 3,
+                    second: 5,
+                },
+            ],
+        });
+
+        fir.push(7);
+        fir.push(11);
+
+        let out: Pair = fir.execute(0);
+        assert_eq!(
+            out,
+            Pair {
+                first: 32,
+                second: 57
+            }
+        );
     }
 
     #[test]

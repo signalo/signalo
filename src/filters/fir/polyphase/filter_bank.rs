@@ -179,11 +179,12 @@ impl<C> PolyphaseFilterBank<C> {
     /// Panics if `phase >= self.num_phases()`, or if the number of samples
     /// yielded by `taps` does not equal `self.taps_per_phase()`.
     #[must_use]
-    pub fn execute<'a, T, K, I>(&self, phase: usize, taps: I) -> T
+    pub fn execute<'a, T, K, O, I>(&self, phase: usize, taps: I) -> O
     where
-        T: 'a + Clone + Zero + Add<Output = T> + Mul<K, Output = T>,
+        T: 'a + Clone + Mul<K, Output = O>,
         K: Clone,
         C: AsSlice<K>,
+        O: Zero + Add<Output = O>,
         I: IntoIterator<Item = &'a T>,
     {
         let coefficients = self.phase_coefficients(phase);
@@ -192,7 +193,7 @@ impl<C> PolyphaseFilterBank<C> {
         let output =
             taps.by_ref()
                 .zip(coefficients.iter().rev())
-                .fold(T::zero(), |sum, (state, coeff)| {
+                .fold(O::zero(), |sum, (state, coeff)| {
                     count += 1;
                     sum + ((*state).clone() * (*coeff).clone())
                 });
@@ -309,6 +310,7 @@ impl<C> Reset for PolyphaseFilterBank<C> {
 #[cfg(test)]
 mod tests {
     use super::{Config, PolyphaseFilterBank, PolyphaseFilterBankArray, PolyphaseFilterBankRefMut};
+    use crate::filters::fir::polyphase::test_support::Pair;
     use crate::traits::WithConfig;
 
     #[test]
@@ -365,6 +367,37 @@ mod tests {
         assert_eq!(bank.execute(0, [10, 40].iter()), 80);
         assert_eq!(bank.execute(1, [20, 50].iter()), 200);
         assert_eq!(bank.execute(2, [30, 60].iter()), 360);
+    }
+
+    /// Bundled coefficients can produce an output type different from the input sample type.
+    ///
+    /// This keeps ordinary scalar FIRs unchanged while allowing callers such as ML-TED timing
+    /// recovery to evaluate interpolation and derivative taps over the same sample history.
+    #[test]
+    fn execute_can_return_a_different_output_type() {
+        let bank = PolyphaseFilterBankArray::<Pair, 2>::from_parts(Config {
+            num_phases: 1,
+            taps_per_phase: 2,
+            coefficients: [
+                Pair {
+                    first: 1,
+                    second: 2,
+                },
+                Pair {
+                    first: 3,
+                    second: 5,
+                },
+            ],
+        });
+
+        let out: Pair = bank.execute(0, [7, 11].iter());
+        assert_eq!(
+            out,
+            Pair {
+                first: 32,
+                second: 57
+            }
+        );
     }
 
     #[test]
