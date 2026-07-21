@@ -269,6 +269,17 @@ where
 /// the minimum buffer length for `prototype_len`, or a larger multiple of
 /// `num_phases` to use a fixed per-phase length.
 ///
+/// # Complexity
+///
+/// - **Time:** O((P·T)²/4) element moves, where P is `num_phases` and T is
+///   `coefficients.len() / num_phases`. The reorder is a rotation-based in-place
+///   transpose performing exactly `P·T + P(P−1)·T(T−1)/4` moves. For P = 128 and
+///   T = 32 that is about 4.0 million moves to place 4096 coefficients.
+/// - **Space:** O(1); no auxiliary storage.
+///
+/// [`pack_prototype_taps`] is O(P·T) and is preferable whenever a second buffer
+/// is acceptable.
+///
 /// # Panics
 ///
 /// Panics when `num_phases` or `prototype_len` is zero, `coefficients` is empty,

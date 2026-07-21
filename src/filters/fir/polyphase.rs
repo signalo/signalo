@@ -8,7 +8,8 @@
 //! primitive. [`fir`] adds sample history. The [`interpolator`], [`decimator`], and
 //! [`rational_resampler`] modules build streaming
 //! [`MultirateFilter`](crate::traits::MultirateFilter) adapters on top of those
-//! primitives.
+//! primitives. [`fractional_delay`] provides sizing, design, and packing helpers
+//! for fractional-delay PFBs, which execute on [`fir`] at an unchanged rate.
 //!
 //! # Prototype design rates
 //!
@@ -50,6 +51,7 @@
 pub mod decimator;
 pub mod filter_bank;
 pub mod fir;
+pub mod fractional_delay;
 pub mod interpolator;
 pub mod rational_resampler;
 
