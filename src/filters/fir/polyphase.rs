@@ -15,3 +15,63 @@ pub mod filter_bank;
 pub mod fir;
 pub mod interpolator;
 pub mod rational_resampler;
+
+#[cfg(test)]
+pub(crate) mod test_support {
+    use core::ops::{Add, Mul};
+
+    use num_traits::Zero;
+
+    /// Test-only bundle proving one PFB pass can run two parallel real filters.
+    ///
+    /// With `T = i32`, this stores two coefficient weights. As the dot-product output, it stores the
+    /// two corresponding output accumulators.
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub(crate) struct Pair<T = i32> {
+        /// First parallel filter value.
+        pub(crate) first: T,
+        /// Second parallel filter value.
+        pub(crate) second: T,
+    }
+
+    impl<T> Add for Pair<T>
+    where
+        T: Add<Output = T>,
+    {
+        type Output = Self;
+
+        fn add(self, rhs: Self) -> Self {
+            Self {
+                first: self.first + rhs.first,
+                second: self.second + rhs.second,
+            }
+        }
+    }
+
+    impl<T> Zero for Pair<T>
+    where
+        T: Zero + Add<Output = T>,
+    {
+        fn zero() -> Self {
+            Self {
+                first: T::zero(),
+                second: T::zero(),
+            }
+        }
+
+        fn is_zero(&self) -> bool {
+            self.first.is_zero() && self.second.is_zero()
+        }
+    }
+
+    impl Mul<Pair> for i32 {
+        type Output = Pair;
+
+        fn mul(self, rhs: Pair) -> Pair {
+            Self::Output {
+                first: self * rhs.first,
+                second: self * rhs.second,
+            }
+        }
+    }
+}
