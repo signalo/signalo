@@ -9,7 +9,7 @@ use core::ops::{Add, Mul};
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{Num, Zero};
 
-use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
+use crate::storage::{zero_fill_ring, AsSlice, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, MultirateFilter, Reset, WithConfig,
@@ -185,7 +185,9 @@ where
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        Self::from_parts(config, zero_filled_fixed_ring::<T, H>())
+        let mut taps = FixedCircularBuffer::new();
+        zero_fill_ring(&mut taps);
+        Self::from_parts(config, taps)
     }
 }
 

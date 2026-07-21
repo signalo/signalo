@@ -24,7 +24,7 @@
 #[cfg(feature = "alloc")]
 use circular_buffer::HeapCircularBuffer;
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
-use num_traits::Num;
+use num_traits::Zero;
 
 /// A contiguous, flat storage backend.
 ///
@@ -304,12 +304,16 @@ impl<T> RingBuffer<T> for &mut CircularBuffer<T> {
     }
 }
 
-pub(crate) fn zero_filled_fixed_ring<T: Num, const N: usize>() -> FixedCircularBuffer<T, N> {
-    let mut buf = FixedCircularBuffer::new();
-    for _ in 0..N {
-        let _ = buf.push_back(T::zero());
+pub(crate) fn zero_fill_ring<T, R>(ring: &mut R)
+where
+    T: Zero,
+    R: RingBuffer<T>,
+{
+    let capacity = ring.capacity();
+    ring.clear();
+    for _ in 0..capacity {
+        let _ = ring.push_back(T::zero());
     }
-    buf
 }
 
 #[cfg(test)]

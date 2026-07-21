@@ -10,7 +10,7 @@ use core::ops::{Add, Mul};
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{Num, Zero};
 
-use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
+use crate::storage::{zero_fill_ring, AsSlice, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -222,7 +222,8 @@ where
             "Convolve: coefficients length must equal N"
         );
         let state = {
-            let taps = zero_filled_fixed_ring::<T, N>();
+            let mut taps = FixedCircularBuffer::new();
+            zero_fill_ring(&mut taps);
             State { taps }
         };
         Self {

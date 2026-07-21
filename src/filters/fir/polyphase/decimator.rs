@@ -10,7 +10,7 @@ use core::ops::{Add, Mul};
 use circular_buffer::FixedCircularBuffer;
 use num_traits::{Num, Zero};
 
-use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
+use crate::storage::{zero_fill_ring, AsSlice, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, MultirateFilter, Reset, WithConfig,
@@ -210,7 +210,11 @@ where
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let taps = core::array::from_fn(|_| zero_filled_fixed_ring::<T, H>());
+        let taps = core::array::from_fn(|_| {
+            let mut taps = FixedCircularBuffer::new();
+            zero_fill_ring(&mut taps);
+            taps
+        });
         Self::from_parts(config, taps)
     }
 }
@@ -239,9 +243,7 @@ where
         let mut taps = alloc::vec::Vec::with_capacity(bank.num_phases());
         for _ in 0..bank.num_phases() {
             let mut tap_buffer = HeapCircularBuffer::with_capacity(bank.taps_per_phase());
-            for _ in 0..bank.taps_per_phase() {
-                let _ = tap_buffer.push_back(T::zero());
-            }
+            zero_fill_ring(&mut tap_buffer);
             taps.push(tap_buffer);
         }
         Self::from_parts(bank.into_guts(), taps)
