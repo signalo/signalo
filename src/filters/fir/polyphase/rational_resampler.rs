@@ -68,13 +68,21 @@ pub struct State {
 /// Coefficients follow the phase-major ordering described by
 /// [`PolyphaseFilterBank`](super::filter_bank::PolyphaseFilterBank).
 ///
+/// # Prototype design
+///
+/// For this P/Q rational resampler, design dense prototype taps at
+/// `input_rate * P`, the intermediate rate after interpolation and before
+/// decimation. For low-pass anti-image and anti-aliasing prototypes, the lower
+/// input/output Nyquist boundary at that intermediate rate is
+/// `0.5 / max(P, Q)`.
+///
 /// # Gain
 ///
-/// This type does not apply interpolation gain scaling. To preserve the input
-/// amplitude, the prototype filter must have passband gain equal to the
-/// interpolation factor. A unity-gain prototype therefore produces output
-/// attenuated by `1 / P`; multiply its coefficients by `P` before construction,
-/// or design the prototype with the required gain.
+/// This type does not apply interpolation gain scaling. If a prototype designer
+/// normalizes taps to unity passband gain, multiply the prototype coefficients
+/// by `P` before polyphase construction when unity amplitude should be
+/// preserved. This compensates for the interpolation step that inserts `P - 1`
+/// zero-valued samples between input samples.
 ///
 /// # Ratio reduction
 ///

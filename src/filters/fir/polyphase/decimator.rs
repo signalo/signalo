@@ -51,11 +51,19 @@ pub struct State<R> {
 /// Coefficients follow the phase-major ordering described by
 /// [`PolyphaseFilterBank`].
 ///
+/// # Prototype design
+///
+/// For this M-to-1 decimator, design dense prototype taps at the input sample
+/// rate. The anti-aliasing filter sees the input-rate spectrum before
+/// downsampling.
+///
 /// # Gain
 ///
 /// This type does not apply gain correction after summing the phase outputs.
-/// Use a prototype filter with unity passband gain when unity-amplitude output
-/// is required.
+/// Decimators are usually constructed with a unity-passband-gain prototype. A
+/// decimator is equivalent to filtering at the input rate and then keeping every
+/// `M`th output sample, so downsampling changes sample spacing but does not
+/// require any amplitude correction.
 ///
 /// # Streaming
 ///

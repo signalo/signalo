@@ -56,13 +56,19 @@ pub struct State {
 /// Coefficients follow the phase-major ordering described by
 /// [`PolyphaseFilterBank`](super::filter_bank::PolyphaseFilterBank).
 ///
+/// # Prototype design
+///
+/// For this 1-to-P interpolator, design dense prototype taps at
+/// `input_rate * P`, the interpolated output rate. Frequency parameters such as
+/// cutoff frequencies and transition widths should be normalized to that rate.
+///
 /// # Gain
 ///
-/// This type does not apply interpolation gain scaling. To preserve the input
-/// amplitude, the prototype filter must have passband gain equal to the
-/// interpolation factor. A unity-gain prototype therefore produces output
-/// attenuated by `1 / P`; multiply its coefficients by `P` before construction,
-/// or design the prototype with the required gain.
+/// This type does not apply interpolation gain scaling. If a prototype designer
+/// normalizes taps to unity passband gain, multiply the prototype coefficients
+/// by `P` before polyphase construction when unity amplitude should be
+/// preserved. This compensates for the interpolation step that inserts `P - 1`
+/// zero-valued samples between input samples.
 ///
 /// # Type aliases
 ///
