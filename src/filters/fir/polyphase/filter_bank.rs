@@ -3,6 +3,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 //! Polyphase FIR filter bank.
+//!
+//! See [`PolyphaseFilterBank`] for coefficient ordering and phase-major storage
+//! layout.
 
 use core::ops::{Add, Mul};
 
@@ -47,16 +50,26 @@ pub struct Config<C> {
 ///
 /// # Coefficient ordering
 ///
-/// Coefficients are stored phase-major in normal FIR order within each phase:
+/// Before packing, coefficients may be represented as a dense prototype: a
+/// single ordinary FIR coefficient sequence:
+///
+/// ```text
+/// h[0], h[1], h[2], h[3], ...
+/// ```
+///
+/// The packed representation is always rectangular: each phase has exactly
+/// `taps_per_phase` coefficients, with zero padding in shorter final branches
+/// when a dense prototype does not fill the rectangle. It stores one contiguous
+/// slice per phase. For `P = num_phases`, phase `p` stores every `P`-th
+/// prototype tap:
 ///
 /// ```text
 /// phase p: h[p], h[p + P], h[p + 2P], ...
 /// ```
 ///
-/// where `P = num_phases`. [`Self::execute`] accepts sample history in
-/// oldest-to-newest order. For the selected phase, the first phase coefficient
-/// is applied to the newest sample, matching normal FIR convolution coefficient
-/// semantics.
+/// [`Self::execute`] accepts sample history in oldest-to-newest order. It pairs
+/// coefficients with samples in convolution order: for the selected phase, the
+/// first phase coefficient is applied to the newest sample.
 ///
 /// The bank does not reverse, conjugate, or otherwise reinterpret
 /// coefficients. For correlation or matched-filter behavior, prepare those FIR
@@ -79,8 +92,8 @@ pub struct Config<C> {
 ///
 /// # Complexity
 ///
-/// - **Time per sample:** O(H/P) per [`Self::execute`] call, where H is the total tap count and
-///   P the number of phases; each call convolves one phase branch of H/P coefficients.
+/// - **Time per [`Self::execute`] call:** O(H/P), where H is the total tap count
+///   and P is the number of phases; each call convolves one phase branch of H/P coefficients.
 /// - **Space:** O(H); stores all H coefficients, but owns no delay-line state.
 #[derive(Clone, Debug)]
 pub struct PolyphaseFilterBank<C> {
@@ -96,6 +109,203 @@ pub type PolyphaseFilterBankVec<K> = PolyphaseFilterBank<alloc::vec::Vec<K>>;
 
 /// A polyphase filter bank that borrows caller-owned coefficient storage.
 pub type PolyphaseFilterBankRefMut<'a, K> = PolyphaseFilterBank<&'a mut [K]>;
+
+/// Returns the length of a packed polyphase coefficient slice.
+///
+/// The packed slice stores `num_phases` contiguous phase branches, with
+/// `taps_per_phase` coefficients in each branch:
+///
+/// ```text
+/// [phase 0 taps..., phase 1 taps..., ..., phase P - 1 taps...]
+/// ```
+///
+/// The total length is `num_phases * taps_per_phase`, which is the storage
+/// length expected by [`PolyphaseFilterBank`].
+///
+/// # Panics
+///
+/// Panics when `num_phases` or `taps_per_phase` is zero, or if the product
+/// overflows `usize`.
+#[must_use]
+pub const fn packed_len(num_phases: usize, taps_per_phase: usize) -> usize {
+    assert!(
+        num_phases > 0,
+        "PolyphaseFilterBank: number of phases must be > 0"
+    );
+    assert!(
+        taps_per_phase > 0,
+        "PolyphaseFilterBank: taps per phase must be > 0"
+    );
+    let Some(len) = num_phases.checked_mul(taps_per_phase) else {
+        panic!("PolyphaseFilterBank: num_phases * taps_per_phase overflowed");
+    };
+    len
+}
+
+/// Returns the per-phase tap count needed to pack `prototype_len` dense
+/// prototype taps.
+///
+/// Dense prototype taps are distributed across phases by tap index. This returns
+/// `ceil(prototype_len / num_phases)`, the number of taps needed by each phase
+/// after the shorter final branches are zero-padded to a rectangular packed
+/// layout.
+///
+/// # Panics
+///
+/// Panics when `num_phases` or `prototype_len` is zero.
+#[must_use]
+pub const fn taps_per_phase_for_prototype_len(num_phases: usize, prototype_len: usize) -> usize {
+    assert!(
+        num_phases > 0,
+        "PolyphaseFilterBank: number of phases must be > 0"
+    );
+    assert!(
+        prototype_len > 0,
+        "PolyphaseFilterBank: tap count must be > 0"
+    );
+    prototype_len.div_ceil(num_phases)
+}
+
+/// Returns the packed coefficient length needed to store `prototype_len` dense
+/// prototype taps.
+///
+/// This is `num_phases * ceil(prototype_len / num_phases)`, i.e. the dense
+/// prototype length rounded up to a rectangular phase-major coefficient layout.
+///
+/// # Panics
+///
+/// Panics when `num_phases` or `prototype_len` is zero, or if the packed length
+/// overflows `usize`.
+#[must_use]
+pub const fn packed_len_for_prototype_len(num_phases: usize, prototype_len: usize) -> usize {
+    let taps_per_phase = taps_per_phase_for_prototype_len(num_phases, prototype_len);
+    packed_len(num_phases, taps_per_phase)
+}
+
+/// Packs dense prototype taps into rectangular phase-major coefficient storage.
+///
+/// Dense prototype taps are ordered as:
+///
+/// ```text
+/// h[0], h[1], h[2], h[3], ...
+/// ```
+///
+/// For `num_phases = P`, phase `p` receives every `P`-th tap:
+///
+/// ```text
+/// phase p: h[p], h[p + P], h[p + 2P], ...
+/// ```
+///
+/// The output `coefficients` slice uses phase-major storage:
+///
+/// ```text
+/// [phase 0 taps..., phase 1 taps..., ..., phase P - 1 taps...]
+/// ```
+///
+/// `coefficients.len()` chooses the rectangular packed geometry. It must be a
+/// nonzero multiple of `num_phases`. Any packed entries not covered by
+/// `prototype` are zero-filled, so callers may preallocate a larger fixed
+/// per-phase length than the minimum required by the prototype.
+///
+/// # Tap interpretation
+///
+/// This is only a storage transform; it does not reverse, conjugate, or
+/// otherwise reinterpret `prototype`. When the packed taps are used with
+/// [`PolyphaseFilterBank::execute`], `prototype` must already use that method's
+/// convolution coefficient order. For correlation or matched filtering through
+/// that executor, time-reverse the template first; for complex templates,
+/// conjugate it as well. For other executors, prepare the prototype in the order
+/// they expect before packing.
+///
+/// # Panics
+///
+/// Panics when `num_phases` is zero, `prototype` is empty, `coefficients` is
+/// empty, `coefficients.len()` is not a multiple of `num_phases`, or
+/// `prototype.len() > coefficients.len()`.
+pub fn pack_prototype_taps<K>(coefficients: &mut [K], num_phases: usize, prototype: &[K])
+where
+    K: Clone + Zero,
+{
+    assert!(
+        num_phases > 0,
+        "PolyphaseFilterBank: number of phases must be > 0"
+    );
+    assert!(
+        !prototype.is_empty(),
+        "PolyphaseFilterBank: tap count must be > 0"
+    );
+    assert!(
+        !coefficients.is_empty(),
+        "PolyphaseFilterBank: coefficient storage must be nonempty"
+    );
+    assert!(
+        coefficients.len().is_multiple_of(num_phases),
+        "PolyphaseFilterBank: coefficient count must be a multiple of num_phases"
+    );
+    assert!(
+        prototype.len() <= coefficients.len(),
+        "PolyphaseFilterBank: prototype length must fit coefficient storage"
+    );
+
+    let taps_per_phase = coefficients.len() / num_phases;
+    crate::math::matrix_transpose_padded(
+        coefficients,
+        prototype,
+        num_phases,
+        taps_per_phase,
+        K::zero(),
+    );
+}
+
+/// Packs dense prototype taps into rectangular phase-major storage in place.
+///
+/// `coefficients[..prototype_len]` is treated as the dense prototype. The tail
+/// `coefficients[prototype_len..]` is zero-filled, then the full slice is
+/// reordered into the phase-major layout described by [`pack_prototype_taps`].
+/// See [`pack_prototype_taps`] for tap ordering and interpretation.
+///
+/// `coefficients.len()` chooses the rectangular packed geometry, with the same
+/// rules as [`pack_prototype_taps`]. Use [`packed_len_for_prototype_len`] to get
+/// the minimum buffer length for `prototype_len`, or a larger multiple of
+/// `num_phases` to use a fixed per-phase length.
+///
+/// # Panics
+///
+/// Panics when `num_phases` or `prototype_len` is zero, `coefficients` is empty,
+/// `coefficients.len()` is not a multiple of `num_phases`, or
+/// `prototype_len > coefficients.len()`.
+pub fn pack_prototype_taps_in_place<K>(
+    coefficients: &mut [K],
+    num_phases: usize,
+    prototype_len: usize,
+) where
+    K: Clone + Zero,
+{
+    assert!(
+        num_phases > 0,
+        "PolyphaseFilterBank: number of phases must be > 0"
+    );
+    assert!(
+        prototype_len > 0,
+        "PolyphaseFilterBank: tap count must be > 0"
+    );
+    assert!(
+        !coefficients.is_empty(),
+        "PolyphaseFilterBank: coefficient storage must be nonempty"
+    );
+    assert!(
+        coefficients.len().is_multiple_of(num_phases),
+        "PolyphaseFilterBank: coefficient count must be a multiple of num_phases"
+    );
+    assert!(
+        prototype_len <= coefficients.len(),
+        "PolyphaseFilterBank: prototype length must fit coefficient storage"
+    );
+
+    let taps_per_phase = coefficients.len() / num_phases;
+    coefficients[prototype_len..].fill(K::zero());
+    crate::math::matrix_transpose_in_place(coefficients, num_phases, taps_per_phase);
+}
 
 impl<C> PolyphaseFilterBank<C> {
     /// Creates a [`PolyphaseFilterBank`] from phase-major coefficient storage.
@@ -117,9 +327,7 @@ impl<C> PolyphaseFilterBank<C> {
             "PolyphaseFilterBank: taps per phase must be > 0"
         );
 
-        let Some(expected_taps) = config.num_phases.checked_mul(config.taps_per_phase) else {
-            panic!("PolyphaseFilterBank: num_phases * taps_per_phase overflowed");
-        };
+        let expected_taps = packed_len(config.num_phases, config.taps_per_phase);
 
         assert_eq!(
             config.coefficients.as_slice().len(),
@@ -215,9 +423,11 @@ where
     /// Creates a heap-backed filter bank from dense prototype coefficients.
     ///
     /// This convenience constructor allocates coefficient storage. `prototype`
-    /// is provided in normal tap order, not phase-major order. It is zero-padded
-    /// at the tail as needed, then packed using the phase-major coefficient
+    /// is provided as a dense prototype, not phase-major storage. It is
+    /// zero-padded at the tail as needed, then packed using the phase-major
     /// ordering described on [`PolyphaseFilterBank`].
+    ///
+    /// See [`pack_prototype_taps`] for tap ordering and interpretation.
     ///
     /// # Panics
     ///
@@ -234,21 +444,10 @@ where
             "PolyphaseFilterBank: tap count must be > 0"
         );
 
-        let taps_per_phase = prototype.len().div_ceil(num_phases);
-        let Some(total_taps) = num_phases.checked_mul(taps_per_phase) else {
-            panic!("PolyphaseFilterBank: num_phases * taps_per_phase overflowed");
-        };
-
+        let taps_per_phase = taps_per_phase_for_prototype_len(num_phases, prototype.len());
+        let total_taps = packed_len(num_phases, taps_per_phase);
         let mut coefficients = alloc::vec![K::zero(); total_taps];
-        for phase in 0..num_phases {
-            for tap in 0..taps_per_phase {
-                let src = tap * num_phases + phase;
-                if src < prototype.len() {
-                    let dst = phase * taps_per_phase + tap;
-                    coefficients[dst] = prototype[src].clone();
-                }
-            }
-        }
+        pack_prototype_taps(&mut coefficients, num_phases, prototype);
 
         Self::from_parts(Config {
             num_phases,
@@ -309,9 +508,76 @@ impl<C> Reset for PolyphaseFilterBank<C> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Config, PolyphaseFilterBank, PolyphaseFilterBankArray, PolyphaseFilterBankRefMut};
+    use super::{
+        pack_prototype_taps, pack_prototype_taps_in_place, packed_len,
+        packed_len_for_prototype_len, taps_per_phase_for_prototype_len, Config,
+        PolyphaseFilterBank, PolyphaseFilterBankArray, PolyphaseFilterBankRefMut,
+    };
     use crate::filters::fir::polyphase::test_support::Pair;
     use crate::traits::WithConfig;
+
+    #[test]
+    fn packed_lengths_match_phase_geometry() {
+        assert_eq!(packed_len(3, 2), 6);
+        assert_eq!(taps_per_phase_for_prototype_len(3, 5), 2);
+        assert_eq!(packed_len_for_prototype_len(3, 5), 6);
+        assert_eq!(taps_per_phase_for_prototype_len(4, 8), 2);
+        assert_eq!(packed_len_for_prototype_len(4, 8), 8);
+    }
+
+    #[test]
+    fn pack_prototype_taps_reorders_and_pads() {
+        let mut coefficients = [99; 6];
+
+        pack_prototype_taps(&mut coefficients, 3, &[1, 2, 3, 4, 5]);
+
+        assert_eq!(coefficients, [1, 4, 2, 5, 3, 0]);
+    }
+
+    #[test]
+    fn pack_prototype_taps_handles_exact_rectangles() {
+        let mut coefficients = [99; 6];
+
+        pack_prototype_taps(&mut coefficients, 3, &[1, 2, 3, 4, 5, 6]);
+
+        assert_eq!(coefficients, [1, 4, 2, 5, 3, 6]);
+    }
+
+    #[test]
+    fn pack_prototype_taps_allows_larger_geometry() {
+        let mut coefficients = [99; 9];
+
+        pack_prototype_taps(&mut coefficients, 3, &[1, 2, 3, 4, 5]);
+
+        assert_eq!(coefficients, [1, 4, 0, 2, 5, 0, 3, 0, 0]);
+    }
+
+    #[test]
+    fn pack_prototype_taps_in_place_reorders_and_pads() {
+        let mut coefficients = [1, 2, 3, 4, 5, 99];
+
+        pack_prototype_taps_in_place(&mut coefficients, 3, 5);
+
+        assert_eq!(coefficients, [1, 4, 2, 5, 3, 0]);
+    }
+
+    #[test]
+    fn pack_prototype_taps_in_place_handles_exact_rectangles() {
+        let mut coefficients = [1, 2, 3, 4, 5, 6];
+
+        pack_prototype_taps_in_place(&mut coefficients, 3, 6);
+
+        assert_eq!(coefficients, [1, 4, 2, 5, 3, 6]);
+    }
+
+    #[test]
+    fn pack_prototype_taps_in_place_allows_larger_geometry() {
+        let mut coefficients = [1, 2, 3, 4, 5, 99, 98, 97, 96];
+
+        pack_prototype_taps_in_place(&mut coefficients, 3, 5);
+
+        assert_eq!(coefficients, [1, 4, 0, 2, 5, 0, 3, 0, 0]);
+    }
 
     #[test]
     fn from_parts_accepts_phase_major_coefficients() {

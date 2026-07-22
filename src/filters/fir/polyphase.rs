@@ -9,6 +9,43 @@
 //! [`rational_resampler`] modules build streaming
 //! [`MultirateFilter`](crate::traits::MultirateFilter) adapters on top of those
 //! primitives.
+//!
+//! # Prototype design rates
+//!
+//! A dense prototype is the ordinary FIR tap sequence before it is split into
+//! polyphase branches. Its design rate is the sample rate where that FIR would
+//! run in the equivalent non-polyphase resampler. Frequency parameters such as
+//! cutoff frequencies and transition widths should be normalized to that same
+//! rate.
+//!
+//! | Case | Prototype design rate | Notes |
+//! | --- | --- | --- |
+//! | [Interpolator `L`](interpolator::PolyphaseInterpolator) | `input_rate * L` | The prototype runs at the output rate, where it suppresses interpolation images. |
+//! | [Decimator `M`](decimator::PolyphaseDecimator) | `input_rate` | The anti-aliasing filter sees the input-rate spectrum before downsampling. |
+//! | [Rational `L/M`](rational_resampler::RationalResampler) | `input_rate * L` | The filter runs at the intermediate rate after interpolation and before decimation. |
+//!
+//! For rational resamplers, `max(L, M)` is useful when choosing a low-pass
+//! anti-image and anti-aliasing prototype. At `input_rate * L`, the input
+//! Nyquist maps to `1 / (2L)` and the output Nyquist maps to `1 / (2M)`, so the
+//! lower Nyquist limit is `0.5 / max(L, M)`. Use that as the normalized
+//! boundary when choosing the prototype's passband edge, cutoff, and transition
+//! band for the desired image and alias rejection.
+//!
+//! # Prototype gain
+//!
+//! [`interpolator`] and [`rational_resampler`] do not apply interpolation gain
+//! scaling. If a prototype designer normalizes taps to unity passband gain,
+//! multiply the prototype coefficients by `L` before polyphase construction
+//! when unity amplitude should be preserved. This compensates for the
+//! interpolation step that inserts `L - 1` zero-valued samples between input
+//! samples. A unity-gain prototype preserves that upsampled sequence's
+//! `1 / L` baseband/DC gain, while scaling the prototype by `L` restores unity
+//! passband amplitude.
+//!
+//! Decimators are usually constructed with a unity-passband-gain prototype. A
+//! decimator is equivalent to filtering at the input rate and then keeping every
+//! `M`th output sample, so downsampling changes sample spacing but does not
+//! require any amplitude correction.
 
 pub mod decimator;
 pub mod filter_bank;

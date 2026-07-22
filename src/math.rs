@@ -13,6 +13,131 @@ use num_traits::Zero;
 #[cfg(any(feature = "libm", feature = "std"))]
 use num_traits::Float;
 
+/// Transposes a row-major matrix into a separate output slice.
+///
+/// `input` has `height` rows and `width` columns. `output` receives the
+/// transposed matrix, which has `width` rows and `height` columns. Both slices
+/// must have length `width * height`. Supports rectangular matrices, not just
+/// square ones.
+///
+/// # Panics
+///
+/// Panics when either slice length is not `width * height`, including
+/// multiplication overflow.
+pub(crate) fn matrix_transpose<T: Clone>(
+    output: &mut [T],
+    input: &[T],
+    width: usize,
+    height: usize,
+) {
+    let Some(count) = width.checked_mul(height) else {
+        panic!("matrix_transpose: width * height overflowed");
+    };
+    assert_eq!(
+        input.len(),
+        count,
+        "matrix_transpose: input length must equal width * height"
+    );
+    assert_eq!(
+        output.len(),
+        count,
+        "matrix_transpose: output length must equal width * height"
+    );
+
+    for y in 0..height {
+        for x in 0..width {
+            output[x * height + y] = input[y * width + x].clone();
+        }
+    }
+}
+
+/// Transposes a row-major matrix prefix into a separate output slice.
+///
+/// `input` is treated as the prefix of a row-major matrix with `height` rows and
+/// `width` columns. `output` receives the transposed matrix, which has `width`
+/// rows and `height` columns. Missing input elements are filled with `padding`.
+/// The output slice must have length `width * height`, and `input.len()` must
+/// not exceed that length.
+///
+/// # Panics
+///
+/// Panics when `output.len() != width * height`, `input.len() > width * height`,
+/// or if `width * height` overflows.
+pub(crate) fn matrix_transpose_padded<T: Clone>(
+    output: &mut [T],
+    input: &[T],
+    width: usize,
+    height: usize,
+    padding: T,
+) {
+    let Some(count) = width.checked_mul(height) else {
+        panic!("matrix_transpose_padded: width * height overflowed");
+    };
+    assert!(
+        input.len() <= count,
+        "matrix_transpose_padded: input length must be <= width * height"
+    );
+    assert_eq!(
+        output.len(),
+        count,
+        "matrix_transpose_padded: output length must equal width * height"
+    );
+    if input.len() == count {
+        matrix_transpose(output, input, width, height);
+        return;
+    }
+
+    output.fill(padding);
+    for (src, value) in input.iter().enumerate() {
+        let x = src % width;
+        let y = src / width;
+        output[x * height + y] = value.clone();
+    }
+}
+
+/// Transposes a row-major matrix in place.
+///
+/// The matrix has `height` rows and `width` columns, and `matrix.len()` must be
+/// `width * height`. Supports rectangular matrices, not just square ones.
+///
+/// This uses a rotation-based in-place algorithm that avoids a full auxiliary
+/// matrix. It is not linear-time: for large matrices, prefer
+/// [`matrix_transpose`] when a separate output buffer is available.
+///
+/// # Complexity
+///
+/// Performs `O(width^2 * height^2 / 4)` element moves.
+///
+/// # Panics
+///
+/// Panics when `width * height != matrix.len()`, including multiplication
+/// overflow.
+pub(crate) fn matrix_transpose_in_place<T>(matrix: &mut [T], width: usize, height: usize) {
+    let Some(count) = width.checked_mul(height) else {
+        panic!("matrix_transpose_in_place: width * height overflowed");
+    };
+    assert_eq!(
+        matrix.len(),
+        count,
+        "matrix_transpose_in_place: matrix length must equal width * height"
+    );
+
+    // Each inner iteration rotates a window of `step` elements ending at `last`
+    // (exclusive). `step` starts at 1 and grows by `width - x - 1` per row,
+    // advancing the rotation boundary through the transposition permutation for
+    // column group `x`.
+    for x in 0..width {
+        let count_adjustment = width - x - 1;
+        let mut step = 1;
+        for y in 0..height {
+            let last = count - (y + x * height);
+            let first = last - step;
+            matrix[first..last].rotate_left(1);
+            step += count_adjustment;
+        }
+    }
+}
+
 /// Kahan compensated summation accumulator.
 ///
 /// Tracks a running sum plus a compensation term that estimates floating-point
@@ -205,6 +330,8 @@ pub fn erf<T: Erf>(x: T) -> T {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::vec;
+    use std::vec::Vec;
 
     #[test]
     fn kahan_sum_accumulates_values() {
@@ -249,6 +376,78 @@ mod tests {
         sum.reset();
 
         assert_eq!(sum.value(), 0.0);
+    }
+
+    #[test]
+    fn matrix_transpose_padded_handles_short_input() {
+        let input = [1, 2, 3, 4, 5];
+        let mut output = [99; 6];
+
+        matrix_transpose_padded(&mut output, &input, 3, 2, 0);
+
+        assert_eq!(output, [1, 4, 2, 5, 3, 0]);
+    }
+
+    #[test]
+    fn matrix_transpose_padded_handles_larger_output() {
+        let input = [1, 2, 3, 4, 5];
+        let mut output = [99; 9];
+
+        matrix_transpose_padded(&mut output, &input, 3, 3, 0);
+
+        assert_eq!(output, [1, 4, 0, 2, 5, 0, 3, 0, 0]);
+    }
+
+    #[test]
+    fn matrix_transpose_handles_rectangular_matrix() {
+        let input = [1, 2, 3, 4, 5, 6];
+        let mut output = [0; 6];
+
+        matrix_transpose(&mut output, &input, 3, 2);
+
+        assert_eq!(output, [1, 4, 2, 5, 3, 6]);
+    }
+
+    #[test]
+    fn matrix_transpose_handles_square_matrix() {
+        let input = [1, 2, 3, 4];
+        let mut output = [0; 4];
+
+        matrix_transpose(&mut output, &input, 2, 2);
+
+        assert_eq!(output, [1, 3, 2, 4]);
+    }
+
+    #[test]
+    fn matrix_transpose_in_place_handles_rectangular_matrix() {
+        let mut matrix = [1, 2, 3, 4, 5, 6];
+
+        matrix_transpose_in_place(&mut matrix, 3, 2);
+
+        assert_eq!(matrix, [1, 4, 2, 5, 3, 6]);
+    }
+
+    #[test]
+    fn matrix_transpose_in_place_handles_square_matrix() {
+        let mut matrix = [1, 2, 3, 4];
+
+        matrix_transpose_in_place(&mut matrix, 2, 2);
+
+        assert_eq!(matrix, [1, 3, 2, 4]);
+    }
+
+    #[test]
+    fn matrix_transpose_in_place_matches_out_of_place() {
+        for (width, height) in [(4, 3), (3, 4), (1, 8), (8, 1), (4, 4), (3, 5)] {
+            let input: Vec<_> = (1..=width * height).collect();
+            let mut expected = vec![0; width * height];
+            matrix_transpose(&mut expected, &input, width, height);
+
+            let mut actual = input.clone();
+            matrix_transpose_in_place(&mut actual, width, height);
+
+            assert_eq!(actual, expected, "width={width} height={height}");
+        }
     }
 
     #[cfg(any(feature = "libm", feature = "std"))]
