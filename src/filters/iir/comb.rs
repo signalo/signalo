@@ -21,7 +21,7 @@ use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 #[cfg(feature = "alloc")]
 use circular_buffer::HeapCircularBuffer;
 
-use crate::storage::{zero_filled_fixed_ring, RingBuffer};
+use crate::storage::{zero_fill_ring, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -185,7 +185,8 @@ where
             );
         };
         let state = {
-            let output_delay = zero_filled_fixed_ring::<T, D>();
+            let mut output_delay = FixedCircularBuffer::new();
+            zero_fill_ring(&mut output_delay);
             State { output_delay }
         };
         Self { config, state }

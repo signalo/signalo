@@ -10,7 +10,7 @@ use core::ops::{Add, Mul};
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{Num, Zero};
 
-use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
+use crate::storage::{zero_fill_ring, AsSlice, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Reset, State as StateTrait, StateMut,
@@ -140,6 +140,17 @@ where
     pub fn push(&mut self, input: T) {
         let _ = self.state.taps.push_back(input);
     }
+
+    /// Clears the delay line and fills it with zeros.
+    ///
+    /// This preserves coefficient and delay-line storage while restoring the
+    /// zero-padded cold-start state expected before [`Self::execute`].
+    pub fn reset_delay_line(&mut self)
+    where
+        T: Zero,
+    {
+        zero_fill_ring(&mut self.state.taps);
+    }
 }
 
 impl<T, C, R, K> PolyphaseFir<T, C, R, K> {
@@ -193,7 +204,8 @@ where
     type Output = Self;
 
     fn with_config(config: Self::Config) -> Self::Output {
-        let taps = zero_filled_fixed_ring::<T, H>();
+        let mut taps = FixedCircularBuffer::new();
+        zero_fill_ring(&mut taps);
         Self::from_parts(config, taps)
     }
 }
@@ -221,9 +233,7 @@ where
     pub fn from_prototype_taps(num_phases: usize, prototype: &[K]) -> Self {
         let bank = PolyphaseFilterBankVec::from_prototype_taps(num_phases, prototype);
         let mut taps = HeapCircularBuffer::with_capacity(bank.taps_per_phase());
-        for _ in 0..bank.taps_per_phase() {
-            let _ = taps.push_back(T::zero());
-        }
+        zero_fill_ring(&mut taps);
         Self::from_parts(bank.into_guts(), taps)
     }
 }
@@ -468,6 +478,23 @@ mod tests {
     }
 
     #[test]
+    fn reset_delay_line_clears_state_without_rebuilding_storage() {
+        let mut fir = PolyphaseFirArray::<i32, 4, 2>::with_config(Config {
+            num_phases: 2,
+            taps_per_phase: 2,
+            coefficients: [1, 3, 2, 4],
+        });
+
+        fir.push(10);
+        fir.push(20);
+        assert_eq!(fir.execute(0), 50);
+
+        fir.reset_delay_line();
+        assert_eq!(fir.execute(0), 0);
+        assert_eq!(fir.execute(1), 0);
+    }
+
+    #[test]
     fn ref_mut_uses_caller_owned_delay_line() {
         let config = Config {
             num_phases: 2,
@@ -539,5 +566,19 @@ mod tests {
         assert_eq!(fir.execute(0), 60);
         assert_eq!(fir.execute(1), 90);
         assert_eq!(fir.execute(2), 60);
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn vec_reset_delay_line_clears_state() {
+        let mut fir = super::PolyphaseFirVec::<i32>::from_prototype_taps(2, &[1, 2, 3, 4]);
+
+        fir.push(10);
+        fir.push(20);
+        assert_eq!(fir.execute(0), 50);
+
+        fir.reset_delay_line();
+        assert_eq!(fir.execute(0), 0);
+        assert_eq!(fir.execute(1), 0);
     }
 }

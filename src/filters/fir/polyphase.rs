@@ -5,8 +5,9 @@
 //! Polyphase FIR filter banks, executors, and multirate filters.
 //!
 //! [`filter_bank`] contains the coefficient storage and selected-phase execution
-//! primitive. [`fir`] adds sample history. The [`interpolator`], [`decimator`], and
-//! [`rational_resampler`] modules build streaming
+//! primitive. [`fir`] adds sample history. [`fractional_delay`] provides sizing,
+//! design, and packing helpers for fractional-delay PFBs. The [`interpolator`],
+//! [`decimator`], and [`rational_resampler`] modules build streaming
 //! [`MultirateFilter`](crate::traits::MultirateFilter) adapters on top of those
 //! primitives.
 //!
@@ -50,6 +51,7 @@
 pub mod decimator;
 pub mod filter_bank;
 pub mod fir;
+pub mod fractional_delay;
 pub mod interpolator;
 pub mod rational_resampler;
 
