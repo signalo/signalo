@@ -27,6 +27,12 @@ Please make sure to add your changes to the appropriate categories:
 - Added `KaiserSinc::highpass_with_beta`, `KaiserSinc::bandpass_with_beta`, and `KaiserSinc::bandstop_with_beta` constructors (with `_hz` variants) for Kaiser-windowed filters with custom `β`
 - Added Kaiser FIR order-design helpers in `filters::fir::design`
 - Added Kaiser-windowed low-pass convenience helpers in `windowed_sinc::kaiser`
+- Added FIR polyphase prototype packing helpers:
+  - Added `packed_len` for computing the rectangular packed polyphase coefficient storage length given a number of phases and taps per phase
+  - Added `taps_per_phase_for_prototype_len` for computing taps per phase from a dense prototype length
+  - Added `packed_len_for_prototype_len` for computing packed polyphase storage length from a dense prototype length and number of phases
+  - Added `pack_prototype_taps` for copying and reordering a dense FIR prototype into phase-major rectangular polyphase coefficient storage
+  - Added `pack_prototype_taps_in_place` for in-place reordering of a padded dense prototype buffer into phase-major polyphase storage without a second allocation
 
 ### Changed
 
