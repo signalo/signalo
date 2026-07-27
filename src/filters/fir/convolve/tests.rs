@@ -206,6 +206,62 @@ fn array_and_vec_backends_are_equivalent() {
     }
 }
 
+/// Verifies that [`Reset`] restores a full window of zeros on every storage
+/// backend.
+///
+/// Fullness matters as much as the zeros: `filter` zips the taps against the
+/// reversed coefficients and `zip` stops at the shorter iterator, so an empty
+/// delay line would mispair rather than zero-pad.
+#[test]
+fn reset_zero_fills_the_delay_line() {
+    use crate::traits::{guts::IntoGuts, Filter, Reset, WithConfig};
+
+    const COEFFS: [f32; 4] = [1.0, 2.0, 4.0, 8.0];
+
+    fn dirty_then_reset<C, R>(mut filter: Convolve<f32, C, R>)
+    where
+        C: AsSlice<f32>,
+        R: RingBuffer<f32>,
+    {
+        let _ = filter.filter(1.0);
+        let (_, state) = filter.reset().into_guts();
+        assert_eq!(
+            RingBuffer::len(&state.taps),
+            RingBuffer::capacity(&state.taps),
+            "delay line must be full, not empty"
+        );
+        assert!(
+            state.taps.iter().all(|tap| *tap == 0.0),
+            "every tap must be zero after reset"
+        );
+    }
+
+    dirty_then_reset(ConvolveArray::<f32, 4>::with_config(Config {
+        coefficients: COEFFS,
+    }));
+
+    // Borrowed ring: the backend that rebuilding from a config could never reset.
+    let mut owned = zero_filled_fixed_ring::<f32, 4>();
+    dirty_then_reset(ConvolveRefMut::<f32, [f32; 4]>::from_parts(
+        Config {
+            coefficients: COEFFS,
+        },
+        &mut owned,
+    ));
+
+    #[cfg(feature = "alloc")]
+    {
+        let mut taps = circular_buffer::HeapCircularBuffer::<f32>::with_capacity(4);
+        taps.fill_with(|| 0.0);
+        dirty_then_reset(ConvolveVec::<f32>::from_parts(
+            Config {
+                coefficients: COEFFS.to_vec(),
+            },
+            taps,
+        ));
+    }
+}
+
 #[test]
 #[should_panic(expected = "Convolve: window size N must be > 0")]
 fn from_parts_zero_coefficients_panics() {
