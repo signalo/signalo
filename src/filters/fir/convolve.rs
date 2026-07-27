@@ -100,9 +100,11 @@ pub type ConvolveArray<T, const N: usize, K = T> =
 /// A convolution filter backed by heap-allocated [`Vec`](alloc::vec::Vec) coefficients
 /// and a [`HeapCircularBuffer`] tap buffer.
 ///
-/// Requires the `alloc` feature. Use [`Convolve::from_parts`] to construct
-/// this variant, since the tap buffer cannot be `Default`-constructed without
-/// knowing the desired capacity at compile time.
+/// Requires the `alloc` feature. Construct via
+/// [`with_config`](WithConfig::with_config), which sizes the tap buffer from
+/// the coefficient count and zero-fills it for the standard cold start. Use
+/// [`Convolve::from_parts`] only to supply a caller-owned tap buffer or a
+/// non-zero initial history.
 #[cfg(feature = "alloc")]
 pub type ConvolveVec<T, K = T> = Convolve<T, alloc::vec::Vec<K>, HeapCircularBuffer<T>, K>;
 
@@ -230,6 +232,28 @@ where
             state,
             _pd: PhantomData,
         }
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T, K> WithConfig for ConvolveVec<T, K>
+where
+    T: Num,
+    K: Num,
+{
+    type Output = Self;
+
+    /// Creates a [`ConvolveVec`] from a configuration, allocating a tap buffer
+    /// sized from the coefficient count and zero-filling it for the standard
+    /// zero-padded cold start.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `config.coefficients` is empty.
+    fn with_config(config: Self::Config) -> Self::Output {
+        let mut taps = HeapCircularBuffer::with_capacity(config.coefficients.len());
+        taps.fill_with(T::zero);
+        Self::from_parts(config, taps)
     }
 }
 

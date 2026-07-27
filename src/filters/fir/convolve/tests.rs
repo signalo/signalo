@@ -175,27 +175,27 @@ normalized_case!(normalized_zero_sum, 3, [1.0, -1.0, 0.0], [1.0, -1.0, 0.0]);
 /// are compared with `assert_abs_diff_eq!` at epsilon 1e-6.  Any divergence
 /// here points to a construction or iteration-order bug in the generic `filter`
 /// implementation (Task 5 contract).
+///
+/// The coefficients are deliberately non-uniform. A box average cannot detect a
+/// tap/coefficient mispairing at all, because permuting a constant vector is a
+/// no-op, so the whole warm-up window would compare equal regardless.
 #[cfg(feature = "alloc")]
 #[test]
 fn array_and_vec_backends_are_equivalent() {
-    use circular_buffer::HeapCircularBuffer;
-
     use crate::traits::{Filter, WithConfig};
 
-    // 4-tap low-pass FIR (box average)
-    let coeffs: [f32; 4] = [0.25, 0.25, 0.25, 0.25];
+    // 4-tap FIR with distinguishable coefficients
+    let coeffs: [f32; 4] = [1.0, 2.0, 4.0, 8.0];
 
     // ConvolveArray — stack-allocated
     let mut array_filter = ConvolveArray::<f32, 4>::with_config(Config {
         coefficients: coeffs,
     });
 
-    // ConvolveVec — heap-allocated; capacity must match coefficient count
-    let taps = HeapCircularBuffer::<f32>::with_capacity(4);
-    let vec_config = Config {
-        coefficients: alloc::vec![0.25_f32, 0.25, 0.25, 0.25],
-    };
-    let mut vec_filter = ConvolveVec::<f32>::from_parts(vec_config, taps);
+    // ConvolveVec — heap-allocated; `with_config` sizes and zero-fills the taps
+    let mut vec_filter = ConvolveVec::<f32>::with_config(Config {
+        coefficients: coeffs.to_vec(),
+    });
 
     let input: [f32; 10] = [1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0];
 
@@ -204,6 +204,43 @@ fn array_and_vec_backends_are_equivalent() {
         let vec_out = vec_filter.filter(x);
         assert_abs_diff_eq!(array_out, vec_out, epsilon = 1e-6);
     }
+}
+
+/// Verifies that `ConvolveVec::with_config` establishes the zero-padded
+/// cold-start state, so the impulse response reads back the coefficients in
+/// order rather than a partial or mispaired window.
+#[cfg(feature = "alloc")]
+#[test]
+fn vec_with_config_cold_starts_zero_padded() {
+    use crate::traits::{Filter, WithConfig};
+
+    // Exactly representable in f32, so the impulse response is the coefficients.
+    let coeffs = alloc::vec![1.0_f32, 2.0, 4.0, 8.0];
+    let mut filter = ConvolveVec::<f32>::with_config(Config {
+        coefficients: coeffs,
+    });
+
+    let out: Vec<f32> = [1.0_f32, 0.0, 0.0, 0.0, 0.0]
+        .iter()
+        .map(|&x| filter.filter(x))
+        .collect();
+
+    assert_abs_diff_eq!(
+        out.as_slice(),
+        [1.0_f32, 2.0, 4.0, 8.0, 0.0].as_slice(),
+        epsilon = 1e-6
+    );
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+#[should_panic(expected = "Convolve: window size N must be > 0")]
+fn vec_with_config_empty_coefficients_panics() {
+    use crate::traits::WithConfig;
+
+    let _ = ConvolveVec::<f32>::with_config(Config {
+        coefficients: Vec::<f32>::new(),
+    });
 }
 
 /// Verifies that [`Reset`] restores a full window of zeros on every storage
