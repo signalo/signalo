@@ -48,6 +48,10 @@ pub fn taps_with_norm<T>(
     let sqrt_2 = T::from(core::f64::consts::SQRT_2).expect("sqrt(2) is representable");
     let two = T::from(2.0).expect("2 is representable");
     let four = T::from(4.0).expect("4 is representable");
+    // Near |4αt| = 1 both the numerator and the denominator vanish linearly, so the direct
+    // form's cancellation error grows as ε/δ while the limit's truncation error grows as δ,
+    // where δ = |1 − (4αt)²|. The two cross at δ ≈ √ε, so that is the substitution threshold.
+    let singularity_guard = T::epsilon().sqrt();
     let inv_sps = T::one() / sps_t;
     let sqrt_sps = sps_t.sqrt();
     let Ok(half) = isize::try_from(samples / 2) else {
@@ -67,7 +71,7 @@ pub fn taps_with_norm<T>(
             (T::one() - rolloff + four * rolloff / pi) * sqrt_sps
         } else {
             let quad_denominator = T::one() - four_rolloff_time * four_rolloff_time;
-            if rolloff > T::zero() && quad_denominator.abs() <= T::epsilon() * four {
+            if rolloff > T::zero() && quad_denominator.abs() <= singularity_guard {
                 let s = (pi / (four * rolloff)).sin();
                 let c = (pi / (four * rolloff)).cos();
                 let g1 = T::one() + two / pi;

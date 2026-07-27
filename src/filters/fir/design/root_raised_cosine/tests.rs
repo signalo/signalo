@@ -74,6 +74,26 @@ fn passband_gain_normalizes_sum_to_one() {
 }
 
 #[test]
+fn f32_near_singularity_uses_the_stable_limit() {
+    const SPAN: usize = 8;
+    const SPS: usize = 4;
+    const LEN: usize = len_from_span(SPAN, SPS);
+    let rolloff = 0.250_01_f32;
+    let mut actual = [0.0_f32; LEN];
+    super::taps_with_norm(&mut actual, SPAN, SPS, rolloff, Normalization::None);
+
+    // At one symbol from the centre, 4αt differs from one by only about 4e-5. The direct form
+    // subtracts nearly equal terms, while the closed-form limit remains well conditioned.
+    let singular_index = LEN / 2 + SPS;
+    let pi = core::f32::consts::PI;
+    let expected = rolloff / core::f32::consts::SQRT_2
+        * ((1.0 + 2.0 / pi) * (pi / (4.0 * rolloff)).sin()
+            + (1.0 - 2.0 / pi) * (pi / (4.0 * rolloff)).cos())
+        * (SPS as f32).sqrt();
+    assert_abs_diff_eq!(actual[singular_index], expected, epsilon = 1.0e-6);
+}
+
+#[test]
 fn matched_filter_gives_raised_cosine_at_symbol_instants() {
     const SPAN: usize = 64;
     const SPS: usize = 8;
