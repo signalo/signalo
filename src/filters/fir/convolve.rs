@@ -275,18 +275,21 @@ impl<T, C, R, K> IntoGuts for Convolve<T, C, R, K> {
     }
 }
 
-impl<T, const N: usize, K> Reset for ConvolveArray<T, N, K>
+impl<T, C, R, K> Reset for Convolve<T, C, R, K>
 where
     T: Num,
-    K: Num,
+    R: RingBuffer<T>,
 {
-    fn reset(self) -> Self {
-        Self::with_config(self.config)
+    /// Restores the zero-padded cold-start state by refilling the delay line
+    /// in place, reusing the existing storage.
+    fn reset(mut self) -> Self {
+        self.state.taps.fill_with(T::zero);
+        self
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize, K> ResetMut for ConvolveArray<T, N, K> where Self: Reset {}
+impl<T, C, R, K> ResetMut for Convolve<T, C, R, K> where Self: Reset {}
 
 impl<T, C, R, K> Filter<T> for Convolve<T, C, R, K>
 where
