@@ -15,10 +15,7 @@ use crate::traits::{
     Config as ConfigTrait, ConfigClone, MultirateFilter, Reset, WithConfig,
 };
 
-use super::{
-    filter_bank::Config as BankConfig,
-    fir::{PolyphaseFir, PolyphaseFirArray},
-};
+use super::{filter_bank::Config as BankConfig, fir::PolyphaseFir};
 
 #[cfg(feature = "alloc")]
 use circular_buffer::HeapCircularBuffer;
@@ -318,20 +315,19 @@ where
     }
 }
 
-impl<T, const N: usize, const H: usize, K> Reset for RationalResamplerArray<T, N, H, K>
+impl<T, C, R, K> Reset for RationalResampler<T, C, R, K>
 where
-    PolyphaseFirArray<T, N, H, K>: Reset,
+    PolyphaseFir<T, C, R, K>: Reset,
 {
+    /// Resets the wrapped FIR's delay line in place and rewinds the phase
+    /// accumulator to "no output pending".
     fn reset(self) -> Self {
         Self::from_fir(self.fir.reset(), self.decimation)
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize, const H: usize, K> ResetMut for RationalResamplerArray<T, N, H, K> where
-    Self: Reset
-{
-}
+impl<T, C, R, K> ResetMut for RationalResampler<T, C, R, K> where Self: Reset {}
 
 impl<T, C, R, K> MultirateFilter<T> for RationalResampler<T, C, R, K>
 where
