@@ -239,9 +239,7 @@ where
         let mut taps = alloc::vec::Vec::with_capacity(bank.num_phases());
         for _ in 0..bank.num_phases() {
             let mut tap_buffer = HeapCircularBuffer::with_capacity(bank.taps_per_phase());
-            for _ in 0..bank.taps_per_phase() {
-                let _ = tap_buffer.push_back(T::zero());
-            }
+            tap_buffer.fill_with(T::zero);
             taps.push(tap_buffer);
         }
         Self::from_parts(bank.into_guts(), taps)
