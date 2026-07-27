@@ -282,23 +282,29 @@ impl<T, C, R, B, K> IntoGuts for PolyphaseDecimator<T, C, R, B, K> {
     }
 }
 
-impl<T, const N: usize, const H: usize, const P: usize, K> Reset
-    for PolyphaseDecimatorArray<T, N, H, P, K>
+impl<T, C, R, B, K> Reset for PolyphaseDecimator<T, C, R, B, K>
 where
     T: Num,
+    R: AsSlice<B>,
+    B: RingBuffer<T>,
 {
-    fn reset(self) -> Self {
-        Self::with_config(self.bank.into_guts())
+    /// Restores the zero-padded cold-start state by refilling every per-phase
+    /// delay line in place, reusing the existing storage.
+    ///
+    /// The commutator is rewound to the last branch, matching
+    /// [`from_parts`](Self::from_parts), so the first output after a reset
+    /// follows a full decimation block rather than arriving early.
+    fn reset(mut self) -> Self {
+        for taps in self.state.taps.as_mut_slice() {
+            taps.fill_with(T::zero);
+        }
+        self.state.phase = self.bank.num_phases() - 1;
+        self
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize, const H: usize, const P: usize, K> ResetMut
-    for PolyphaseDecimatorArray<T, N, H, P, K>
-where
-    Self: Reset,
-{
-}
+impl<T, C, R, B, K> ResetMut for PolyphaseDecimator<T, C, R, B, K> where Self: Reset {}
 
 impl<T, C, R, B, K> MultirateFilter<T> for PolyphaseDecimator<T, C, R, B, K>
 where
@@ -443,6 +449,36 @@ mod tests {
         assert_eq!(decimator.process(&[10, 20, 30, 40], &mut []), (2, 0));
         assert_eq!(decimator.process(&[30], &mut output), (1, 1));
         assert_eq!(output, [100]);
+    }
+
+    /// Verifies that [`Reset`] zero-fills every per-phase delay line and rewinds
+    /// the commutator on the heap backend, which had no reset before.
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn vec_reset_zero_fills_every_branch_and_rewinds_the_commutator() {
+        use crate::storage::{AsSlice, RingBuffer};
+
+        let mut decimator = super::PolyphaseDecimatorVec::<i32>::from_prototype_taps(3, &[1, 2, 3]);
+        // Consume one sample so the commutator is left mid-block and a tap is dirty.
+        assert_eq!(decimator.process(&[10], &mut []), (1, 0));
+
+        let (_, state) = decimator.reset().into_guts();
+        assert_eq!(
+            state.phase,
+            state.taps.as_slice().len() - 1,
+            "the commutator must rewind to the last branch, not to zero"
+        );
+        for taps in state.taps.as_slice() {
+            assert_eq!(
+                RingBuffer::len(taps),
+                RingBuffer::capacity(taps),
+                "every branch delay line must be full, not empty"
+            );
+            assert!(
+                taps.iter().all(|tap| *tap == 0),
+                "every tap must be zero after reset"
+            );
+        }
     }
 
     #[test]

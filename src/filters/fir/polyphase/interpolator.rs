@@ -15,10 +15,7 @@ use crate::traits::{
     Config as ConfigTrait, ConfigClone, ConfigRef, MultirateFilter, Reset, WithConfig,
 };
 
-use super::{
-    filter_bank::Config,
-    fir::{PolyphaseFir, PolyphaseFirArray},
-};
+use super::{filter_bank::Config, fir::PolyphaseFir};
 
 #[cfg(feature = "alloc")]
 use circular_buffer::HeapCircularBuffer;
@@ -260,20 +257,19 @@ where
     }
 }
 
-impl<T, const N: usize, const H: usize, K> Reset for PolyphaseInterpolatorArray<T, N, H, K>
+impl<T, C, R, K> Reset for PolyphaseInterpolator<T, C, R, K>
 where
-    PolyphaseFirArray<T, N, H, K>: Reset,
+    PolyphaseFir<T, C, R, K>: Reset,
 {
+    /// Resets the wrapped FIR's delay line in place and rewinds the phase
+    /// counter to "no output pending".
     fn reset(self) -> Self {
         Self::from_fir(self.fir.reset())
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize, const H: usize, K> ResetMut for PolyphaseInterpolatorArray<T, N, H, K> where
-    Self: Reset
-{
-}
+impl<T, C, R, K> ResetMut for PolyphaseInterpolator<T, C, R, K> where Self: Reset {}
 
 impl<T, C, R, K> MultirateFilter<T> for PolyphaseInterpolator<T, C, R, K>
 where

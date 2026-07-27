@@ -272,20 +272,21 @@ impl<T, C, R, K> IntoGuts for PolyphaseFir<T, C, R, K> {
     }
 }
 
-impl<T, const N: usize, const H: usize, K> Reset for PolyphaseFirArray<T, N, H, K>
+impl<T, C, R, K> Reset for PolyphaseFir<T, C, R, K>
 where
     T: Num,
+    R: RingBuffer<T>,
 {
-    fn reset(self) -> Self {
-        Self::with_config(self.bank.into_guts())
+    /// Restores the zero-padded cold-start state by refilling the delay line
+    /// in place, reusing the existing storage.
+    fn reset(mut self) -> Self {
+        self.state.taps.fill_with(T::zero);
+        self
     }
 }
 
 #[cfg(feature = "derive")]
-impl<T, const N: usize, const H: usize, K> ResetMut for PolyphaseFirArray<T, N, H, K> where
-    Self: Reset
-{
-}
+impl<T, C, R, K> ResetMut for PolyphaseFir<T, C, R, K> where Self: Reset {}
 
 #[cfg(test)]
 mod tests {
@@ -446,6 +447,57 @@ mod tests {
         });
 
         let _ = fir.execute(2);
+    }
+
+    /// Verifies that [`Reset`] restores a full window of zeros on every storage
+    /// backend, mirroring the equivalent `Convolve` test.
+    ///
+    /// Fullness matters as much as the zeros: `execute` pairs each branch's
+    /// coefficients against the delay line, so a short delay line would
+    /// mispair rather than zero-pad.
+    #[test]
+    fn reset_zero_fills_the_delay_line_on_every_backend() {
+        use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
+
+        const COEFFS: [i32; 4] = [1, 3, 2, 4];
+
+        fn dirty_then_reset<C, R>(mut fir: PolyphaseFir<i32, C, R>)
+        where
+            C: AsSlice<i32>,
+            R: RingBuffer<i32>,
+        {
+            fir.push(10);
+            let (_, state) = fir.reset().into_guts();
+            assert_eq!(
+                RingBuffer::len(&state.taps),
+                RingBuffer::capacity(&state.taps),
+                "delay line must be full, not empty"
+            );
+            assert!(
+                state.taps.iter().all(|tap| *tap == 0),
+                "every tap must be zero after reset"
+            );
+        }
+
+        let config = || Config {
+            num_phases: 2,
+            taps_per_phase: 2,
+            coefficients: COEFFS,
+        };
+
+        dirty_then_reset(PolyphaseFirArray::<i32, 4, 2>::with_config(config()));
+
+        // Borrowed ring: the backend that rebuilding from a config could never reset.
+        let mut owned = zero_filled_fixed_ring::<i32, 2>();
+        dirty_then_reset(PolyphaseFirRefMut::<'_, i32, [i32; 4]>::from_parts(
+            config(),
+            &mut owned,
+        ));
+
+        #[cfg(feature = "alloc")]
+        dirty_then_reset(super::PolyphaseFirVec::<i32>::from_prototype_taps(
+            2, &COEFFS,
+        ));
     }
 
     #[test]
