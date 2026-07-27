@@ -221,9 +221,7 @@ where
     pub fn from_prototype_taps(num_phases: usize, prototype: &[K]) -> Self {
         let bank = PolyphaseFilterBankVec::from_prototype_taps(num_phases, prototype);
         let mut taps = HeapCircularBuffer::with_capacity(bank.taps_per_phase());
-        for _ in 0..bank.taps_per_phase() {
-            let _ = taps.push_back(T::zero());
-        }
+        taps.fill_with(T::zero);
         Self::from_parts(bank.into_guts(), taps)
     }
 }

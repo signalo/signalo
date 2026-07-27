@@ -145,6 +145,17 @@ pub trait RingBuffer<T> {
 
     /// Removes all elements from the buffer.
     fn clear(&mut self);
+
+    /// Replaces the entire contents with `capacity()` values produced by `f`.
+    ///
+    /// Equivalent to [`clear`](Self::clear) followed by pushing `capacity()`
+    /// values. Note that the result is *full*, not empty: after this call
+    /// [`is_full`](Self::is_full) is `true` and [`is_empty`](Self::is_empty)
+    /// is `false`. `fill_with(T::zero)` establishes the zero-padded cold-start
+    /// state for a numeric delay line without requiring `T: Clone`.
+    fn fill_with<F>(&mut self, f: F)
+    where
+        F: FnMut() -> T;
 }
 
 impl<T, const N: usize> RingBuffer<T> for FixedCircularBuffer<T, N> {
@@ -196,6 +207,13 @@ impl<T, const N: usize> RingBuffer<T> for FixedCircularBuffer<T, N> {
 
     fn clear(&mut self) {
         (**self).clear();
+    }
+
+    fn fill_with<F>(&mut self, f: F)
+    where
+        F: FnMut() -> T,
+    {
+        (**self).fill_with(f);
     }
 }
 
@@ -250,6 +268,13 @@ impl<T> RingBuffer<T> for HeapCircularBuffer<T> {
     fn clear(&mut self) {
         (**self).clear();
     }
+
+    fn fill_with<F>(&mut self, f: F)
+    where
+        F: FnMut() -> T,
+    {
+        (**self).fill_with(f);
+    }
 }
 
 impl<T> RingBuffer<T> for &mut CircularBuffer<T> {
@@ -302,13 +327,18 @@ impl<T> RingBuffer<T> for &mut CircularBuffer<T> {
     fn clear(&mut self) {
         (**self).clear();
     }
+
+    fn fill_with<F>(&mut self, f: F)
+    where
+        F: FnMut() -> T,
+    {
+        (**self).fill_with(f);
+    }
 }
 
 pub(crate) fn zero_filled_fixed_ring<T: Num, const N: usize>() -> FixedCircularBuffer<T, N> {
     let mut buf = FixedCircularBuffer::new();
-    for _ in 0..N {
-        let _ = buf.push_back(T::zero());
-    }
+    RingBuffer::fill_with(&mut buf, T::zero);
     buf
 }
 
