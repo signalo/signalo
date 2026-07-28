@@ -35,10 +35,10 @@
 //! Steps 3 and 4 can share one buffer instead of two. Allocate the packed
 //! length, generate the dense kernel into `taps[..dense_len]`, then call
 //! [`pack_prototype_taps_in_place`](super::filter_bank::pack_prototype_taps_in_place)
-//! over the whole slice. That reorder is quadratic in the packed length rather
-//! than linear, so use the two-buffer route unless the second allocation is
-//! unacceptable. The subslice is required because the design helpers assert an
-//! exact prototype length.
+//! over the whole slice. That reorder costs more than the linear two-buffer
+//! route, so prefer two buffers unless the second allocation is unacceptable.
+//! The subslice is required because the design helpers assert an exact
+//! prototype length.
 //!
 //! Throughout, `d0` is the bulk group delay every branch shares, in input
 //! samples:
