@@ -56,7 +56,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Fixed
 
-- n/a
+- Widened the root-raised-cosine singularity guard from `4ε` to `√ε` so the closed-form limit is substituted across the full cancellation region instead of only on an exact hit; rolloff `α = 0.25001` at 4 samples per symbol no longer loses 11 bits of precision.
 
 ### Performance
 
