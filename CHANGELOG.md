@@ -35,6 +35,7 @@ Please make sure to add your changes to the appropriate categories:
   - Added `pack_prototype_taps_in_place` for in-place reordering of a padded dense prototype buffer into phase-major polyphase storage without a second allocation
 - Added [`RingBuffer::fill_with`](crate::storage::RingBuffer::fill_with), a trait method that replaces the entire ring buffer contents with `capacity()` values produced by a closure
 - Added [`WithConfig`](crate::traits::WithConfig) implementation for [`ConvolveVec`](crate::filters::fir::convolve::ConvolveVec), so heap-allocated convolution filters can be constructed from config without manually allocating and zero-filling a tap buffer
+- Added `polyphase::fractional_delay` module with fractional-delay polyphase FIR filter design helper functions
 
 ### Changed
 
