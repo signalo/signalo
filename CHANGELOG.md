@@ -43,6 +43,8 @@ Please make sure to add your changes to the appropriate categories:
 - Relaxed `State<T>` / `Biquad<T>` default bounds from `Num` to `Zero` for state initialization
 - `Kaiser::Config::beta_for_attenuation` now delegates to `filters::fir::design::kaiser_beta`; the boundary at exactly 50 dB now uses the mid-attenuation formula (matching SciPy) instead of the high-attenuation formula
 - `Convolve::reset` now fills the delay line in place via [`RingBuffer::fill_with`](crate::storage::RingBuffer::fill_with) instead of reconstructing from config; the `Reset` impl no longer requires `WithConfig`, making it available on `ConvolveVec` and `ConvolveRefMut`
+- Moved `Reset` from per-alias impls (e.g. `PolyphaseFirArray`, `PolyphaseDecimatorArray`) onto the generic types, using `fill_with(T::zero)` in place instead of rebuilding via `with_config`.
+- Relaxed the `Interpolator` and `RationalResampler` trait bounds from `WithConfig` to `PolyphaseFir: Reset`, delegating through the wrapped FIR.
 
 ### Deprecated
 
