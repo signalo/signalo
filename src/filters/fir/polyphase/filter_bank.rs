@@ -271,10 +271,9 @@ where
 ///
 /// # Complexity
 ///
-/// - **Time:** O((P·T)²/4) element moves, where P is `num_phases` and T is
-///   `coefficients.len() / num_phases`. The reorder is a rotation-based in-place
-///   transpose performing exactly `P·T + P(P−1)·T(T−1)/4` moves. For P = 128 and
-///   T = 32 that is about 4.0 million moves to place 4096 coefficients.
+/// - **Time:** dominated by an in-place transpose of the P by T rectangle, where
+///   P is `num_phases` and T is `coefficients.len() / num_phases`. See
+///   `matrix_transpose_in_place` for its cost.
 /// - **Space:** O(1); no auxiliary storage.
 ///
 /// [`pack_prototype_taps`] is O(P·T) and is preferable whenever a second buffer

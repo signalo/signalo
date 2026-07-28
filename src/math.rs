@@ -89,9 +89,7 @@ pub(crate) fn matrix_transpose_padded<T: Clone>(
 
     output.fill(padding);
     for (src, value) in input.iter().enumerate() {
-        let x = src % width;
-        let y = src / width;
-        output[x * height + y] = value.clone();
+        output[transposed_index(src, width, height)] = value.clone();
     }
 }
 
@@ -100,13 +98,15 @@ pub(crate) fn matrix_transpose_padded<T: Clone>(
 /// The matrix has `height` rows and `width` columns, and `matrix.len()` must be
 /// `width * height`. Supports rectangular matrices, not just square ones.
 ///
-/// This uses a rotation-based in-place algorithm that avoids a full auxiliary
-/// matrix. It is not linear-time: for large matrices, prefer
-/// [`matrix_transpose`] when a separate output buffer is available.
+/// Follows the cycles of the transposition permutation, needing only a constant
+/// number of index variables and no recursion. Prefer [`matrix_transpose`] when a
+/// separate output buffer is available, since it is linear.
 ///
 /// # Complexity
 ///
-/// Performs `O(width^2 * height^2 / 4)` element moves.
+/// - **Time:** `O(N log N)` index steps for `N = width * height`, of which exactly
+///   `N - 2` are element moves.
+/// - **Space:** `O(1)`, regardless of `N`.
 ///
 /// # Panics
 ///
@@ -122,20 +122,56 @@ pub(crate) fn matrix_transpose_in_place<T>(matrix: &mut [T], width: usize, heigh
         "matrix_transpose_in_place: matrix length must equal width * height"
     );
 
-    // Each inner iteration rotates a window of `step` elements ending at `last`
-    // (exclusive). `step` starts at 1 and grows by `width - x - 1` per row,
-    // advancing the rotation boundary through the transposition permutation for
-    // column group `x`.
-    for x in 0..width {
-        let count_adjustment = width - x - 1;
-        let mut step = 1;
-        for y in 0..height {
-            let last = count - (y + x * height);
-            let first = last - step;
-            matrix[first..last].rotate_left(1);
-            step += count_adjustment;
+    // A single row or column is already its own transpose in row-major order.
+    if count < 3 || width == 1 || height == 1 {
+        return;
+    }
+
+    // Row and column loops keep both coordinates as counters, so `first` tracks
+    // `column * height + row` by adding `height` per column, with no division and
+    // no multiply. Only the walks below divide.
+    let mut start = 0;
+    for row in 0..height {
+        let mut first = row;
+        for _ in 0..width {
+            // Visit each cycle once via its smallest index: walking from `start`
+            // reaches something smaller unless `start` is itself the smallest.
+            // That costs `O(cycle length)` and needs no visited set. The first and
+            // last indices are fixed points and rotate nothing.
+            let mut probe = first;
+            while probe > start {
+                probe = transposed_index(probe, width, height);
+            }
+
+            if probe == start {
+                // Rotate the cycle by swapping against its representative. After
+                // k swaps, `start` holds the element belonging k + 1 steps along.
+                // `swap` needs no element temporary, so `T` stays unbounded.
+                let mut next = first;
+                while next != start {
+                    matrix.swap(start, next);
+                    next = transposed_index(next, width, height);
+                }
+            }
+
+            first += height;
+            start += 1;
         }
     }
+}
+
+/// Maps a linear index of a `height` by `width` row-major matrix to its position
+/// after transposition.
+///
+/// Index `i` denotes row `i / width` and column `i - row * width`, which lands at
+/// `column * height + row` once transposed. Subtracting rather than taking a
+/// remainder keeps this to a single division, and every intermediate is bounded
+/// by `width * height`, so this stays within `usize` on 32-bit targets.
+#[inline]
+fn transposed_index(i: usize, width: usize, height: usize) -> usize {
+    let row = i / width;
+    let column = i - row * width;
+    column * height + row
 }
 
 /// Kahan compensated summation accumulator.
@@ -447,6 +483,71 @@ mod tests {
             matrix_transpose_in_place(&mut actual, width, height);
 
             assert_eq!(actual, expected, "width={width} height={height}");
+        }
+    }
+
+    /// The cycle structure of the transposition permutation varies sharply with
+    /// the factorisation of `width * height - 1`, so correctness is checked over
+    /// every geometry in a range rather than a handful of samples.
+    #[test]
+    fn matrix_transpose_in_place_matches_out_of_place_exhaustively() {
+        for width in 1..=32_usize {
+            for height in 1..=32_usize {
+                let input: Vec<_> = (0..width * height).collect();
+                let mut expected = vec![0; width * height];
+                matrix_transpose(&mut expected, &input, width, height);
+
+                let mut actual = input.clone();
+                matrix_transpose_in_place(&mut actual, width, height);
+
+                assert_eq!(actual, expected, "width={width} height={height}");
+            }
+        }
+    }
+
+    /// Transposing twice must restore the original for any geometry.
+    #[test]
+    fn matrix_transpose_in_place_is_an_involution() {
+        for width in 1..=24_usize {
+            for height in 1..=24_usize {
+                let input: Vec<_> = (0..width * height).collect();
+                let mut round_trip = input.clone();
+                matrix_transpose_in_place(&mut round_trip, width, height);
+                // the transposed matrix is `width` rows of `height`
+                matrix_transpose_in_place(&mut round_trip, height, width);
+                assert_eq!(round_trip, input, "width={width} height={height}");
+            }
+        }
+    }
+
+    /// An extreme aspect ratio gives the permutation a very different cycle
+    /// structure from a square matrix, and maximises the index arithmetic, so it
+    /// is checked separately from the exhaustive small-geometry sweep.
+    #[test]
+    fn matrix_transpose_in_place_handles_extreme_aspect_ratio() {
+        let (width, height) = (65536_usize, 2_usize);
+        let input: Vec<_> = (0..width * height).collect();
+        let mut expected = vec![0; width * height];
+        matrix_transpose(&mut expected, &input, width, height);
+
+        let mut actual = input.clone();
+        matrix_transpose_in_place(&mut actual, width, height);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn matrix_transpose_in_place_moves_every_element_exactly_once() {
+        // Exactly N - 2 swaps means each non-fixed position is written once.
+        // A duplicated or dropped element would show up as a changed multiset.
+        for (width, height) in [(7, 5), (5, 7), (8, 8), (13, 3), (2, 31)] {
+            let n = width * height;
+            let input: Vec<_> = (0..n).collect();
+            let mut actual = input.clone();
+            matrix_transpose_in_place(&mut actual, width, height);
+            let mut sorted = actual.clone();
+            sorted.sort_unstable();
+            assert_eq!(sorted, input, "width={width} height={height}");
         }
     }
 
