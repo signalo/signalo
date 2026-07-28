@@ -33,6 +33,8 @@ Please make sure to add your changes to the appropriate categories:
   - Added `packed_len_for_prototype_len` for computing packed polyphase storage length from a dense prototype length and number of phases
   - Added `pack_prototype_taps` for copying and reordering a dense FIR prototype into phase-major rectangular polyphase coefficient storage
   - Added `pack_prototype_taps_in_place` for in-place reordering of a padded dense prototype buffer into phase-major polyphase storage without a second allocation
+- Added [`RingBuffer::fill_with`](crate::storage::RingBuffer::fill_with), a trait method that replaces the entire ring buffer contents with `capacity()` values produced by a closure
+- Added [`WithConfig`](crate::traits::WithConfig) implementation for [`ConvolveVec`](crate::filters::fir::convolve::ConvolveVec), so heap-allocated convolution filters can be constructed from config without manually allocating and zero-filling a tap buffer
 
 ### Changed
 
@@ -40,6 +42,7 @@ Please make sure to add your changes to the appropriate categories:
 - `BiquadCascade<T, CS, SS>` generalized to `BiquadCascade<T, CS, SS, K = T>` and its type aliases (`BiquadCascadeArray`, `BiquadCascadeVec`, `BiquadCascadeRefMut`) gained a `K` parameter
 - Relaxed `State<T>` / `Biquad<T>` default bounds from `Num` to `Zero` for state initialization
 - `Kaiser::Config::beta_for_attenuation` now delegates to `filters::fir::design::kaiser_beta`; the boundary at exactly 50 dB now uses the mid-attenuation formula (matching SciPy) instead of the high-attenuation formula
+- `Convolve::reset` now fills the delay line in place via [`RingBuffer::fill_with`](crate::storage::RingBuffer::fill_with) instead of reconstructing from config; the `Reset` impl no longer requires `WithConfig`, making it available on `ConvolveVec` and `ConvolveRefMut`
 
 ### Deprecated
 
