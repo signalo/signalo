@@ -34,7 +34,7 @@
 //!
 //! # Related
 //!
-//! - [`crate::filters::delay::Delay`] for integer delay.
+//! - [`crate::filters::util::delay::Delay`] for integer delay.
 //! - [`crate::filters::fir::convolve::windowed_sinc`] for frequency-domain
 //!   fractional-delay alternatives via windowed-sinc resampling.
 //!
@@ -42,7 +42,7 @@
 //!
 //! `half_sample_delay()` is pre-defined for even `M ∈ {4, 6, 8, 10}`. Odd `M`
 //! yields `(M−1)/2 ∈ ℤ` — that is an *integer* delay and should use
-//! [`Delay`](crate::filters::delay::Delay) (or
+//! [`Delay`](crate::filters::util::delay::Delay) (or
 //! [`ConvolveArray::with_config`](crate::filters::fir::convolve::ConvolveArray::with_config)
 //! with a unit impulse at the relevant tap).
 //!
