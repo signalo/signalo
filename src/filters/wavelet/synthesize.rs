@@ -68,7 +68,8 @@ pub type SynthesizeArray<T, const N: usize> = Synthesize<T, [T; N], FixedCircula
 #[cfg(feature = "alloc")]
 pub type SynthesizeVec<T> = Synthesize<T, alloc::vec::Vec<T>, HeapCircularBuffer<T>>;
 
-/// A wavelet synthesis filter that borrows a [`CircularBuffer`] tap buffer.
+/// A wavelet synthesis filter that borrows a
+/// [`CircularBuffer`](circular_buffer::CircularBuffer) tap buffer.
 ///
 /// This alias allows sharing a caller-owned ring buffer without taking
 /// ownership of it. The coefficient storage `C` remains generic.

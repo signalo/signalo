@@ -45,7 +45,7 @@
 //!
 //! # Related
 //!
-//! - [`super::savitzky_golay`] for polynomial smoothing filters
+//! - [`crate::filters::fir::savitzky_golay`] for polynomial smoothing filters
 //! - [`super::ConvolveArray::normalized`] for general coefficient normalisation
 //!
 //! # Coefficient ordering
@@ -209,7 +209,7 @@ impl<T: Float + core::fmt::Debug, const N: usize> KaiserSinc<ConvolveArray<T, N>
     ///
     /// A larger β produces stronger stopband attenuation and a wider transition band.
     /// Typical values: 5.0–8.0 for general-purpose use (~50–70 dB attenuation).
-    /// Use [`Config::beta_for_attenuation`](crate::filters::window::kaiser::Config::beta_for_attenuation)
+    /// Use [`Config::beta_for_attenuation`](crate::filters::fir::window::kaiser::Config::beta_for_attenuation)
     /// to compute β from a desired stopband attenuation.
     ///
     /// # Panics

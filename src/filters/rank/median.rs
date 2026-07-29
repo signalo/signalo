@@ -157,8 +157,7 @@ pub type MedianVec<T> = Median<T, alloc::vec::Vec<ListNode<T>>>;
 ///
 /// This alias allows sharing a caller-owned node-buffer slice without taking
 /// ownership of it. Construct via [`Median::from_parts`], passing a
-/// correctly-linked `&mut [ListNode<T>]` slice (use [`MedianVec::new_buffer`]
-/// to build one).
+/// correctly-linked `&mut [ListNode<T>]` slice.
 pub type MedianRefMut<'a, T> = Median<T, &'a mut [ListNode<T>]>;
 
 impl<T, const N: usize> Default for MedianArray<T, N> {
@@ -368,8 +367,8 @@ where
     /// # Expected storage state
     ///
     /// For the idiomatic initial state, the buffer should contain correctly
-    /// linked nodes with all values set to `None`. Use
-    /// [`MedianVec::new_buffer`] to construct such a buffer.
+    /// linked nodes with all values set to `None`, so for a buffer of length
+    /// `n` that is `previous == (i + n - 1) % n` and `next == (i + 1) % n`.
     ///
     /// # Panics
     ///

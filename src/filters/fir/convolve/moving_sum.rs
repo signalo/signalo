@@ -7,9 +7,9 @@
 //! A `MovingSum` is a bounded sliding sum over `N` samples:
 //! `y[n] = Σ_{k=0}^{N-1} x[n-k]`.
 //!
-//! This is distinct from [`Integrate`](crate::filters::integrate::Integrate),
+//! This is distinct from [`Integrate`](crate::filters::iir::integrate::Integrate),
 //! which is an IIR running sum (`y[n] = y[n-1] + x[n]`) with unbounded growth.
-//! For a bounded sliding average, use [`Mean`](crate::filters::mean::mean::Mean),
+//! For a bounded sliding average, use [`Mean`](crate::filters::fir::mean::Mean),
 //! which is essentially `MovingSum / N`.
 //!
 //! | Operator    | Formula                    | State | Boundedness             |

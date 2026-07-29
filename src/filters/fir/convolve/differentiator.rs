@@ -42,17 +42,18 @@
 //!
 //! # Related
 //!
-//! - [`Differentiate`](crate::filters::differentiate::Differentiate) for
+//! - [`Differentiate`](crate::filters::fir::differentiate::Differentiate) for
 //!   the O(1)-state two-tap backward difference (`h = [-1, 1]`).
-//! - `laplacian()` and `second_central_difference()` for the second
-//!   derivative.
-//! - [`savitzky_golay`](super::savitzky_golay) for Savitzky-Golay polynomial
+//! - [`laplacian()`](super::Convolve::laplacian) and
+//!   [`second_central_difference()`](super::Convolve::second_central_difference)
+//!   for the second derivative.
+//! - [`savitzky_golay`](crate::filters::fir::savitzky_golay) for Savitzky-Golay polynomial
 //!   smoothing.
 //!
 //! # Coefficient ordering
 //!
 //! `h[0]` pairs with the newest sample (see
-//! [`ConvolveArray::filter`](super::ConvolveArray::filter)).
+//! [`Convolve`'s coefficient ordering](super::Convolve#coefficient-ordering)).
 
 use crate::traits::WithConfig;
 

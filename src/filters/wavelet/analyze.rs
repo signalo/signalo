@@ -69,7 +69,8 @@ pub type AnalyzeArray<T, const N: usize> = Analyze<T, [T; N], FixedCircularBuffe
 #[cfg(feature = "alloc")]
 pub type AnalyzeVec<T> = Analyze<T, alloc::vec::Vec<T>, HeapCircularBuffer<T>>;
 
-/// A wavelet analysis filter that borrows a [`CircularBuffer`] tap buffer.
+/// A wavelet analysis filter that borrows a
+/// [`CircularBuffer`](circular_buffer::CircularBuffer) tap buffer.
 ///
 /// This alias allows sharing a caller-owned ring buffer without taking
 /// ownership of it. The coefficient storage `C` remains generic.
