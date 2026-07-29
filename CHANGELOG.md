@@ -20,6 +20,40 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
+- n/a
+
+### Changed
+
+- n/a
+
+### Deprecated
+
+- n/a
+
+### Removed
+
+- n/a
+
+### Fixed
+
+- n/a
+
+### Performance
+
+- n/a
+
+### Security
+
+- n/a
+
+### Other
+
+- n/a
+
+## [0.10.0] - 2026-07-29
+
+### Added
+
 - Added complex sample support to IIR biquad filters: `Biquad<T, K>` and `BiquadCascade<T, CS, SS, K>` accept an explicit coefficient type `K`, enabling `Biquad<Complex32, f32>` (requires `complex` feature)
 - Added `KahanSum<T>`, a compensated accumulator for long-running sums that repeatedly add small deltas
 - Add `KahanIntegrate<T>`, a compensated cumulative-sum filter backed by `KahanSum<T>`
@@ -47,29 +81,9 @@ Please make sure to add your changes to the appropriate categories:
 - Moved `Reset` from per-alias impls (e.g. `PolyphaseFirArray`, `PolyphaseDecimatorArray`) onto the generic types, using `fill_with(T::zero)` in place instead of rebuilding via `with_config`.
 - Relaxed the `Interpolator` and `RationalResampler` trait bounds from `WithConfig` to `PolyphaseFir: Reset`, delegating through the wrapped FIR.
 
-### Deprecated
-
-- n/a
-
-### Removed
-
-- n/a
-
 ### Fixed
 
 - Widened the root-raised-cosine singularity guard from `4ε` to `√ε` so the closed-form limit is substituted across the full cancellation region instead of only on an exact hit; rolloff `α = 0.25001` at 4 samples per symbol no longer loses 11 bits of precision.
-
-### Performance
-
-- n/a
-
-### Security
-
-- n/a
-
-### Other
-
-- n/a
 
 ## [0.9.0] - 2026-07-15
 
