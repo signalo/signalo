@@ -331,6 +331,7 @@ impl<T> Nco<T> {
         let (sin, cos) = self.sin_cos();
         crate::complex::Complex::new(cos, sin)
     }
+
     /// Creates an NCO from a phase step in turns per sample and zero initial phase.
     ///
     /// Turns per sample is the same quantity as a normalized frequency in cycles per sample, so a
