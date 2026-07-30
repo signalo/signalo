@@ -152,7 +152,18 @@ impl<T> State<T> {
 ///
 /// - **Time per sample:** O(1); one wrapping addition and one lookup/approximation for sin/cos.
 /// - **Space:** O(1); stores one 32-bit phase word.
-#[derive(Clone, Debug)]
+///
+/// # Precision
+///
+/// `T` is the output type, not the working type. It appears only in the return
+/// position of [`Self::sin`], [`Self::cos`], [`Self::sin_cos`], [`Self::phasor`]
+/// and [`Self::phasor_then_step`], while every frequency and phase conversion is
+/// `f32` regardless of it.
+///
+/// Phase is an exact 32-bit word, but sine and cosine are approximations bounded
+/// by [`crate::math::phase::MAX_ABS_ERROR`], so `Nco<f64>` widens `f32` values
+/// rather than refining them and is no more accurate than `Nco<f32>`.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Nco<T = f32> {
     config: Config<T>,
     state: State<T>,

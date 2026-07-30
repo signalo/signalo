@@ -18,6 +18,9 @@ pub mod fir;
 
 pub mod iir;
 
+#[cfg(feature = "complex")]
+pub mod mixer;
+
 pub mod ops;
 
 pub mod rank;
