@@ -20,11 +20,14 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- n/a
+- Added turns and radians phase units to `Nco`: `from_turns`, `from_radians`, and `from_turns_per_sample` constructors; `set_turns_per_sample` and `set_radians_per_sample` setters; `turns_per_sample`, `radians_per_sample`, `phase_turns`, and `phase_radians` getters
+- Added `Nco` phase-step conversion functions: `phase_step_from_turns_per_sample`, `phase_step_from_radians_per_sample`, `turns_per_sample_from_phase_step`, `radians_per_sample_from_phase_step`, `phase_word_from_turns`, `phase_word_from_radians`, `turns_from_phase_word`, and `radians_from_phase_word`
+- Added `Config::from_turns_per_sample` and `Config::from_radians_per_sample` constructors for creating NCO configs from turns-per-sample and radians-per-sample rates
+- Added `Nco::phasor_then_step` (behind `complex` feature), returning the current phasor and then advancing one sample — the correct order for derotating a stream
 
 ### Changed
 
-- n/a
+- `Nco::phase_step_from_frequency` now delegates to the shared turns-per-sample conversion (behavior unchanged; tested as bit-for-bit equivalent)
 
 ### Deprecated
 
