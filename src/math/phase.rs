@@ -14,6 +14,31 @@
 //!
 //! The represented interval is `[0, 1)` turns. Wrapping arithmetic on the phase
 //! word naturally wraps the oscillator phase.
+//!
+//! Values come from a quarter-wave sine table with linear interpolation
+//! between entries, so they are approximations: [`MAX_ABS_ERROR`] bounds the
+//! absolute error at about `4.8e-6`, where `libm`'s `sinf` and `cosf` are
+//! accurate to near an `f32` ULP. In exchange there is no transcendental call,
+//! which is the point on a target where that call is expensive.
+//!
+//! A companion `i32` phase step is the same scale read as a signed rate, one
+//! step being the phase advanced per sample, folded into `[-1 / 2, 1 / 2)`
+//! turns per sample. Turns are the phase word's own unit, so every other
+//! spelling of a phase or a rate converts through the turns functions here,
+//! including a rate in Hz, which divides by a sample rate to reach turns per
+//! sample.
+
+use num_traits::float::FloatCore;
+
+/// Phase words in one full turn, which is the scale between turns and a phase word or step.
+///
+/// Deliberately `f32` rather than an integer phase word like [`QUARTER_TURN`]: a full turn is `2^32`,
+/// which does not fit in `u32`, and this is only ever a float scale to multiply or divide by. It is
+/// exact, `2^32` being a power of two well inside `f32`'s range, so scaling by it never rounds.
+/// One turn spans the whole phase word, so `2^32` words. Exactly representable in
+/// `f32`, the cast rounds nothing.
+#[allow(clippy::cast_precision_loss)]
+const PHASE_WORDS_PER_TURN: f32 = (1_u64 << u32::BITS) as f32;
 
 const QUARTER_TURN: u32 = 0x4000_0000;
 const QUARTER_BITS: u32 = 8;
@@ -22,6 +47,24 @@ const FRAC_BITS: u32 = 30 - QUARTER_BITS;
 const FRAC_MASK: u32 = (1_u32 << FRAC_BITS) - 1;
 #[allow(clippy::cast_precision_loss)]
 const FRAC_SCALE_RECIP: f32 = 1.0 / ((1_u32 << FRAC_BITS) as f32);
+
+/// Upper bound on the absolute error of [`sin`], [`cos`], [`sin_cos`] and [`phasor`].
+///
+/// About `4.8e-6`. Exposed so a caller choosing between these and a true
+/// `sin`/`cos` can size a tolerance against the bound rather than a copied
+/// literal.
+///
+/// `f64` although it bounds `f32` functions, because the bound is derived from
+/// the table geometry and rounding it to `f32` would lose that derivation. Cast
+/// at the point of use for an `f32` tolerance.
+pub const MAX_ABS_ERROR: f64 = {
+    const QUARTER_SEGMENTS: f64 = (1_u32 << QUARTER_BITS) as f64;
+    const SEGMENT_RADIANS: f64 = core::f64::consts::FRAC_PI_2 / QUARTER_SEGMENTS;
+    // Linear interpolation error is bounded by max(|f''(x)|) * h^2 / 8.
+    // For sin(x), max(|f''(x)|) <= 1, so the table's segment width h gives
+    // h^2 / 8. Add one f32 epsilon for table quantization/arithmetic margin.
+    (SEGMENT_RADIANS * SEGMENT_RADIANS / 8.0) + (f32::EPSILON as f64)
+};
 
 /// Computes sine for a 32-bit wrapping phase word.
 ///
@@ -58,6 +101,180 @@ pub fn sin_cos(phase: u32) -> (f32, f32) {
 pub fn phasor(phase: u32) -> crate::complex::Complex32 {
     let (imag, real) = sin_cos(phase);
     crate::complex::Complex32::new(real, imag)
+}
+
+/// Computes the complex phasor for a phase in radians.
+///
+/// This is [`phase_word_from_radians`] followed by [`phasor`], which is the common pairing when the
+/// caller holds an angle rather than a phase word. It replaces a `sin`/`cos` pair with a table lookup,
+/// so it trades [`MAX_ABS_ERROR`] of accuracy for having no transcendental call to make.
+///
+/// # Panics
+///
+/// Panics if `radians` is not finite.
+#[cfg(feature = "complex")]
+#[must_use]
+#[inline]
+pub fn phasor_from_radians(radians: f32) -> crate::complex::Complex32 {
+    phasor(phase_word_from_radians(radians))
+}
+
+/// Converts a phase in turns to a wrapping full-turn phase word.
+///
+/// # Panics
+///
+/// Panics if `turns` is not finite.
+#[must_use]
+pub fn phase_word_from_turns(turns: f32) -> u32 {
+    assert!(turns.is_finite(), "phase: turns must be finite");
+    // Folding through the signed step keeps a small negative phase small, which folding through
+    // `[0, 1)` turns would not: at `f32` precision a tiny negative value becomes exactly one turn.
+    phase_step_from_turns_per_sample(turns).cast_unsigned()
+}
+
+/// Converts a phase in radians to a wrapping full-turn phase word.
+///
+/// One turn is `2π` radians, so any finite input folds into the single turn the phase word
+/// represents.
+///
+/// # Panics
+///
+/// Panics if `radians` is not finite.
+#[must_use]
+pub fn phase_word_from_radians(radians: f32) -> u32 {
+    assert!(radians.is_finite(), "phase: radians must be finite");
+    phase_word_from_turns(radians / core::f32::consts::TAU)
+}
+
+/// Converts a wrapping full-turn phase word to turns in `[0, 1)`.
+///
+/// The unsigned counterpart of [`turns_per_sample_from_phase_step`], and the only other place the
+/// phase-word scale is applied.
+#[must_use]
+#[allow(clippy::cast_precision_loss)]
+pub fn turns_from_phase_word(phase: u32) -> f32 {
+    phase as f32 / PHASE_WORDS_PER_TURN
+}
+
+/// Converts a wrapping full-turn phase word to radians in `[0, 2π)`.
+#[must_use]
+pub fn radians_from_phase_word(phase: u32) -> f32 {
+    turns_from_phase_word(phase) * core::f32::consts::TAU
+}
+
+/// Converts turns per sample to a signed phase step.
+///
+/// This is where the conversion actually happens. Turns per sample is the phase word's own unit, one
+/// turn being its full range, so every other spelling of a frequency reduces to this one:
+/// [`phase_step_from_frequency`] divides by the sample rate first and
+/// [`phase_step_from_radians_per_sample`] divides by `2π`. Rates outside the Nyquist interval of
+/// half a turn per sample fold and alias.
+///
+/// # Panics
+///
+/// Panics if `turns_per_sample` is not finite.
+#[must_use]
+pub fn phase_step_from_turns_per_sample(turns_per_sample: f32) -> i32 {
+    assert!(
+        turns_per_sample.is_finite(),
+        "phase: turns per sample must be finite"
+    );
+
+    phase_step_from_turns_per_sample_unchecked(turns_per_sample)
+}
+
+/// Folds and scales turns per sample without checking it.
+///
+/// Split out so each public entry point keeps its own documented panic contract.
+/// [`phase_step_from_frequency`] accepts finite inputs whose ratio overflows, and folding an infinite
+/// rate yields `NaN`, which casts to a step of zero.
+#[allow(clippy::cast_possible_truncation)]
+fn phase_step_from_turns_per_sample_unchecked(turns_per_sample: f32) -> i32 {
+    let folded = turns_per_sample - FloatCore::floor(turns_per_sample + 0.5);
+    // Truncated towards zero, which is what [`phase_step_from_frequency`] has always done. Every
+    // spelling of a rate reduces to this one, so they all agree exactly.
+    FloatCore::trunc(folded * PHASE_WORDS_PER_TURN) as i32
+}
+
+/// Converts radians per sample to a signed phase step.
+///
+/// Rates outside the Nyquist interval of `π` radians per sample fold modulo `2π` and alias, as with
+/// [`phase_step_from_frequency`].
+///
+/// # Panics
+///
+/// Panics if `radians_per_sample` is not finite.
+#[must_use]
+pub fn phase_step_from_radians_per_sample(radians_per_sample: f32) -> i32 {
+    phase_step_from_turns_per_sample(radians_per_sample / core::f32::consts::TAU)
+}
+
+/// Converts a signed phase step to turns per sample.
+///
+/// The inverse counterpart, and likewise the one place the scale is applied.
+#[must_use]
+#[allow(clippy::cast_precision_loss)]
+pub fn turns_per_sample_from_phase_step(phase_step: i32) -> f32 {
+    phase_step as f32 / PHASE_WORDS_PER_TURN
+}
+
+/// Converts a signed phase step to radians per sample.
+#[must_use]
+pub fn radians_per_sample_from_phase_step(phase_step: i32) -> f32 {
+    turns_per_sample_from_phase_step(phase_step) * core::f32::consts::TAU
+}
+
+/// Converts a frequency and sample rate in Hz to a signed phase step.
+///
+/// The returned step represents `frequency_hz / sample_rate_hz` turns per sample, folded into
+/// `[-1 / 2, 1 / 2)` turns per sample. Frequencies outside the Nyquist interval of `sample_rate_hz`
+/// therefore alias to the folded frequency.
+///
+/// # Panics
+///
+/// Panics if either input is not finite or `sample_rate_hz <= 0`.
+///
+/// A finite pair whose ratio overflows does not panic. `is_finite` on the
+/// arguments does not imply a finite ratio, and folding an infinite rate yields
+/// `NaN`, which casts to a step of zero. Routing this through
+/// [`phase_step_from_turns_per_sample`] instead would panic there, so the
+/// unchecked fold is deliberate rather than an oversight.
+#[must_use]
+pub fn phase_step_from_frequency(frequency_hz: f32, sample_rate_hz: f32) -> i32 {
+    assert!(frequency_hz.is_finite(), "phase: frequency must be finite");
+    assert!(
+        sample_rate_hz.is_finite(),
+        "phase: sample rate must be finite"
+    );
+    assert!(sample_rate_hz > 0.0, "phase: sample rate must be > 0");
+
+    // Deliberately the unchecked form: a finite pair whose ratio overflows must keep returning zero
+    // rather than start panicking.
+    phase_step_from_turns_per_sample_unchecked(frequency_hz / sample_rate_hz)
+}
+
+/// Converts a signed phase step to frequency in Hz.
+///
+/// # Panics
+///
+/// Panics if `sample_rate_hz` is not finite or `sample_rate_hz <= 0`.
+///
+/// A large step against a large rate returns an infinity rather than panicking,
+/// because the product forms before the scale divides it. That expression order
+/// is deliberate, so reassociating it would change the result.
+#[must_use]
+#[allow(clippy::cast_precision_loss)]
+pub fn frequency_from_phase_step(phase_step: i32, sample_rate_hz: f32) -> f32 {
+    assert!(
+        sample_rate_hz.is_finite(),
+        "phase: sample rate must be finite"
+    );
+    assert!(sample_rate_hz > 0.0, "phase: sample rate must be > 0");
+
+    // Deliberately not `turns_per_sample_from_phase_step(phase_step) * sample_rate_hz`. Dividing by
+    // the scale first is bit-exact wherever this order does not overflow, but it returns a finite
+    // value where this one reaches infinity, which would change behaviour.
+    phase_step as f32 * sample_rate_hz / PHASE_WORDS_PER_TURN
 }
 
 #[inline]
@@ -177,13 +394,6 @@ mod tests {
 
     const EPS: f32 = 1.0e-6;
     const FULL_TURN_PHASE_WORDS: f64 = (u32::MAX as f64) + 1.0;
-    const QUARTER_SEGMENTS: f64 = (1_u32 << QUARTER_BITS) as f64;
-    const SEGMENT_RADIANS: f64 = core::f64::consts::FRAC_PI_2 / QUARTER_SEGMENTS;
-    // Linear interpolation error is bounded by max(|f''(x)|) * h^2 / 8.
-    // For sin(x), max(|f''(x)|) <= 1, so the table's segment width h gives
-    // h^2 / 8. Add one f32 epsilon for table quantization/arithmetic margin.
-    const MAX_INTERPOLATION_ERROR: f64 =
-        (SEGMENT_RADIANS * SEGMENT_RADIANS / 8.0) + (f32::EPSILON as f64);
     const PRE_WRAP_EPS: f64 = 1.0e-12;
 
     #[test]
@@ -250,12 +460,12 @@ mod tests {
             assert_abs_diff_eq!(
                 f64::from(sin(phase)),
                 radians.sin(),
-                epsilon = MAX_INTERPOLATION_ERROR
+                epsilon = MAX_ABS_ERROR
             );
             assert_abs_diff_eq!(
                 f64::from(cos(phase)),
                 radians.cos(),
-                epsilon = MAX_INTERPOLATION_ERROR
+                epsilon = MAX_ABS_ERROR
             );
         }
     }
@@ -268,5 +478,150 @@ mod tests {
 
         assert_abs_diff_eq!(phasor.re, cos(phase), epsilon = EPS);
         assert_abs_diff_eq!(phasor.im, sin(phase), epsilon = EPS);
+    }
+
+    /// The radians pairing agrees exactly with converting and looking up separately, and lands on the
+    /// cardinal phases.
+    #[test]
+    #[cfg(feature = "complex")]
+    fn phasor_from_radians_matches_the_two_step_form() {
+        use core::f32::consts::TAU;
+
+        for turns in [0.0_f32, 0.125, 0.25, 0.5, 0.75, -0.25, 1.5] {
+            let radians = turns * TAU;
+            assert_eq!(
+                phasor_from_radians(radians),
+                phasor(phase_word_from_radians(radians)),
+                "turns {turns}"
+            );
+        }
+        assert_abs_diff_eq!(phasor_from_radians(0.0).re, 1.0, epsilon = 1e-6);
+        assert_abs_diff_eq!(phasor_from_radians(0.0).im, 0.0, epsilon = 1e-6);
+        assert_abs_diff_eq!(phasor_from_radians(TAU / 4.0).re, 0.0, epsilon = 1e-6);
+        assert_abs_diff_eq!(phasor_from_radians(TAU / 4.0).im, 1.0, epsilon = 1e-6);
+    }
+
+    /// Every conversion the oscillator exposes delegates here, so the two spellings must be the same
+    /// bits, not merely close.
+    #[test]
+    fn frequency_helpers_convert_hz_and_phase_step() {
+        let step = phase_step_from_frequency(250.0, 1000.0);
+        assert_eq!(step, 0x4000_0000);
+
+        let negative_step = phase_step_from_frequency(-250.0, 1000.0);
+        assert_eq!(negative_step, -0x4000_0000);
+
+        assert_abs_diff_eq!(
+            frequency_from_phase_step(step, 1000.0),
+            250.0,
+            epsilon = EPS
+        );
+    }
+
+    #[test]
+    fn phase_step_from_frequency_truncates_towards_zero() {
+        // 7.3 / 48000 is 653192.53 phase words. Pinned because delegating to the turns helper must
+        // not change what this has always returned.
+        assert_eq!(phase_step_from_frequency(7.3, 48_000.0), 653_192);
+        assert_eq!(phase_step_from_frequency(-7.3, 48_000.0), -653_192);
+        assert_eq!(phase_step_from_frequency(250.0, 1000.0), 0x4000_0000);
+        // Both inputs are finite but their ratio overflows, which folds to `NaN` and casts to zero.
+        // Pinned because routing this through the checked helper would panic instead, and the
+        // documented contract promises a panic only for a non-finite input.
+        assert_eq!(phase_step_from_frequency(3.0e38, 1.0e-38), 0);
+    }
+
+    #[test]
+    fn frequency_from_phase_step_keeps_the_product_order() {
+        // The product forms before the scale divides it, so a large step against a large sample rate
+        // reaches infinity. Pinned so the expression is not reassociated: dividing by the scale first
+        // would return a finite value here and silently change what this has always returned.
+        assert!(frequency_from_phase_step(i32::MAX, 1.0e30).is_infinite());
+        assert_abs_diff_eq!(
+            frequency_from_phase_step(0x4000_0000, 1000.0),
+            250.0,
+            epsilon = EPS
+        );
+    }
+
+    #[test]
+    fn frequency_and_turns_spellings_agree_on_the_same_rate() {
+        // Ratios that are not whole fractions of a turn, so the two paths would diverge if either
+        // folded or truncated differently.
+        for &(frequency_hz, sample_rate_hz) in
+            &[(7.3_f32, 48_000.0_f32), (-7.3, 48_000.0), (1.0, 7.0)]
+        {
+            assert_eq!(
+                phase_step_from_frequency(frequency_hz, sample_rate_hz),
+                phase_step_from_turns_per_sample(frequency_hz / sample_rate_hz)
+            );
+        }
+    }
+
+    #[test]
+    fn nyquist_frequency_folds_to_negative_nyquist() {
+        assert_eq!(phase_step_from_frequency(500.0, 1000.0), i32::MIN);
+        assert_eq!(phase_step_from_frequency(-500.0, 1000.0), i32::MIN);
+    }
+
+    #[test]
+    fn frequency_aliases_fold_modulo_sample_rate() {
+        assert_eq!(phase_step_from_frequency(750.0, 1000.0), -0x4000_0000);
+        assert_eq!(phase_step_from_frequency(-750.0, 1000.0), 0x4000_0000);
+    }
+
+    #[test]
+    fn turns_and_radians_agree_on_the_same_rotation() {
+        let turns = 0.1_f32;
+
+        assert_eq!(
+            phase_step_from_turns_per_sample(turns),
+            phase_step_from_radians_per_sample(turns * core::f32::consts::TAU)
+        );
+    }
+
+    #[test]
+    fn turn_helpers_convert_whole_fractions_of_a_turn() {
+        // A whole fraction of a turn is a whole number of phase words, so these are exact.
+        assert_eq!(phase_step_from_turns_per_sample(0.25), 0x4000_0000);
+        assert_eq!(phase_step_from_turns_per_sample(-0.25), -0x4000_0000);
+        assert_eq!(phase_word_from_turns(-0.25), 0xC000_0000);
+        // Three quarters of a turn per sample aliases to a quarter turn backwards.
+        assert_eq!(phase_step_from_turns_per_sample(0.75), -0x4000_0000);
+
+        assert_abs_diff_eq!(
+            turns_per_sample_from_phase_step(0x4000_0000),
+            0.25,
+            epsilon = EPS
+        );
+    }
+
+    #[test]
+    fn radian_helpers_convert_whole_fractions_of_a_turn() {
+        use core::f32::consts::TAU;
+
+        // A whole fraction of a turn is a whole number of phase words, so these are exact.
+        assert_eq!(phase_step_from_radians_per_sample(TAU / 4.0), 0x4000_0000);
+        assert_eq!(phase_step_from_radians_per_sample(-TAU / 4.0), -0x4000_0000);
+        assert_eq!(phase_step_from_radians_per_sample(TAU / 8.0), 0x2000_0000);
+        assert_eq!(phase_word_from_radians(TAU / 4.0), 0x4000_0000);
+        assert_eq!(phase_word_from_radians(-TAU / 4.0), 0xC000_0000);
+
+        // Three quarters of a turn per sample aliases to a quarter turn backwards.
+        assert_eq!(
+            phase_step_from_radians_per_sample(3.0 * TAU / 4.0),
+            -0x4000_0000
+        );
+
+        assert_abs_diff_eq!(
+            radians_per_sample_from_phase_step(0x4000_0000),
+            TAU / 4.0,
+            epsilon = EPS
+        );
+        assert_abs_diff_eq!(
+            radians_from_phase_word(0xC000_0000),
+            3.0 * TAU / 4.0,
+            epsilon = EPS
+        );
     }
 }
