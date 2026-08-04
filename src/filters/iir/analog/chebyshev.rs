@@ -241,20 +241,42 @@ mod tests {
     }
 
     #[test]
-    fn chebyshev2_order2_yields_one_stable_finite_section() {
+    fn chebyshev2_order2_pole_inversion_matches_hand_derived_oracle() {
+        // Self-consistency oracle (no published Type-II table is mandated by this
+        // module): independently re-derive the underlying Type-I pole `s_0` for
+        // `order = 2, atten_db = 20.0` using the same `nu`/`theta` formulas as
+        // `chebyshev1_lowpass`, invert it by hand (`1/s_0`), and assert the
+        // resulting quadratic/zero coefficients to a tight epsilon. A skipped or
+        // malformed `1/s_k` inversion (e.g. `p_re = re, p_im = im`) would produce
+        // `a[0] = 0.5025...`/`a[1] = 0.0710...` instead of the values asserted
+        // below, so this test — unlike a bare finiteness/sign check — actually
+        // fails if the inversion step regresses.
+        let eps = (10f64.powf(20.0 / 10.0) - 1.0).sqrt();
+        let nu = eps.asinh() / 2.0;
+        let theta = core::f64::consts::PI * (0.0 + 2.0 + 1.0) / (2.0 * 2.0);
+        let re = -nu.sinh() * theta.sin();
+        let im = nu.cosh() * theta.cos();
+        let mag2 = re * re + im * im;
+        let p_re = re / mag2;
+        let p_im = -im / mag2;
+        let expected_a0 = p_re * p_re + p_im * p_im;
+        let expected_a1 = -2.0 * p_re;
+        let expected_b0 = 1.0 / (theta.cos() * theta.cos());
+
         let s = chebyshev2_lowpass::<f64>(2, 20.0).next().unwrap();
-        // A stable section has all-positive, finite denominator coefficients (poles
-        // strictly in the left half-plane, encoded via the same `a[2] = 1` monic,
-        // ascending-power convention as Type-I and Butterworth).
-        assert!(s.a[0].is_finite() && s.a[0] > 0.0);
-        assert!(s.a[1].is_finite() && s.a[1] > 0.0);
+
+        approx::assert_abs_diff_eq!(s.a[0], expected_a0, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(s.a[1], expected_a1, epsilon = 1e-9);
         assert_eq!(s.a[2], 1.0);
-        // Type-II has finite transmission zeros on the imaginary axis, unlike the
-        // all-pole Type-I/Butterworth prototypes, so `b[0]` (the zero's magnitude
-        // squared) must be finite and positive rather than the `b = [1,0,0]`
-        // all-pole numerator.
-        assert!(s.b[0].is_finite() && s.b[0] > 0.0);
+        approx::assert_abs_diff_eq!(s.b[0], expected_b0, epsilon = 1e-9);
+        assert_eq!(s.b[1], 0.0);
         assert_eq!(s.b[2], 1.0);
+
+        // The inverted pole's real/imaginary parts must differ meaningfully from
+        // the un-inverted Type-I pole `s_0`, proving the inversion actually ran
+        // rather than being a no-op that passed the coefficients through.
+        assert!((p_re - re).abs() > 1e-3);
+        assert!((p_im - im).abs() > 1e-3);
     }
 
     #[test]
@@ -266,15 +288,22 @@ mod tests {
     #[test]
     fn chebyshev2_odd_order_trailing_real_pole_has_no_finite_zero() {
         // Order 3's trailing real pole comes from inverting Type-I's middle real
-        // pole; the corresponding zero would sit at `i / cos(pi/2) = i / 0`, i.e.
-        // at infinity, so the trailing section stays all-pole (`b = [1,0,0]`) like
-        // Type-I's own trailing real-pole section.
+        // pole `s = -sinh(nu)`, giving `1/s = -1/sinh(nu)`; the corresponding zero
+        // would sit at `i / cos(pi/2) = i / 0`, i.e. at infinity, so the trailing
+        // section stays all-pole (`b = [1,0,0]`) like Type-I's own trailing
+        // real-pole section. `trailing.a[0]` is pinned to the hand-derived
+        // `1/sinh(nu)` value (rather than merely `> 0.0`) so a skipped or
+        // malformed inversion of the real pole is also caught.
+        let eps = (10f64.powf(20.0 / 10.0) - 1.0).sqrt();
+        let nu = eps.asinh() / 3.0;
+        let expected_a0 = 1.0 / nu.sinh();
+
         let sections: alloc::vec::Vec<_> = chebyshev2_lowpass::<f64>(3, 20.0).collect();
         assert_eq!(sections.len(), 2);
         let trailing = sections[1];
         assert_eq!(trailing.a[2], 0.0);
         assert_eq!(trailing.a[1], 1.0);
-        assert!(trailing.a[0] > 0.0);
+        approx::assert_abs_diff_eq!(trailing.a[0], expected_a0, epsilon = 1e-9);
         assert_eq!(trailing.b, [1.0, 0.0, 0.0]);
     }
 
