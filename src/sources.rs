@@ -35,6 +35,8 @@ pub mod peek;
 
 pub mod repeat;
 
+pub mod sampler;
+
 pub mod skip;
 
 pub mod step;

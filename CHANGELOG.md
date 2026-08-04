@@ -30,6 +30,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Timed<T, Tm = T>` value wrapper
 - Added `Lift<F>` filter wrapper
 - Added `sample_phase` helper for mapping fractional sample positions to wrapped phase
+- Added `Sampler<F>` cadence emitter
 
 ### Changed
 
