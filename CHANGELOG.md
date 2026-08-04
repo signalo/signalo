@@ -40,7 +40,14 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Removed
 
-- n/a
+- Removed unused marker traits:
+  - `PhaseShift`
+  - `LinearPhaseShift`
+  - `TimeInvariant`
+  - `ShiftInvariant`
+  - `Causal`
+  - `DiscreteTime`
+  - `ContinuousTime`
 
 ### Fixed
 
