@@ -27,7 +27,11 @@ use crate::traits::ResetMut;
 
 pub mod kahan;
 
+mod trapezoidal;
+
 pub use kahan::KahanIntegrate;
+
+pub use self::trapezoidal::Trapezoidal;
 
 /// The integration filter's state.
 #[derive(Clone, Debug)]
