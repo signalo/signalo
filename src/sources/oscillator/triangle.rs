@@ -17,7 +17,7 @@
 
 use num_traits::float::FloatCore;
 
-use crate::traits::Source;
+use crate::traits::{Filter, Source};
 
 /// The triangle oscillator's configuration.
 ///
@@ -126,6 +126,34 @@ where
     }
 }
 
+impl<T> Filter<T> for TriangleOscillator<T>
+where
+    T: FloatCore,
+{
+    type Output = T;
+
+    /// Evaluates the waveform at fractional sample position `input`.
+    ///
+    /// Maps `input` to a phase using the current [`State::phase`]
+    /// as `phase0`, then applies the same triangle-wave amplitude rule as
+    /// [`TriangleOscillator::next_sample`]. For non-negative `phase_increment` and
+    /// integer `input` this reproduces the corresponding [`Source::source`] emission
+    /// without advancing state.
+    #[inline]
+    fn filter(&mut self, input: T) -> Self::Output {
+        let phase = crate::sources::oscillator::sample_phase(
+            self.state.phase,
+            self.config.phase_increment,
+            input,
+        );
+
+        let phase_offset = phase - self.config.half;
+        let abs_offset = phase_offset.abs();
+
+        self.config.amplitude * (T::one() - self.config.four_times * abs_offset)
+    }
+}
+
 impl_oscillator_traits!(TriangleOscillator, T: FloatCore);
 
 impl<T> Source for TriangleOscillator<T>
@@ -230,6 +258,24 @@ mod tests {
         // Verify all outputs are within [-amplitude, amplitude]
         for sample in &samples {
             assert!((*sample).abs() <= 1.0f32 + 1e-5);
+        }
+    }
+
+    #[test]
+    fn triangle_filter_time_matches_source() {
+        use crate::traits::{Filter, Source};
+        let config = Config {
+            phase_increment: 0.13f32,
+            amplitude: 1.0f32,
+            half: 0.5f32,
+            four_times: 4.0f32,
+        };
+        let mut osc = TriangleOscillator::with_config(config);
+        let mut streamed = osc.clone();
+        for n in 0..8 {
+            let via_source = streamed.source().unwrap();
+            let via_map = <_ as Filter<f32>>::filter(&mut osc, n as f32);
+            approx::assert_abs_diff_eq!(via_map, via_source, epsilon = 1e-6);
         }
     }
 

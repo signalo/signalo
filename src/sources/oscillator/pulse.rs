@@ -20,7 +20,7 @@
 
 use num_traits::float::FloatCore;
 
-use crate::traits::Source;
+use crate::traits::{Filter, Source};
 
 /// The pulse oscillator's configuration.
 ///
@@ -128,6 +128,35 @@ where
         }
 
         output
+    }
+}
+
+impl<T> Filter<T> for PulseOscillator<T>
+where
+    T: FloatCore,
+{
+    type Output = T;
+
+    /// Evaluates the waveform at fractional sample position `input`.
+    ///
+    /// Maps `input` to a phase using the current [`State::phase`]
+    /// as `phase0`, then applies the same duty-cycle amplitude rule as
+    /// [`PulseOscillator::next_sample`]. For non-negative `phase_increment` and
+    /// integer `input` this reproduces the corresponding [`Source::source`] emission
+    /// without advancing state.
+    #[inline]
+    fn filter(&mut self, input: T) -> Self::Output {
+        let phase = crate::sources::oscillator::sample_phase(
+            self.state.phase,
+            self.config.phase_increment,
+            input,
+        );
+
+        if phase < self.config.duty_cycle {
+            self.config.amplitude
+        } else {
+            -self.config.amplitude
+        }
     }
 }
 
@@ -264,6 +293,23 @@ mod tests {
 
         for sample in &samples {
             assert_abs_diff_eq!(*sample, 1.0f32, epsilon = 1e-5);
+        }
+    }
+
+    #[test]
+    fn pulse_filter_time_matches_source() {
+        use crate::traits::{Filter, Source};
+        let config = Config {
+            phase_increment: 0.13f32,
+            amplitude: 1.0f32,
+            duty_cycle: 0.5f32,
+        };
+        let mut osc = PulseOscillator::with_config(config);
+        let mut streamed = osc.clone();
+        for n in 0..8 {
+            let via_source = streamed.source().unwrap();
+            let via_map = <_ as Filter<f32>>::filter(&mut osc, n as f32);
+            approx::assert_abs_diff_eq!(via_map, via_source, epsilon = 1e-6);
         }
     }
 
