@@ -57,3 +57,7 @@ pub mod integrate;
 pub mod loop_filter;
 
 pub mod dc_blocker;
+
+pub mod analog;
+
+pub mod peak_hold;

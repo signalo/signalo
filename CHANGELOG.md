@@ -42,6 +42,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `TimedMean<T>` dt-aware EMA
 - Added `TimedPeakHold<T>` dt-aware decay
 - Added `TimedEnvelope<T>` dt-aware follower
+- Added `AnalogBiquad<T>` s-domain section
 
 ### Changed
 
