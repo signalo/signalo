@@ -6,6 +6,8 @@
 //!
 //! Provides stable recursive generators for sine, cosine, and other periodic signals.
 
+use num_traits::float::FloatCore;
+
 #[macro_use]
 pub(crate) mod macros;
 
@@ -23,3 +25,14 @@ pub mod pulse;
 pub mod triangle;
 
 pub mod sawtooth;
+
+/// Maps a fractional sample position `input` to a wrapped phase in the oscillator's phase space,
+/// as `(phase0 + increment * input).fract()`.
+///
+/// For non-negative `increment` and non-negative resulting phase this reproduces the phase used by
+/// the oscillators' `Source::source` path. It does not renormalize negative phase: with a negative
+/// `increment` (or a negative accumulated phase) the result lies in `(-1, 0]`, matching `.fract()`
+/// rather than `Source::source`'s positive-only wrap.
+pub(crate) fn sample_phase<T: FloatCore>(phase0: T, increment: T, input: T) -> T {
+    (phase0 + increment * input).fract()
+}

@@ -29,6 +29,7 @@ Please make sure to add your changes to the appropriate categories:
 - Moved every phase-word, phase-step and frequency conversion from `Nco` to `math::phase` as free functions: `phase_word_from_turns`, `phase_word_from_radians`, `turns_from_phase_word`, `radians_from_phase_word`, `phase_step_from_turns_per_sample`, `phase_step_from_radians_per_sample`, `phase_step_from_frequency`, `turns_per_sample_from_phase_step`, `radians_per_sample_from_phase_step` and `frequency_from_phase_step`. `math::phase` owns the phase-word representation, and none of these involve the oscillator's scalar type, so calling them through `Nco` needed a turbofish for a type parameter they never used. The `Nco` associated functions remain and delegate, so existing callers are unaffected and agree bit for bit
 - Added `Timed<T, Tm = T>` value wrapper
 - Added `Lift<F>` filter wrapper
+- Added `sample_phase` helper for mapping fractional sample positions to wrapped phase
 
 ### Changed
 
