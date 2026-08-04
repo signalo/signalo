@@ -41,6 +41,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Trapezoidal<T>` dt-aware integrator
 - Added `TimedMean<T>` dt-aware EMA
 - Added `TimedPeakHold<T>` dt-aware decay
+- Added `TimedEnvelope<T>` dt-aware follower
 
 ### Changed
 

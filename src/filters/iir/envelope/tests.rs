@@ -174,3 +174,39 @@ fn smoke() {
         .collect();
     assert_abs_diff_eq!(output.as_slice(), input.as_slice(), epsilon = 1e-6);
 }
+
+#[test]
+fn timed_envelope_fast_attack_tracks_input() {
+    use crate::time::Timed;
+    use crate::traits::Filter;
+    let mut e = TimedEnvelope::from_time_constants(1e-6_f32, 1.0_f32);
+    let y = e.filter(Timed::new(-4.0_f32, 1.0_f32));
+    approx::assert_abs_diff_eq!(y, 4.0, epsilon = 1e-3);
+}
+
+#[test]
+fn timed_envelope_release_decays_toward_zero() {
+    use crate::time::Timed;
+    use crate::traits::Filter;
+    // Fast attack seeds the envelope near |input|; then a below-envelope input uses release_tau.
+    let mut e = TimedEnvelope::from_time_constants(1e-6_f32, 1.0_f32);
+    // Seed dt is 20x attack_tau so the attack step saturates the envelope to ~1.0.
+    let _ = e.filter(Timed::new(1.0_f32, 20e-6));
+    // With input 0 over dt=1.0, tau=1.0: envelope <- (1 - (1-1/e))*prev = (1/e)*prev.
+    let y = e.filter(Timed::new(0.0_f32, 1.0_f32));
+    approx::assert_abs_diff_eq!(y, core::f32::consts::E.recip(), epsilon = 1e-2);
+}
+
+#[test]
+fn timed_envelope_release_uses_dt() {
+    use crate::time::Timed;
+    use crate::traits::Filter;
+    // A larger dt on the release branch decays further toward zero than a smaller dt.
+    let mut slow = TimedEnvelope::from_time_constants(1e-6_f32, 1.0_f32);
+    let _ = slow.filter(Timed::new(1.0_f32, 1e-6));
+    let y_small = slow.filter(Timed::new(0.0_f32, 0.1_f32));
+    let mut fast = TimedEnvelope::from_time_constants(1e-6_f32, 1.0_f32);
+    let _ = fast.filter(Timed::new(1.0_f32, 1e-6));
+    let y_big = fast.filter(Timed::new(0.0_f32, 1.0_f32));
+    assert!(y_big < y_small);
+}

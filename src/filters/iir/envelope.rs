@@ -9,6 +9,7 @@
 
 use num_traits::{Num, Signed};
 
+use crate::time::Timed;
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -177,6 +178,75 @@ where
         self.state.envelope =
             coeff.clone() * abs_input + one_minus_coeff * self.state.envelope.clone();
         self.state.envelope.clone()
+    }
+}
+
+/// An envelope follower for irregularly-timed samples, parameterized by time constants.
+///
+/// Tracks the envelope (peak amplitude) of a signal with asymmetric attack and
+/// release characteristics, deriving its per-sample smoothing coefficient from
+/// each sample's elapsed time `dt` rather than from a fixed coefficient. This
+/// keeps the response consistent under non-uniform sampling, unlike [`Envelope`]
+/// whose fixed `attack`/`release` coefficients assume a constant sample rate.
+///
+/// Per sample the smoothing coefficient is `alpha = 1 − exp(−dt / tau)`, using
+/// `attack_tau` when the input magnitude exceeds the current envelope and
+/// `release_tau` otherwise. The envelope then updates as
+/// `envelope = alpha · |input| + (1 − alpha) · envelope`, mirroring [`Envelope`].
+///
+/// # Complexity
+///
+/// - **Time per sample:** O(1); one absolute value, one comparison, one
+///   exponential, and two multiply-add steps.
+/// - **Space:** O(1); stores one envelope value and two time constants.
+#[derive(Clone, Debug)]
+pub struct TimedEnvelope<T> {
+    attack_tau: T,
+    release_tau: T,
+    envelope: T,
+}
+
+impl<T> TimedEnvelope<T>
+where
+    T: num_traits::Float,
+{
+    /// Creates an envelope follower with the given attack and release time
+    /// constants (same units as the samples' `dt`).
+    ///
+    /// The initial envelope is `T::zero()`.
+    pub fn from_time_constants(attack_tau: T, release_tau: T) -> Self {
+        let envelope = T::zero();
+
+        Self {
+            attack_tau,
+            release_tau,
+            envelope,
+        }
+    }
+}
+
+impl<T> Filter<Timed<T, T>> for TimedEnvelope<T>
+where
+    T: num_traits::Float + Signed,
+{
+    type Output = T;
+
+    fn filter(&mut self, input: Timed<T, T>) -> Self::Output {
+        let Timed { value, dt } = input;
+
+        let abs_input = value.abs();
+
+        let tau = if abs_input > self.envelope {
+            self.attack_tau
+        } else {
+            self.release_tau
+        };
+
+        let coeff = crate::time::smoothing_alpha(dt, tau);
+
+        self.envelope = coeff * abs_input + (T::one() - coeff) * self.envelope;
+
+        self.envelope
     }
 }
 
