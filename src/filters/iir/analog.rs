@@ -38,6 +38,9 @@ impl<T> AnalogBiquad<T> {
     }
 }
 
+mod chebyshev;
+pub use self::chebyshev::{chebyshev1_lowpass, chebyshev2_lowpass};
+
 /// Yields the normalized (`ωc = 1`) lowpass Butterworth prototype as second-order sections.
 ///
 /// The Butterworth prototype of a given `order` has poles spaced evenly around the left half of
