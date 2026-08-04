@@ -172,28 +172,12 @@ pub fn lp_to_hp<T: num_traits::Float>(section: AnalogBiquad<T>, wc: T) -> Analog
 /// assert!(coeffs[0] > 0.0);
 /// ```
 ///
-/// Passing `prewarp_hz >= sample_rate / 2` on an upstream-pre-warped `section` is a
-/// precondition violation: the pre-warp cutoff computed from such a frequency diverges (the
-/// tangent has a pole at `sample_rate / 2`), and this function performs no clamping or
-/// validation — it propagates whatever non-finite values result.
-///
-/// In debug builds, panics if `prewarp_hz` is not in `(0, sample_rate / 2)`, since a pre-warp
-/// target outside that range cannot correspond to a finite pre-warped analog cutoff.
-///
-/// # Panics
-///
-/// Panics in debug builds if `prewarp_hz <= 0` or `prewarp_hz >= sample_rate / 2`.
-pub fn bilinear<T: num_traits::Float>(
-    section: AnalogBiquad<T>,
-    sample_rate: T,
-    prewarp_hz: T,
-) -> [T; 5] {
-    debug_assert!(prewarp_hz > T::zero(), "prewarp_hz must be positive");
-    debug_assert!(
-        prewarp_hz < sample_rate / (T::one() + T::one()),
-        "prewarp_hz must be below Nyquist (sample_rate / 2)"
-    );
-
+/// This function performs no clamping or validation of `section` — it is a pure coefficient
+/// transform. The only source of non-finite output is `section` itself, which propagates
+/// through unmodified if, for instance, an upstream pre-warp computation such as
+/// `2·sample_rate·tan(π·f/sample_rate)` was evaluated at `f ≥ sample_rate / 2` (a pole of `tan`)
+/// before being passed into [`lp_to_lp`] or an equivalent scaling step.
+pub fn bilinear<T: num_traits::Float>(section: AnalogBiquad<T>, sample_rate: T) -> [T; 5] {
     let two = T::one() + T::one();
     let k = two * sample_rate;
     let k2 = k * k;
