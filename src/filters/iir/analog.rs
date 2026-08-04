@@ -38,6 +38,98 @@ impl<T> AnalogBiquad<T> {
     }
 }
 
+/// Yields the normalized (`ωc = 1`) lowpass Butterworth prototype as second-order sections.
+///
+/// The Butterworth prototype of a given `order` has poles spaced evenly around the left half of
+/// the unit circle in the s-plane, at angles `s_k = exp(i·π·(2k + order + 1) / (2·order))` for
+/// `k = 0, …, order - 1`. Complex-conjugate pole pairs `(s_k, s_k*)` combine into a real quadratic
+/// factor `s² - 2·Re(s_k)·s + 1`, since `|s_k| = 1`; this iterator yields one [`AnalogBiquad`] per
+/// such pair. For an odd `order`, one real pole at `s = -1` remains unpaired and is yielded as a
+/// trailing first-order section, encoded with `a = [1, 1, 0]` and `b = [1, 0, 0]`.
+///
+/// An `order` of zero yields an empty iterator.
+///
+/// # Panics
+///
+/// Panics while iterating if `order` or a pole-pair index does not fit into `T`, which cannot
+/// happen for any of `num_traits::Float`'s built-in implementors (`f32`, `f64`) and a realistic
+/// `order`.
+///
+/// # Examples
+///
+/// ```
+/// # use signalo::filters::iir::analog::butterworth_lowpass;
+/// assert_eq!(butterworth_lowpass::<f64>(2).count(), 1);
+/// ```
+pub fn butterworth_lowpass<T: num_traits::Float>(
+    order: usize,
+) -> impl Iterator<Item = AnalogBiquad<T>> {
+    PoleSections {
+        pair_count: order / 2,
+        pair_index: 0,
+        first_order_count: order % 2,
+        pair: move |pair_index: usize| {
+            let one = T::one();
+            let two = one + one;
+            let four = two + two;
+            let pi = four * T::atan(one);
+
+            let n = T::from(order).expect("order fits into T");
+            let k = T::from(pair_index).expect("pair_index fits into T");
+            let angle = pi * (two * k + n + one) / (two * n);
+            let re = angle.cos();
+
+            AnalogBiquad::new([one, T::zero(), T::zero()], [one, -two * re, one])
+        },
+        first_order: || {
+            let one = T::one();
+
+            AnalogBiquad::new([one, T::zero(), T::zero()], [one, one, T::zero()])
+        },
+        _phantom: core::marker::PhantomData,
+    }
+}
+
+/// Lazily computes normalized Butterworth lowpass sections one at a time.
+///
+/// Shared by analog lowpass prototypes (Butterworth, Chebyshev, …) whose poles decompose into
+/// complex-conjugate pairs plus, for odd order, one unpaired real pole. `pair` computes the
+/// quadratic section for pole-pair index `k` (`0 <= k < pair_count`); `first_order` computes the
+/// trailing real-pole section and is called `first_order_count` times.
+struct PoleSections<T, Pair, First> {
+    pair_count: usize,
+    pair_index: usize,
+    first_order_count: usize,
+    pair: Pair,
+    first_order: First,
+    _phantom: core::marker::PhantomData<T>,
+}
+
+impl<T, Pair, First> Iterator for PoleSections<T, Pair, First>
+where
+    Pair: FnMut(usize) -> AnalogBiquad<T>,
+    First: FnMut() -> AnalogBiquad<T>,
+{
+    type Item = AnalogBiquad<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pair_index < self.pair_count {
+            let section = (self.pair)(self.pair_index);
+            self.pair_index += 1;
+
+            return Some(section);
+        }
+
+        if self.first_order_count > 0 {
+            self.first_order_count -= 1;
+
+            return Some((self.first_order)());
+        }
+
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -47,5 +139,21 @@ mod tests {
         let s = AnalogBiquad::new([1.0_f64, 2.0, 3.0], [4.0, 5.0, 6.0]);
         assert_eq!(s.b, [1.0, 2.0, 3.0]);
         assert_eq!(s.a, [4.0, 5.0, 6.0]);
+    }
+
+    #[test]
+    fn butterworth_order2_is_canonical_section() {
+        let sections: alloc::vec::Vec<_> = butterworth_lowpass::<f64>(2).collect();
+        assert_eq!(sections.len(), 1);
+        approx::assert_abs_diff_eq!(sections[0].a[0], 1.0, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(sections[0].a[1], 2.0f64.sqrt(), epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(sections[0].a[2], 1.0, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(sections[0].b[0], 1.0, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn butterworth_order0_yields_empty_iterator() {
+        let sections: alloc::vec::Vec<_> = butterworth_lowpass::<f64>(0).collect();
+        assert_eq!(sections.len(), 0);
     }
 }
