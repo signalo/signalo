@@ -15,8 +15,8 @@ use num_traits::{Float, One, Zero};
 
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
-    Config as ConfigTrait, ConfigClone, ConfigRef, Reset, Source, State as StateTrait, StateMut,
-    WithConfig,
+    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, Source, State as StateTrait,
+    StateMut, WithConfig,
 };
 
 #[cfg(feature = "derive")]
@@ -257,6 +257,31 @@ where
         self.state.sample_index += 1;
 
         Some(output)
+    }
+}
+
+impl<T> Filter<T> for Chirp<T>
+where
+    T: Float,
+{
+    type Output = T;
+
+    /// Evaluates the swept sine at the fractional sample position `input`.
+    ///
+    /// Reproduces [`Source::source`] for integer `input` values, relative to the
+    /// current state, without advancing that state. Because the ramping phase
+    /// increment accumulates arithmetically, stepping `input` samples from the
+    /// current phase adds `current_phase_increment * input` plus a quadratic
+    /// `phase_increment_delta * input * (input - 1) / 2` correction. Unlike
+    /// [`Source::source`], this ignores `num_samples` and is defined for every
+    /// finite `input`.
+    #[inline]
+    fn filter(&mut self, input: T) -> Self::Output {
+        let two = T::one() + T::one();
+        let quadratic = self.state.phase_increment_delta * input * (input - T::one()) / two;
+        let phase = self.state.phase + self.state.current_phase_increment * input + quadratic;
+
+        phase.sin()
     }
 }
 

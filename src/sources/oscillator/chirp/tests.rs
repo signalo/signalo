@@ -166,6 +166,24 @@ fn test_chirp_state_reset_at_construction() {
 }
 
 #[test]
+fn chirp_filter_time_matches_source() {
+    use crate::traits::{Filter, Source};
+    let config = Config {
+        phase_increment_start: 0.1f32,
+        phase_increment_end: 0.3f32,
+        num_samples: 16,
+    };
+    let n_max = config.num_samples;
+    let mut osc = Chirp::with_config(config);
+    let mut streamed = osc.clone();
+    for n in 0..n_max {
+        let via_source = streamed.source().unwrap();
+        let via_map = <_ as Filter<f32>>::filter(&mut osc, n as f32);
+        approx::assert_abs_diff_eq!(via_map, via_source, epsilon = 1e-5);
+    }
+}
+
+#[test]
 fn test_chirp_f64() {
     use alloc::vec::Vec;
     use core::f64::consts::PI;
