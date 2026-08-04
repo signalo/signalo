@@ -39,6 +39,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Filter<Timed<T, Tm>>` rectangular integrator
 - Added `Filter<Timed<T, Tm>>` dt-aware prediction
 - Added `Trapezoidal<T>` dt-aware integrator
+- Added `TimedMean<T>` dt-aware EMA
 
 ### Changed
 

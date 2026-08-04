@@ -8,3 +8,7 @@
 
 pub mod mean;
 pub mod mean_variance;
+
+mod timed_mean;
+
+pub use self::timed_mean::TimedMean;
