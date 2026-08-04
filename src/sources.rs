@@ -39,6 +39,8 @@ pub mod sampler;
 
 pub mod skip;
 
+pub mod stamp;
+
 pub mod step;
 
 pub mod take;
