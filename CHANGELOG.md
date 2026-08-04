@@ -36,6 +36,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Filter<T>` waveform maps for square and sawtooth oscillators
 - Added `Filter<T>` waveform maps for triangle and pulse oscillators
 - Added `Filter<T>` quadratic-phase map for `Chirp<T>`
+- Added `Filter<Timed<T, Tm>>` rectangular integrator
 
 ### Changed
 

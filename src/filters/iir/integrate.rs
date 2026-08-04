@@ -10,13 +10,16 @@
 //! [`Integrate`] is the minimal plain accumulator. [`KahanIntegrate`] uses
 //! compensated summation for long-running floating-point accumulators.
 
-use core::ops::Add;
+use core::ops::{Add, Mul};
 
 use num_traits::Zero;
 
-use crate::traits::{
-    guts::{FromGuts, HasGuts, IntoGuts},
-    Filter, Reset, State as StateTrait, StateMut,
+use crate::{
+    time::Timed,
+    traits::{
+        guts::{FromGuts, HasGuts, IntoGuts},
+        Filter, Reset, State as StateTrait, StateMut,
+    },
 };
 
 #[cfg(feature = "derive")]
@@ -109,6 +112,21 @@ where
     }
 }
 
+impl<T, Tm> Filter<Timed<T, Tm>> for Integrate<T>
+where
+    T: Clone + Add<T, Output = T> + Mul<Tm, Output = T> + Zero,
+{
+    type Output = T;
+
+    fn filter(&mut self, input: Timed<T, Tm>) -> Self::Output {
+        let contribution = input.value * input.dt;
+        let state = self.state.value.clone() + contribution;
+        self.state.value = state.clone();
+
+        state
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::vec::Vec;
@@ -138,5 +156,31 @@ mod tests {
             .as_slice(),
             epsilon = 1e-6
         );
+    }
+
+    #[test]
+    fn integrate_timed_rectangular_area() {
+        use crate::time::Timed;
+        use crate::traits::Filter;
+        let mut f = Integrate::<f32>::default();
+        let mut last = 0.0;
+        for _ in 0..10 {
+            last = f.filter(Timed::new(2.0_f32, 0.5_f32));
+        }
+        approx::assert_abs_diff_eq!(last, 2.0 * 10.0 * 0.5, epsilon = 1e-6); // 10.0
+    }
+
+    #[test]
+    fn integrate_timed_reduces_to_running_sum() {
+        use crate::time::Timed;
+        use crate::traits::Filter;
+        let inputs = [0.0_f32, 1.0, 7.0, 2.0, 5.0];
+        let mut a = Integrate::<f32>::default();
+        let mut b = Integrate::<f32>::default();
+        for x in inputs {
+            let via_timed = a.filter(Timed::new(x, 1.0_f32));
+            let via_plain = b.filter(x);
+            approx::assert_abs_diff_eq!(via_timed, via_plain, epsilon = 1e-6);
+        }
     }
 }
