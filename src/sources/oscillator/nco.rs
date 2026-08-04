@@ -14,7 +14,7 @@
 //! and out of them delegates there.
 
 use crate::math;
-use crate::traits::Source;
+use crate::traits::{Filter, Source};
 
 use core::marker::PhantomData;
 use num_traits::float::FloatCore;
@@ -557,6 +557,32 @@ where
     }
 }
 
+/// `Nco` implements [`Filter<f32>`] rather than `Filter<T>`, pinning the fractional-position
+/// input to `f32` regardless of `T`. This is deliberate: the phase backend in
+/// [`math::phase`] is `f32`-based, so a fractional sample position is always resolved at
+/// `f32` precision before conversion to the phase word. This diverges from the sibling
+/// oscillators (`SquareOscillator`, `SawtoothOscillator`, `TriangleOscillator`,
+/// `PulseOscillator`, [`crate::sources::oscillator::chirp::Chirp`]), which implement
+/// `Filter<T>` and evaluate at `T`'s own precision.
+impl<T> Filter<f32> for Nco<T>
+where
+    T: FloatCore + From<f32>,
+{
+    type Output = (T, T);
+
+    /// Evaluates `(sin, cos)` at fractional sample position `t` without mutating state.
+    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+    fn filter(&mut self, t: f32) -> Self::Output {
+        // Reads through the same fixed-point phase backend the NCO steps with, so a
+        // fractional position agrees with an integer number of `step` calls. `FloatCore::round`
+        // rather than the inherent `f32::round`, which is `std`-only, keeps this `no_std`.
+        let delta = FloatCore::round(self.config.phase_step as f32 * t) as i32;
+        let phase = self.state.phase.wrapping_add(delta.cast_unsigned());
+        let (sin, cos) = math::phase::sin_cos(phase);
+        (From::from(sin), From::from(cos))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
@@ -843,5 +869,20 @@ mod tests {
 
         assert_abs_diff_eq!(phasor.re, 0.0, epsilon = EPS);
         assert_abs_diff_eq!(phasor.im, 1.0, epsilon = EPS);
+    }
+
+    #[test]
+    fn nco_filter_time_matches_stepping() {
+        use crate::traits::Filter;
+        let mut nco = Nco::<f32>::from_phase_step(0x0100_0000); // arbitrary non-trivial step
+        let at_zero = <Nco<f32> as Filter<f32>>::filter(&mut nco, 0.0);
+        assert_eq!(at_zero, nco.sin_cos());
+        let mut stepped = nco.clone();
+        stepped.step();
+        stepped.step();
+        stepped.step();
+        let at_three = <Nco<f32> as Filter<f32>>::filter(&mut nco, 3.0);
+        approx::assert_abs_diff_eq!(at_three.0, stepped.sin_cos().0, epsilon = 1e-6);
+        approx::assert_abs_diff_eq!(at_three.1, stepped.sin_cos().1, epsilon = 1e-6);
     }
 }

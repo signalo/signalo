@@ -32,6 +32,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `sample_phase` helper for mapping fractional sample positions to wrapped phase
 - Added `Sampler<F>` cadence emitter
 - Added `Stamp<S, Tm>` constant-`dt` source wrapper
+- Added `Filter<f32>` quadrature map for `Nco<T>`
 
 ### Changed
 
