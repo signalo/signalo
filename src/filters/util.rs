@@ -41,5 +41,6 @@
 pub mod delay;
 pub mod identity;
 pub mod last;
+pub mod lift;
 pub mod uom;
 pub(crate) mod window;
