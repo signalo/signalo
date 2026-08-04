@@ -141,6 +141,74 @@ pub fn lp_to_hp<T: num_traits::Float>(section: AnalogBiquad<T>, wc: T) -> Analog
     )
 }
 
+/// Bilinear-transforms an analog section to digital biquad coefficients
+/// `[b0, b1, b2, a1, a2]` (the layout used by [`biquad`](super::biquad)).
+///
+/// Substitutes `s = 2·sample_rate·(1 − z⁻¹)/(1 + z⁻¹)` into `section`'s transfer function
+/// `H(s) = (b[2] s² + b[1] s + b[0]) / (a[2] s² + a[1] s + a[0])`, then clears the negative
+/// powers of `z` by multiplying through by `(1 + z⁻¹)²` and collecting `z⁻¹` powers.
+/// This is the standard bilinear transform constant `K = 2·sample_rate`, used as-is: the
+/// frequency warping inherent to the bilinear transform is compensated exactly once, upstream,
+/// by scaling `section`'s analog cutoff to `2·sample_rate·tan(π·f/sample_rate)` for the desired
+/// digital cutoff `f` — for example via [`lp_to_lp`] — before calling this function. Composing
+/// that pre-warped cutoff with the plain substitution constant here reproduces the reference RBJ
+/// Audio EQ Cookbook biquad recipe exactly; re-applying the tangent warp to `K` itself would
+/// double-warp the result.
+///
+/// The output is normalized so `a0 == 1`, matching the convention of
+/// [`Butterworth::lowpass`](super::biquad::coefficients::Butterworth::lowpass) and other
+/// [`biquad::coefficients`](super::biquad::coefficients) factories.
+///
+/// # Examples
+///
+/// ```
+/// # use signalo::filters::iir::analog::{butterworth_lowpass, lp_to_lp, bilinear};
+/// let fs = 48000.0_f64;
+/// let fc = 1000.0_f64;
+/// let proto = butterworth_lowpass::<f64>(2).next().unwrap();
+/// let wc = 2.0 * fs * (core::f64::consts::PI * fc / fs).tan();
+/// let warped = lp_to_lp(proto, wc);
+/// let coeffs = bilinear(warped, fs);
+/// assert!(coeffs[0] > 0.0);
+/// ```
+///
+/// Passing `prewarp_hz >= sample_rate / 2` on an upstream-pre-warped `section` is a
+/// precondition violation: the pre-warp cutoff computed from such a frequency diverges (the
+/// tangent has a pole at `sample_rate / 2`), and this function performs no clamping or
+/// validation — it propagates whatever non-finite values result.
+///
+/// In debug builds, panics if `prewarp_hz` is not in `(0, sample_rate / 2)`, since a pre-warp
+/// target outside that range cannot correspond to a finite pre-warped analog cutoff.
+///
+/// # Panics
+///
+/// Panics in debug builds if `prewarp_hz <= 0` or `prewarp_hz >= sample_rate / 2`.
+pub fn bilinear<T: num_traits::Float>(
+    section: AnalogBiquad<T>,
+    sample_rate: T,
+    prewarp_hz: T,
+) -> [T; 5] {
+    debug_assert!(prewarp_hz > T::zero(), "prewarp_hz must be positive");
+    debug_assert!(
+        prewarp_hz < sample_rate / (T::one() + T::one()),
+        "prewarp_hz must be below Nyquist (sample_rate / 2)"
+    );
+
+    let two = T::one() + T::one();
+    let k = two * sample_rate;
+    let k2 = k * k;
+
+    let b0 = section.b[2] * k2 + section.b[1] * k + section.b[0];
+    let b1 = two * (section.b[0] - section.b[2] * k2);
+    let b2 = section.b[2] * k2 - section.b[1] * k + section.b[0];
+
+    let a0 = section.a[2] * k2 + section.a[1] * k + section.a[0];
+    let a1 = two * (section.a[0] - section.a[2] * k2);
+    let a2 = section.a[2] * k2 - section.a[1] * k + section.a[0];
+
+    [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0]
+}
+
 /// Lazily computes normalized Butterworth lowpass sections one at a time.
 ///
 /// Shared by analog lowpass prototypes (Butterworth, Chebyshev, …) whose poles decompose into
@@ -264,5 +332,19 @@ mod tests {
         approx::assert_abs_diff_eq!(t.a[0], 4.0 * wc * wc, epsilon = 1e-9);
         approx::assert_abs_diff_eq!(t.a[1], 3.0 * wc, epsilon = 1e-9);
         approx::assert_abs_diff_eq!(t.a[2], 2.0, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn bilinear_butterworth_matches_rbj_lowpass() {
+        use crate::filters::iir::biquad::coefficients::Butterworth;
+        let fs = 48000.0_f64;
+        let fc = 1000.0_f64;
+        let proto = butterworth_lowpass::<f64>(2).next().unwrap();
+        let warped = lp_to_lp(proto, 2.0 * fs * (core::f64::consts::PI * fc / fs).tan());
+        let got = bilinear(warped, fs);
+        let want = Butterworth::lowpass(fs, fc);
+        for i in 0..5 {
+            approx::assert_abs_diff_eq!(got[i], want[i], epsilon = 1e-6);
+        }
     }
 }

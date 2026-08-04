@@ -45,6 +45,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `AnalogBiquad<T>` s-domain section
 - Added `butterworth_lowpass` normalized prototype
 - Added `lp_to_lp`/`lp_to_hp` s-domain transforms
+- Added `bilinear` transform for digital biquad coefficients to "analog.rs"
 
 ### Changed
 
