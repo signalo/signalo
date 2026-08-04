@@ -90,6 +90,57 @@ pub fn butterworth_lowpass<T: num_traits::Float>(
     }
 }
 
+/// Transforms a normalized lowpass [`AnalogBiquad`] to a lowpass with cutoff `wc`.
+///
+/// Applies the substitution `s → s/wc` to `section`'s transfer function
+/// `H(s) = (b[2] s² + b[1] s + b[0]) / (a[2] s² + a[1] s + a[0])`. Clearing the resulting
+/// `1/wc²` factors from both numerator and denominator scales each coefficient by a power of
+/// `wc` matching its order: the constant term (`b[0]`/`a[0]`) picks up `wc²`, the linear term
+/// (`b[1]`/`a[1]`) picks up `wc`, and the quadratic term (`b[2]`/`a[2]`) is unchanged.
+///
+/// # Examples
+///
+/// ```
+/// # use signalo::filters::iir::analog::{AnalogBiquad, lp_to_lp};
+/// let section = AnalogBiquad::new([1.0_f64, 0.0, 0.0], [1.0, 2.0f64.sqrt(), 1.0]);
+/// let scaled = lp_to_lp(section, 2.0);
+/// assert_eq!(scaled.a, [4.0, 2.0 * 2.0f64.sqrt(), 1.0]);
+/// ```
+pub fn lp_to_lp<T: num_traits::Float>(section: AnalogBiquad<T>, wc: T) -> AnalogBiquad<T> {
+    let wc2 = wc * wc;
+
+    AnalogBiquad::new(
+        [section.b[0] * wc2, section.b[1] * wc, section.b[2]],
+        [section.a[0] * wc2, section.a[1] * wc, section.a[2]],
+    )
+}
+
+/// Transforms a normalized lowpass [`AnalogBiquad`] to a highpass with cutoff `wc`.
+///
+/// Applies the substitution `s → wc/s` to `section`'s transfer function
+/// `H(s) = (b[2] s² + b[1] s + b[0]) / (a[2] s² + a[1] s + a[0])`. Multiplying numerator and
+/// denominator through by `s²/wc²` clears the negative powers of `s` and swaps the roles of the
+/// constant and quadratic terms: the former constant term (`b[0]`/`a[0]`) becomes the new
+/// quadratic term, the former quadratic term (`b[2]`/`a[2]`) becomes the new constant term scaled
+/// by `wc²`, and the linear term (`b[1]`/`a[1]`) is scaled by `wc`.
+///
+/// # Examples
+///
+/// ```
+/// # use signalo::filters::iir::analog::{AnalogBiquad, lp_to_hp};
+/// let section = AnalogBiquad::new([1.0_f64, 0.0, 0.0], [1.0, 2.0f64.sqrt(), 1.0]);
+/// let highpass = lp_to_hp(section, 1.0);
+/// assert_eq!(highpass.b, [0.0, 0.0, 1.0]);
+/// ```
+pub fn lp_to_hp<T: num_traits::Float>(section: AnalogBiquad<T>, wc: T) -> AnalogBiquad<T> {
+    let wc2 = wc * wc;
+
+    AnalogBiquad::new(
+        [section.b[2] * wc2, section.b[1] * wc, section.b[0]],
+        [section.a[2] * wc2, section.a[1] * wc, section.a[0]],
+    )
+}
+
 /// Lazily computes normalized Butterworth lowpass sections one at a time.
 ///
 /// Shared by analog lowpass prototypes (Butterworth, Chebyshev, …) whose poles decompose into
@@ -155,5 +206,63 @@ mod tests {
     fn butterworth_order0_yields_empty_iterator() {
         let sections: alloc::vec::Vec<_> = butterworth_lowpass::<f64>(0).collect();
         assert_eq!(sections.len(), 0);
+    }
+
+    #[test]
+    fn lp_to_lp_identity_at_unit_cutoff() {
+        let s = butterworth_lowpass::<f64>(2).next().unwrap();
+        let t = lp_to_lp(s, 1.0);
+        for i in 0..3 {
+            approx::assert_abs_diff_eq!(t.a[i], s.a[i], epsilon = 1e-12);
+        }
+    }
+
+    #[test]
+    fn lp_to_lp_scales_cutoff() {
+        let s = butterworth_lowpass::<f64>(2).next().unwrap();
+        let wc = 5.0;
+        let t = lp_to_lp(s, wc);
+        // `a[2]` (quadratic coefficient) is invariant under `s -> s/wc`, while `a[0]`
+        // (constant term) picks up `wc^2`, matching the standard `s^2 + sqrt(2)*wc*s + wc^2`
+        // Butterworth form, so the ratio is `a[0] / a[2]`, not `a[2] / a[0]`.
+        approx::assert_abs_diff_eq!(t.a[0] / t.a[2], wc * wc, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn lp_to_lp_scales_numerator_coefficients() {
+        // A section with all-nonzero numerator coefficients, so every `b` term is exercised.
+        let s = AnalogBiquad::new([3.0_f64, 5.0, 7.0], [1.0, 2.0f64.sqrt(), 1.0]);
+        let wc = 5.0;
+        let t = lp_to_lp(s, wc);
+        approx::assert_abs_diff_eq!(t.b[0], 3.0 * wc * wc, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.b[1], 5.0 * wc, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.b[2], 7.0, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn lp_to_hp_swaps_and_scales_denominator_at_unit_cutoff() {
+        // Canonical order-2 Butterworth: a = [1, sqrt(2), 1], symmetric so `a` is
+        // unchanged by the order-0/order-2 swap at wc = 1, while `b = [1,0,0]`
+        // becomes `[0,0,1]`, i.e. a pure s^2 highpass numerator.
+        let s = butterworth_lowpass::<f64>(2).next().unwrap();
+        let t = lp_to_hp(s, 1.0);
+        approx::assert_abs_diff_eq!(t.a[0], 1.0, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.a[1], 2.0f64.sqrt(), epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.a[2], 1.0, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.b[0], 0.0, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.b[1], 0.0, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.b[2], 1.0, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn lp_to_hp_scales_cutoff() {
+        // A section with distinct, nonzero denominator coefficients so the swap
+        // and per-term scaling by `wc` are all independently exercised.
+        let s = AnalogBiquad::new([1.0_f64, 0.0, 0.0], [2.0, 3.0, 4.0]);
+        let wc = 5.0;
+        let t = lp_to_hp(s, wc);
+        approx::assert_abs_diff_eq!(t.a[0], 4.0 * wc * wc, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.a[1], 3.0 * wc, epsilon = 1e-9);
+        approx::assert_abs_diff_eq!(t.a[2], 2.0, epsilon = 1e-9);
     }
 }
