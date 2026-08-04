@@ -48,6 +48,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `bilinear` transform for digital biquad coefficients to "analog.rs"
 - Added `lowpass_biquad_configs` cascade assembly
 - Added `chebyshev1_lowpass`/`chebyshev2_lowpass` prototypes
+- Added `bessel_lowpass` prototype
 
 ### Changed
 

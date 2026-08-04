@@ -38,6 +38,9 @@ impl<T> AnalogBiquad<T> {
     }
 }
 
+mod bessel;
+pub use self::bessel::bessel_lowpass;
+
 mod chebyshev;
 pub use self::chebyshev::{chebyshev1_lowpass, chebyshev2_lowpass};
 
