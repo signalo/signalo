@@ -71,6 +71,8 @@ pub mod math;
 
 pub mod storage;
 
+pub mod time;
+
 pub mod traits;
 
 pub mod filters;
@@ -86,3 +88,5 @@ pub mod sinks;
 
 // Re-export core traits at crate root for convenience
 pub use self::traits::{Filter, Finalize, MultirateFilter, Sink, Source};
+
+pub use self::time::Timed;
