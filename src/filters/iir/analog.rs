@@ -193,7 +193,55 @@ pub fn bilinear<T: num_traits::Float>(section: AnalogBiquad<T>, sample_rate: T) 
     [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0]
 }
 
-/// Lazily computes normalized Butterworth lowpass sections one at a time.
+/// Converts normalized lowpass `sections` into digital [`biquad::Config`](super::biquad::Config)s
+/// for a lowpass filter with cutoff `freq`, ready to drive a
+/// [`BiquadCascadeArray`](super::biquad::cascade::BiquadCascadeArray).
+///
+/// Each section is scaled to the pre-warped analog cutoff `2·sample_rate·tan(π·freq/sample_rate)`
+/// via [`lp_to_lp`], then discretized with [`bilinear`], so the digital cascade's response at
+/// `freq` matches the analog prototype's response at its own critical frequency. `N` must equal
+/// the number of items `sections` yields.
+///
+/// `freq` must satisfy `0 < freq < sample_rate / 2`. At `freq >= sample_rate / 2` the pre-warp
+/// `2·sample_rate·tan(π·freq/sample_rate)` passes through the pole of `tan`, yielding a degenerate
+/// (huge or negative) cutoff and producing coefficients that do not describe a valid lowpass. This
+/// function performs no clamping or validation of `freq`.
+///
+/// # Panics
+///
+/// Panics if `sections` yields fewer than `N` items.
+///
+/// # Examples
+///
+/// ```
+/// # use signalo::filters::iir::analog::{butterworth_lowpass, lowpass_biquad_configs};
+/// let cfgs = lowpass_biquad_configs::<f64, 1>(butterworth_lowpass(2), 48000.0, 1000.0);
+/// assert!(cfgs[0].b0 > 0.0);
+/// ```
+pub fn lowpass_biquad_configs<T: num_traits::Float, const N: usize>(
+    sections: impl Iterator<Item = AnalogBiquad<T>>,
+    sample_rate: T,
+    freq: T,
+) -> [crate::filters::iir::biquad::Config<T>; N] {
+    let two = T::one() + T::one();
+    let wc = two
+        * sample_rate
+        * (T::from(core::f64::consts::PI).expect("π fits into T") * freq / sample_rate).tan();
+
+    let mut sections = sections.map(|section| {
+        let warped = lp_to_lp(section, wc);
+        crate::filters::iir::biquad::Config::from(bilinear(warped, sample_rate))
+    });
+
+    core::array::from_fn(|_| {
+        sections
+            .next()
+            .expect("`sections` must yield at least `N` items")
+    })
+}
+
+/// Lazily yields `pair_count` conjugate-pole-pair quadratic sections followed by
+/// `first_order_count` real-pole first-order sections.
 ///
 /// Shared by analog lowpass prototypes (Butterworth, Chebyshev, …) whose poles decompose into
 /// complex-conjugate pairs plus, for odd order, one unpaired real pole. `pair` computes the
@@ -330,5 +378,49 @@ mod tests {
         for i in 0..5 {
             approx::assert_abs_diff_eq!(got[i], want[i], epsilon = 1e-6);
         }
+    }
+
+    #[test]
+    fn lowpass_configs_order2_matches_rbj() {
+        use crate::filters::iir::biquad::coefficients::Butterworth;
+        let fs = 48000.0_f64;
+        let fc = 1000.0_f64;
+        let cfgs = lowpass_biquad_configs::<f64, 1>(butterworth_lowpass::<f64>(2), fs, fc);
+        let [b0, _b1, _b2, a1, a2] = Butterworth::lowpass(fs, fc);
+        approx::assert_abs_diff_eq!(cfgs[0].b0, b0, epsilon = 1e-6);
+        approx::assert_abs_diff_eq!(cfgs[0].a1, a1, epsilon = 1e-6);
+        approx::assert_abs_diff_eq!(cfgs[0].a2, a2, epsilon = 1e-6);
+    }
+
+    #[test]
+    fn lowpass_configs_order4_yields_two_finite_sections() {
+        // Order 4 has no simple single-coefficient oracle to compare against, unlike
+        // order 2's RBJ recipe. Instead verify the structural contract: exactly `N`
+        // sections come out, and every coefficient is finite (i.e. the per-section
+        // `lp_to_lp` + `bilinear` pipeline didn't overflow or divide by a degenerate
+        // `a0` for either of the two pole-pair sections that order 4 decomposes into).
+        let fs = 48000.0_f64;
+        let fc = 1000.0_f64;
+        let cfgs = lowpass_biquad_configs::<f64, 2>(butterworth_lowpass::<f64>(4), fs, fc);
+        for cfg in &cfgs {
+            assert!(cfg.b0.is_finite());
+            assert!(cfg.b1.is_finite());
+            assert!(cfg.b2.is_finite());
+            assert!(cfg.a1.is_finite());
+            assert!(cfg.a2.is_finite());
+        }
+        // The two sections come from distinct pole pairs (different angles on the unit
+        // circle), so they must not be numerically identical to each other.
+        assert!((cfgs[0].a1 - cfgs[1].a1).abs() > 1e-9 || (cfgs[0].a2 - cfgs[1].a2).abs() > 1e-9);
+    }
+
+    #[test]
+    fn lowpass_configs_near_nyquist_edge_is_finite() {
+        // Just below Nyquist the pre-warp cutoff is large but finite; coefficients stay finite.
+        let fs = 48000.0_f64;
+        let cfgs = lowpass_biquad_configs::<f64, 1>(butterworth_lowpass::<f64>(2), fs, 0.45 * fs);
+        assert!(cfgs[0].b0.is_finite());
+        assert!(cfgs[0].a1.is_finite());
+        assert!(cfgs[0].a2.is_finite());
     }
 }
