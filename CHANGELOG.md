@@ -37,6 +37,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Filter<T>` waveform maps for triangle and pulse oscillators
 - Added `Filter<T>` quadratic-phase map for `Chirp<T>`
 - Added `Filter<Timed<T, Tm>>` rectangular integrator
+- Added `Filter<Timed<T, Tm>>` dt-aware prediction
 
 ### Changed
 

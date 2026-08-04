@@ -7,12 +7,17 @@
 //! A simplified observer providing first-order adaptive estimation with separate gains
 //! for position and velocity tracking. Computationally lighter than Kalman filters.
 
+use core::ops::{Div, Mul};
+
 use num_traits::{Num, Zero};
 
-use crate::traits::{
-    guts::{FromGuts, HasGuts, IntoGuts},
-    Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
-    WithConfig,
+use crate::{
+    time::Timed,
+    traits::{
+        guts::{FromGuts, HasGuts, IntoGuts},
+        Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait,
+        StateMut, WithConfig,
+    },
 };
 
 #[cfg(feature = "derive")]
@@ -160,6 +165,39 @@ where
     }
 }
 
+impl<T, Tm> Filter<Timed<T, Tm>> for AlphaBeta<T>
+where
+    T: Clone + Num + Mul<Tm, Output = T> + Div<Tm, Output = T>,
+    Tm: Clone,
+{
+    type Output = T;
+
+    fn filter(&mut self, input: Timed<T, Tm>) -> Self::Output {
+        let (velocity, state) = match (self.state.velocity.clone(), self.state.value.clone()) {
+            (velocity, None) => (velocity, input.value),
+            (mut velocity, Some(mut state)) => {
+                let dt = input.dt;
+
+                // Compute prediction (velocity is units-per-time, scaled by `dt`):
+                state = state + (velocity.clone() * dt.clone());
+
+                // Compute residual (error):
+                let residual = input.value - state.clone();
+
+                // Correction:
+                state = state + (self.config.alpha.clone() * residual.clone());
+                velocity = velocity.clone() + (self.config.beta.clone() / dt) * residual;
+
+                (velocity, state)
+            }
+        };
+        self.state.velocity = velocity;
+        self.state.value = Some(state.clone());
+
+        state
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::vec;
@@ -203,5 +241,22 @@ mod tests {
             .collect();
 
         assert_abs_diff_eq!(output.as_slice(), get_output().as_slice(), epsilon = 0.001);
+    }
+
+    #[test]
+    fn alpha_beta_timed_velocity_correction_scales_by_inverse_dt() {
+        use crate::time::Timed;
+        use crate::traits::{Filter, WithConfig};
+        // alpha=0 isolates the velocity path. Standard alpha-beta corrects velocity by beta/dt,
+        // so after residual=1 at dt=0.5, velocity = (1.0/0.5)*1 = 2.0, and the next prediction
+        // over dt=0.5 yields state = 2.0*0.5 = 1.0. The old (beta*residual) code yields 0.5.
+        let mut f = AlphaBeta::with_config(Config {
+            alpha: 0.0_f32,
+            beta: 1.0,
+        });
+        let _ = f.filter(Timed::new(0.0_f32, 0.5)); // seed value=0, velocity=0
+        let _ = f.filter(Timed::new(1.0_f32, 0.5)); // velocity <- (beta/dt)*residual = 2.0
+        let y = f.filter(Timed::new(0.0_f32, 0.5)); // state <- velocity*dt = 1.0
+        approx::assert_abs_diff_eq!(y, 1.0, epsilon = 1e-6);
     }
 }
