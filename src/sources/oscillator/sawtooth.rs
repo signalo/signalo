@@ -16,7 +16,7 @@
 
 use num_traits::float::FloatCore;
 
-use crate::traits::Source;
+use crate::traits::{Filter, Source};
 
 /// The sawtooth oscillator's configuration.
 ///
@@ -109,6 +109,31 @@ where
         }
 
         output
+    }
+}
+
+impl<T> Filter<T> for SawtoothOscillator<T>
+where
+    T: FloatCore,
+{
+    type Output = T;
+
+    /// Evaluates the waveform at fractional sample position `input`.
+    ///
+    /// Maps `input` to a phase using the current [`State::phase`]
+    /// as `phase0`, then applies the same linear-ramp amplitude rule as
+    /// [`SawtoothOscillator::next_sample`]. For non-negative `phase_increment` and
+    /// integer `input` this reproduces the corresponding [`Source::source`] emission
+    /// without advancing state.
+    #[inline]
+    fn filter(&mut self, input: T) -> Self::Output {
+        let phase = crate::sources::oscillator::sample_phase(
+            self.state.phase,
+            self.config.phase_increment,
+            input,
+        );
+
+        self.config.amplitude * (phase + phase - T::one())
     }
 }
 
@@ -217,6 +242,25 @@ mod tests {
         let first_step = steps[0];
         for step in &steps {
             assert_abs_diff_eq!(*step, first_step, epsilon = 1e-5);
+        }
+    }
+
+    #[test]
+    fn sawtooth_filter_time_matches_source() {
+        use crate::traits::{Filter, Source};
+        // frequency ~0.13 cyc/sample: phases 0,.13,.26,.39,.52,.65,.78,.91 over n in 0..8
+        // stay within a single period (no integer phase-wrap boundary).
+        let config = Config {
+            phase_increment: 0.13f32,
+            amplitude: 1.0f32,
+        };
+
+        let mut osc = SawtoothOscillator::with_config(config);
+        let mut streamed = osc.clone();
+        for n in 0..8 {
+            let via_source = streamed.source().unwrap();
+            let via_map = <_ as Filter<f32>>::filter(&mut osc, n as f32);
+            approx::assert_abs_diff_eq!(via_map, via_source, epsilon = 1e-6);
         }
     }
 

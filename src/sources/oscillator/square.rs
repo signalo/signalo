@@ -17,7 +17,7 @@
 
 use num_traits::float::FloatCore;
 
-use crate::traits::Source;
+use crate::traits::{Filter, Source};
 
 /// The square oscillator's configuration.
 ///
@@ -121,6 +121,35 @@ where
     }
 }
 
+impl<T> Filter<T> for SquareOscillator<T>
+where
+    T: FloatCore,
+{
+    type Output = T;
+
+    /// Evaluates the waveform at fractional sample position `input`.
+    ///
+    /// Maps `input` to a phase using the current [`State::phase`]
+    /// as `phase0`, then applies the same square-wave amplitude rule as
+    /// [`SquareOscillator::next_sample`]. For non-negative `phase_increment` and
+    /// integer `input` this reproduces the corresponding [`Source::source`] emission
+    /// without advancing state.
+    #[inline]
+    fn filter(&mut self, input: T) -> Self::Output {
+        let phase = crate::sources::oscillator::sample_phase(
+            self.state.phase,
+            self.config.phase_increment,
+            input,
+        );
+
+        if phase < self.config.half_threshold {
+            self.config.amplitude
+        } else {
+            -self.config.amplitude
+        }
+    }
+}
+
 impl_oscillator_traits!(SquareOscillator, T: FloatCore);
 
 impl<T> Source for SquareOscillator<T>
@@ -213,6 +242,27 @@ mod tests {
         // All should be either +1 or -1 (no NaN or out-of-bounds values)
         for sample in samples {
             assert!(sample == 1.0f32 || sample == -1.0f32);
+        }
+    }
+
+    #[test]
+    fn square_filter_time_matches_source() {
+        use crate::traits::{Filter, Source};
+        // frequency ~0.13 cyc/sample: phases 0,.13,.26,.39,.52,.65,.78,.91 over n in 0..8
+        // cross the 0.5 threshold between n=3 and n=4 (exercising both branches) with no
+        // integer sample landing on the threshold or an integer phase-wrap boundary.
+        let config = Config {
+            phase_increment: 0.13f32,
+            amplitude: 1.0f32,
+            half_threshold: 0.5f32,
+        };
+
+        let mut osc = SquareOscillator::with_config(config);
+        let mut streamed = osc.clone();
+        for n in 0..8 {
+            let via_source = streamed.source().unwrap();
+            let via_map = <_ as Filter<f32>>::filter(&mut osc, n as f32);
+            approx::assert_abs_diff_eq!(via_map, via_source, epsilon = 1e-6);
         }
     }
 

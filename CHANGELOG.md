@@ -33,6 +33,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `Sampler<F>` cadence emitter
 - Added `Stamp<S, Tm>` constant-`dt` source wrapper
 - Added `Filter<f32>` quadrature map for `Nco<T>`
+- Added `Filter<T>` waveform maps for square and sawtooth oscillators
 
 ### Changed
 
