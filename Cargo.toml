@@ -41,3 +41,7 @@ panic_abort = ["replace_with/panic_abort"]
 derive = []
 derive_reset_mut = []
 dimensioned = ["dep:dimensioned"]
+
+[[example]]
+name = "sdr_channelizer"
+required-features = ["complex"]
