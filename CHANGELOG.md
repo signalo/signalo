@@ -31,6 +31,8 @@ Please make sure to add your changes to the appropriate categories:
 ### Changed
 
 - `Nco::phase_step_from_frequency` now delegates to the shared turns-per-sample conversion (behavior unchanged; tested as bit-for-bit equivalent)
+- `storage::RingBuffer` has a new required method `as_slices`, returning a pair of slices over the elements from oldest to newest: the first slice holds the older run and the second is empty when the contents are contiguous. All three in-crate backends implement it; out-of-crate implementors of the trait must add it
+- `PolyphaseFilterBank::execute` now takes taps as a `(&[T], &[T])` slice pair instead of an `IntoIterator<Item = &T>`. The concatenation of the pair is still ordered oldest to newest, with `h[phase]` multiplying the newest sample, and both panic conditions and their messages are unchanged. Callers pass the ring buffer's slice pair directly instead of an iterator over it
 
 ### Deprecated
 
