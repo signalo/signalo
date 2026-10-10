@@ -419,6 +419,54 @@ where
     back.iter().fold(sum, |sum, sample| sum + sample.clone())
 }
 
+// Accumulates the products of the k-th oldest samples of both sides into a
+// single running sum, in ascending `k`, stopping when the shorter side runs
+// out. Each side arrives as two runs whose concatenation is oldest-to-newest.
+// Zipping the two first runs and then the two second runs would be wrong: the
+// two rings may split at different physical offsets, so their runs generally
+// have different lengths. Instead the walk repeatedly folds the longest
+// prefixes both current runs can supply, which yields at most three contiguous
+// segment pairs. The single accumulator keeps the result bit-identical to one
+// fold over the whole window, which matters because floating-point addition
+// is not associative.
+pub(crate) fn dot_product_slice_pairs<T>(samples_x: (&[T], &[T]), samples_y: (&[T], &[T])) -> T
+where
+    T: Clone + Zero + Add<Output = T> + Mul<Output = T>,
+{
+    let (mut front_x, mut back_x) = samples_x;
+    let (mut front_y, mut back_y) = samples_y;
+    let mut sum = T::zero();
+
+    loop {
+        if front_x.is_empty() {
+            front_x = core::mem::take(&mut back_x);
+        }
+
+        if front_y.is_empty() {
+            front_y = core::mem::take(&mut back_y);
+        }
+
+        let length = front_x.len().min(front_y.len());
+
+        if length == 0 {
+            break;
+        }
+
+        let (segment_x, rest_x) = front_x.split_at(length);
+        let (segment_y, rest_y) = front_y.split_at(length);
+
+        sum = segment_x
+            .iter()
+            .zip(segment_y.iter())
+            .fold(sum, |sum, (x, y)| sum + (x.clone() * y.clone()));
+
+        front_x = rest_x;
+        front_y = rest_y;
+    }
+
+    sum
+}
+
 #[cfg(test)]
 mod tests {
     use circular_buffer::{CircularBuffer, FixedCircularBuffer};
@@ -851,6 +899,97 @@ mod tests {
 
             assert_eq!(sum_slice_pair((&[1, 2][..], &[3, 4][..])), 10);
             assert_eq!(sum_slice_pair((&[1, 2][..], &[3, 4][..])), expected);
+        }
+    }
+
+    mod dot_product_slice_pairs_helper {
+        use super::super::dot_product_slice_pairs;
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn both_contiguous_matches_zip() {
+            let xs = [1, 2, 3];
+            let ys = [4, 5, 6];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual =
+                dot_product_slice_pairs((&[1, 2, 3][..], &[][..]), (&[4, 5, 6][..], &[][..]));
+
+            assert_eq!(actual, 32);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn both_wrapped_at_same_offset_matches_zip() {
+            let xs = [1, 2, 3];
+            let ys = [4, 5, 6];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual = dot_product_slice_pairs((&[1, 2][..], &[3][..]), (&[4, 5][..], &[6][..]));
+
+            assert_eq!(actual, 32);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn both_wrapped_at_different_offsets_matches_zip() {
+            let xs = [1, 2, 3];
+            let ys = [4, 5, 6];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual = dot_product_slice_pairs((&[1][..], &[2, 3][..]), (&[4, 5][..], &[6][..]));
+
+            assert_eq!(actual, 32);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn one_contiguous_one_wrapped_matches_zip() {
+            let xs = [1, 2, 3];
+            let ys = [4, 5, 6];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual =
+                dot_product_slice_pairs((&[1, 2, 3][..], &[][..]), (&[4][..], &[5, 6][..]));
+
+            assert_eq!(actual, 32);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn longer_x_truncates_like_zip() {
+            let xs = [1, 2, 3, 4];
+            let ys = [5, 6, 7];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual =
+                dot_product_slice_pairs((&[1, 2][..], &[3, 4][..]), (&[5][..], &[6, 7][..]));
+
+            assert_eq!(actual, 38);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn longer_y_truncates_like_zip() {
+            let xs = [1, 2];
+            let ys = [5, 6, 7, 8];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual = dot_product_slice_pairs((&[1][..], &[2][..]), (&[5, 6][..], &[7, 8][..]));
+
+            assert_eq!(actual, 17);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn either_side_empty_is_zero() {
+            assert_eq!(
+                dot_product_slice_pairs::<i32>((&[], &[]), (&[1, 2][..], &[3][..])),
+                0
+            );
+            assert_eq!(
+                dot_product_slice_pairs::<i32>((&[1, 2][..], &[3][..]), (&[], &[])),
+                0
+            );
         }
     }
 }
