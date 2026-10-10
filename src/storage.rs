@@ -21,10 +21,12 @@
 //! `no_std`, zero-allocation use, and the `*Vec` aliases when runtime-sized
 //! storage is required.
 
+use core::ops::{Add, Mul};
+
 #[cfg(feature = "alloc")]
 use circular_buffer::HeapCircularBuffer;
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
-use num_traits::Num;
+use num_traits::{Num, Zero};
 
 /// A contiguous, flat storage backend.
 ///
@@ -127,6 +129,16 @@ pub trait RingBuffer<T> {
     where
         T: 'a;
 
+    /// Returns a pair of slices over the elements, from oldest to newest.
+    ///
+    /// The first slice holds the older run and the second the newer run; the
+    /// second is empty when the contents are contiguous. Their concatenation
+    /// is in the same order [`iter`](Self::iter) yields, so folding the first
+    /// and then the second into one accumulator is equivalent to folding
+    /// `iter()`, while giving each slice as a counted loop that can be
+    /// unrolled and vectorized.
+    fn as_slices(&self) -> (&[T], &[T]);
+
     /// Returns the number of elements currently in the buffer.
     fn len(&self) -> usize;
 
@@ -193,6 +205,10 @@ impl<T, const N: usize> RingBuffer<T> for FixedCircularBuffer<T, N> {
         (**self).iter_mut()
     }
 
+    fn as_slices(&self) -> (&[T], &[T]) {
+        (**self).as_slices()
+    }
+
     fn len(&self) -> usize {
         (**self).len()
     }
@@ -251,6 +267,10 @@ impl<T> RingBuffer<T> for HeapCircularBuffer<T> {
         T: 'a,
     {
         (**self).iter_mut()
+    }
+
+    fn as_slices(&self) -> (&[T], &[T]) {
+        (**self).as_slices()
     }
 
     fn len(&self) -> usize {
@@ -312,6 +332,10 @@ impl<T> RingBuffer<T> for &mut CircularBuffer<T> {
         (**self).iter_mut()
     }
 
+    fn as_slices(&self) -> (&[T], &[T]) {
+        (**self).as_slices()
+    }
+
     fn len(&self) -> usize {
         (**self).len()
     }
@@ -340,6 +364,107 @@ pub(crate) fn zero_filled_fixed_ring<T: Num, const N: usize>() -> FixedCircularB
     let mut buf = FixedCircularBuffer::new();
     RingBuffer::fill_with(&mut buf, T::zero);
     buf
+}
+
+// Accumulates `sample * coefficient` oldest-to-newest into a single running
+// sum. The coefficients are reversed, so `h[N - 1]` pairs with the oldest
+// sample and `h[0]` with the newest. The samples arrive as two runs whose
+// concatenation is oldest-to-newest, so the split point in the coefficients
+// is the first run's length, counted from the end: the first run pairs with
+// the last `front.len()` coefficients (reversed) and the second run with the
+// remaining leading ones (reversed). Like `zip`, the pairing truncates to the
+// shorter of samples and coefficients. One accumulator is threaded through
+// both runs because floating-point addition is not associative.
+pub(crate) fn dot_product_reversed_coefficients<T, K, O>(
+    samples: (&[T], &[T]),
+    coefficients: &[K],
+) -> O
+where
+    T: Clone + Mul<K, Output = O>,
+    K: Clone,
+    O: Zero + Add<Output = O>,
+{
+    let (front, back) = samples;
+    let front_count = front.len().min(coefficients.len());
+    let (head, tail) = coefficients.split_at(coefficients.len() - front_count);
+
+    let sum = front
+        .iter()
+        .zip(tail.iter().rev())
+        .fold(O::zero(), |sum, (sample, coefficient)| {
+            sum + (sample.clone() * coefficient.clone())
+        });
+
+    back.iter()
+        .zip(head.iter().rev())
+        .fold(sum, |sum, (sample, coefficient)| {
+            sum + (sample.clone() * coefficient.clone())
+        })
+}
+
+// Sums the samples oldest-to-newest into a single running sum. The samples
+// arrive as two runs whose concatenation is oldest-to-newest, so one
+// accumulator is threaded through the first run and then the second. This
+// order keeps the result bit-identical to a single fold over the whole
+// window, which matters because floating-point addition is not associative.
+pub(crate) fn sum_slice_pair<T>(samples: (&[T], &[T])) -> T
+where
+    T: Clone + Zero + Add<Output = T>,
+{
+    let (front, back) = samples;
+    let sum = front
+        .iter()
+        .fold(T::zero(), |sum, sample| sum + sample.clone());
+
+    back.iter().fold(sum, |sum, sample| sum + sample.clone())
+}
+
+// Accumulates the products of the k-th oldest samples of both sides into a
+// single running sum, in ascending `k`, stopping when the shorter side runs
+// out. Each side arrives as two runs whose concatenation is oldest-to-newest.
+// Zipping the two first runs and then the two second runs would be wrong: the
+// two rings may split at different physical offsets, so their runs generally
+// have different lengths. Instead the walk repeatedly folds the longest
+// prefixes both current runs can supply, which yields at most three contiguous
+// segment pairs. The single accumulator keeps the result bit-identical to one
+// fold over the whole window, which matters because floating-point addition
+// is not associative.
+pub(crate) fn dot_product_slice_pairs<T>(samples_x: (&[T], &[T]), samples_y: (&[T], &[T])) -> T
+where
+    T: Clone + Zero + Add<Output = T> + Mul<Output = T>,
+{
+    let (mut front_x, mut back_x) = samples_x;
+    let (mut front_y, mut back_y) = samples_y;
+    let mut sum = T::zero();
+
+    loop {
+        if front_x.is_empty() {
+            front_x = core::mem::take(&mut back_x);
+        }
+
+        if front_y.is_empty() {
+            front_y = core::mem::take(&mut back_y);
+        }
+
+        let length = front_x.len().min(front_y.len());
+
+        if length == 0 {
+            break;
+        }
+
+        let (segment_x, rest_x) = front_x.split_at(length);
+        let (segment_y, rest_y) = front_y.split_at(length);
+
+        sum = segment_x
+            .iter()
+            .zip(segment_y.iter())
+            .fold(sum, |sum, (x, y)| sum + (x.clone() * y.clone()));
+
+        front_x = rest_x;
+        front_y = rest_y;
+    }
+
+    sum
 }
 
 #[cfg(test)]
@@ -443,6 +568,48 @@ mod tests {
                     assert_eq!(ring.len(), 2);
                     assert_eq!(ring.back(), Some(&20));
                 }
+
+                #[test]
+                fn as_slices_empty_yields_two_empty_slices() {
+                    let ring = make();
+                    assert_eq!(ring.as_slices(), (&[][..], &[][..]));
+                    assert_eq!(ring.len(), 0);
+                }
+
+                #[test]
+                fn as_slices_contiguous_leaves_second_empty() {
+                    let mut ring = make();
+                    ring.push_back(1);
+                    ring.push_back(2);
+                    assert_eq!(ring.as_slices(), (&[1, 2][..], &[][..]));
+                }
+
+                #[test]
+                fn as_slices_wrapped_splits_oldest_first() {
+                    let mut ring = make();
+                    ring.push_back(1);
+                    ring.push_back(2);
+                    ring.push_back(3);
+                    ring.push_back(4); // evicts 1
+                    let (front, back) = ring.as_slices();
+                    assert_eq!((front, back), (&[2, 3][..], &[4][..]));
+                    assert_eq!(front.len() + back.len(), ring.len());
+                }
+
+                #[test]
+                fn as_slices_concatenation_matches_iter() {
+                    let mut ring = make();
+                    ring.push_back(1);
+                    ring.push_back(2);
+                    ring.push_back(3);
+                    ring.push_back(4);
+                    let (front, back) = ring.as_slices();
+                    let concatenated: alloc::vec::Vec<i32> =
+                        front.iter().chain(back.iter()).copied().collect();
+                    let iterated: alloc::vec::Vec<i32> = ring.iter().copied().collect();
+                    assert_eq!(concatenated, iterated);
+                    assert_eq!(concatenated, [2, 3, 4]);
+                }
             }
         };
     }
@@ -538,6 +705,52 @@ mod tests {
             assert_eq!(ring.len(), 2);
             assert_eq!(ring.back(), Some(&20));
         }
+
+        #[test]
+        fn as_slices_empty_yields_two_empty_slices() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let ring: &mut CircularBuffer<i32> = &mut *owned;
+            assert_eq!(RingBuffer::as_slices(&ring), (&[][..], &[][..]));
+            assert_eq!(RingBuffer::len(&ring), 0);
+        }
+
+        #[test]
+        fn as_slices_contiguous_leaves_second_empty() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let ring: &mut CircularBuffer<i32> = &mut *owned;
+            ring.push_back(1);
+            ring.push_back(2);
+            assert_eq!(RingBuffer::as_slices(&ring), (&[1, 2][..], &[][..]));
+        }
+
+        #[test]
+        fn as_slices_wrapped_splits_oldest_first() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let ring: &mut CircularBuffer<i32> = &mut *owned;
+            ring.push_back(1);
+            ring.push_back(2);
+            ring.push_back(3);
+            ring.push_back(4);
+            let (front, back) = RingBuffer::as_slices(&ring);
+            assert_eq!((front, back), (&[2, 3][..], &[4][..]));
+            assert_eq!(front.len() + back.len(), RingBuffer::len(&ring));
+        }
+
+        #[test]
+        fn as_slices_concatenation_matches_iter() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let ring: &mut CircularBuffer<i32> = &mut *owned;
+            ring.push_back(1);
+            ring.push_back(2);
+            ring.push_back(3);
+            ring.push_back(4);
+            let (front, back) = RingBuffer::as_slices(&ring);
+            let concatenated: alloc::vec::Vec<i32> =
+                front.iter().chain(back.iter()).copied().collect();
+            let iterated: alloc::vec::Vec<i32> = RingBuffer::iter(&ring).copied().collect();
+            assert_eq!(concatenated, iterated);
+            assert_eq!(concatenated, [2, 3, 4]);
+        }
     }
 
     // ---------------------------------------------------------------------------
@@ -600,6 +813,183 @@ mod tests {
             let empty: alloc::vec::Vec<i32> = alloc::vec::Vec::new();
             assert_eq!(AsSlice::len(&empty), 0);
             assert!(AsSlice::is_empty(&empty));
+        }
+    }
+
+    mod dot_product_reversed_coefficients_helper {
+        use super::super::dot_product_reversed_coefficients;
+
+        #[test]
+        fn empty_sample_pair_is_zero() {
+            assert_eq!(
+                dot_product_reversed_coefficients::<i32, i32, i32>((&[], &[]), &[1, 2, 3]),
+                0
+            );
+            assert_eq!(
+                dot_product_reversed_coefficients::<i32, i32, i32>((&[], &[]), &[]),
+                0
+            );
+        }
+
+        #[test]
+        fn contiguous_pair_matches_reversed_zip() {
+            let coefficients = [1, 2, 3];
+            let actual =
+                dot_product_reversed_coefficients((&[10, 20, 30][..], &[][..]), &coefficients);
+            let expected = [10, 20, 30]
+                .iter()
+                .zip(coefficients.iter().rev())
+                .fold(0, |sum, (sample, coefficient)| sum + sample * coefficient);
+
+            assert_eq!(actual, 100);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn wrapped_pair_matches_reversed_zip() {
+            let coefficients = [1, 2, 3];
+            let actual =
+                dot_product_reversed_coefficients((&[10, 20][..], &[30][..]), &coefficients);
+            let expected = [10, 20, 30]
+                .iter()
+                .zip(coefficients.iter().rev())
+                .fold(0, |sum, (sample, coefficient)| sum + sample * coefficient);
+
+            assert_eq!(actual, 100);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn single_element_matches_reversed_zip() {
+            let actual = dot_product_reversed_coefficients((&[3][..], &[][..]), &[7]);
+
+            assert_eq!(actual, 21);
+        }
+
+        #[test]
+        fn fewer_samples_than_coefficients_truncates_like_zip() {
+            let actual = dot_product_reversed_coefficients((&[10][..], &[][..]), &[1, 2, 3, 4]);
+
+            assert_eq!(actual, 40);
+        }
+    }
+
+    mod sum_slice_pair_helper {
+        use super::super::sum_slice_pair;
+
+        #[test]
+        fn empty_pair_is_zero() {
+            assert_eq!(sum_slice_pair::<i32>((&[], &[])), 0);
+        }
+
+        // The explicit `fold` mirrors the helper's accumulation order.
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn contiguous_pair_matches_single_fold() {
+            let expected = [1, 2, 3].iter().fold(0, |acc, x| acc + x);
+
+            assert_eq!(sum_slice_pair((&[1, 2, 3][..], &[][..])), 6);
+            assert_eq!(sum_slice_pair((&[1, 2, 3][..], &[][..])), expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn wrapped_pair_matches_single_fold() {
+            let expected = [1, 2, 3, 4].iter().fold(0, |acc, x| acc + x);
+
+            assert_eq!(sum_slice_pair((&[1, 2][..], &[3, 4][..])), 10);
+            assert_eq!(sum_slice_pair((&[1, 2][..], &[3, 4][..])), expected);
+        }
+    }
+
+    mod dot_product_slice_pairs_helper {
+        use super::super::dot_product_slice_pairs;
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn both_contiguous_matches_zip() {
+            let xs = [1, 2, 3];
+            let ys = [4, 5, 6];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual =
+                dot_product_slice_pairs((&[1, 2, 3][..], &[][..]), (&[4, 5, 6][..], &[][..]));
+
+            assert_eq!(actual, 32);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn both_wrapped_at_same_offset_matches_zip() {
+            let xs = [1, 2, 3];
+            let ys = [4, 5, 6];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual = dot_product_slice_pairs((&[1, 2][..], &[3][..]), (&[4, 5][..], &[6][..]));
+
+            assert_eq!(actual, 32);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn both_wrapped_at_different_offsets_matches_zip() {
+            let xs = [1, 2, 3];
+            let ys = [4, 5, 6];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual = dot_product_slice_pairs((&[1][..], &[2, 3][..]), (&[4, 5][..], &[6][..]));
+
+            assert_eq!(actual, 32);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn one_contiguous_one_wrapped_matches_zip() {
+            let xs = [1, 2, 3];
+            let ys = [4, 5, 6];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual =
+                dot_product_slice_pairs((&[1, 2, 3][..], &[][..]), (&[4][..], &[5, 6][..]));
+
+            assert_eq!(actual, 32);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn longer_x_truncates_like_zip() {
+            let xs = [1, 2, 3, 4];
+            let ys = [5, 6, 7];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual =
+                dot_product_slice_pairs((&[1, 2][..], &[3, 4][..]), (&[5][..], &[6, 7][..]));
+
+            assert_eq!(actual, 38);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn longer_y_truncates_like_zip() {
+            let xs = [1, 2];
+            let ys = [5, 6, 7, 8];
+            let expected = xs.iter().zip(ys.iter()).fold(0, |sum, (x, y)| sum + x * y);
+            let actual = dot_product_slice_pairs((&[1][..], &[2][..]), (&[5, 6][..], &[7, 8][..]));
+
+            assert_eq!(actual, 17);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn either_side_empty_is_zero() {
+            assert_eq!(
+                dot_product_slice_pairs::<i32>((&[], &[]), (&[1, 2][..], &[3][..])),
+                0
+            );
+            assert_eq!(
+                dot_product_slice_pairs::<i32>((&[1, 2][..], &[3][..]), (&[], &[])),
+                0
+            );
         }
     }
 }

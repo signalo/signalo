@@ -13,7 +13,7 @@
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{cast::NumCast, Num};
 
-use crate::storage::RingBuffer;
+use crate::storage::{dot_product_slice_pairs, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Finalize, Reset, Sink,
@@ -234,12 +234,10 @@ where
     #[inline]
     fn filter(&mut self, input: (T, T)) -> Self::Output {
         self.sink(input);
-        let dot_product = self
-            .state
-            .buffer_x
-            .iter()
-            .zip(self.state.buffer_y.iter())
-            .fold(T::zero(), |sum, (x, y)| sum + (x.clone() * y.clone()));
+        let dot_product = dot_product_slice_pairs(
+            self.state.buffer_x.as_slices(),
+            self.state.buffer_y.as_slices(),
+        );
 
         let count = NumCast::from(self.state.len).unwrap_or(T::zero());
 
@@ -264,12 +262,10 @@ where
         if self.state.len == 0 {
             return None;
         }
-        let dot_product = self
-            .state
-            .buffer_x
-            .iter()
-            .zip(self.state.buffer_y.iter())
-            .fold(T::zero(), |sum, (x, y)| sum + (x.clone() * y.clone()));
+        let dot_product = dot_product_slice_pairs(
+            self.state.buffer_x.as_slices(),
+            self.state.buffer_y.as_slices(),
+        );
 
         let count = NumCast::from(self.state.len).unwrap_or(T::zero());
 

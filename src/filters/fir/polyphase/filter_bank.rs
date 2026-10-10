@@ -11,7 +11,7 @@ use core::ops::{Add, Mul};
 
 use num_traits::Zero;
 
-use crate::storage::AsSlice;
+use crate::storage::{dot_product_reversed_coefficients, AsSlice};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Reset, WithConfig,
@@ -388,40 +388,31 @@ impl<C> PolyphaseFilterBank<C> {
 
     /// Evaluates `phase` against caller-provided sample history.
     ///
-    /// The `taps` iterator must yield samples in oldest-to-newest order. Phase
-    /// coefficients are paired so the first coefficient in the selected phase,
-    /// `h[phase]`, multiplies the newest sample.
+    /// The `taps` pair holds two contiguous slices whose concatenation is the
+    /// sample history in oldest-to-newest order. Phase coefficients are paired
+    /// so the first coefficient in the selected phase, `h[phase]`, multiplies
+    /// the newest sample.
     ///
     /// # Panics
     ///
-    /// Panics if `phase >= self.num_phases()`, or if the number of samples
-    /// yielded by `taps` does not equal `self.taps_per_phase()`.
+    /// Panics if `phase >= self.num_phases()`, or if the combined length of
+    /// the two slices in `taps` does not equal `self.taps_per_phase()`.
     #[must_use]
-    pub fn execute<'a, T, K, O, I>(&self, phase: usize, taps: I) -> O
+    pub fn execute<T, K, O>(&self, phase: usize, taps: (&[T], &[T])) -> O
     where
-        T: 'a + Clone + Mul<K, Output = O>,
+        T: Clone + Mul<K, Output = O>,
         K: Clone,
         C: AsSlice<K>,
         O: Zero + Add<Output = O>,
-        I: IntoIterator<Item = &'a T>,
     {
         let coefficients = self.phase_coefficients(phase);
-        let mut taps = taps.into_iter();
-        let mut count = 0;
-        let output =
-            taps.by_ref()
-                .zip(coefficients.iter().rev())
-                .fold(O::zero(), |sum, (state, coeff)| {
-                    count += 1;
-                    sum + ((*state).clone() * (*coeff).clone())
-                });
 
         assert!(
-            count == self.taps_per_phase() && taps.next().is_none(),
+            taps.0.len() + taps.1.len() == self.taps_per_phase(),
             "PolyphaseFilterBank: taps count must equal taps_per_phase"
         );
 
-        output
+        dot_product_reversed_coefficients(taps, coefficients)
     }
 }
 
@@ -640,9 +631,9 @@ mod tests {
             coefficients: [1, 4, 2, 5, 3, 6],
         });
 
-        assert_eq!(bank.execute(0, [10, 40].iter()), 80);
-        assert_eq!(bank.execute(1, [20, 50].iter()), 200);
-        assert_eq!(bank.execute(2, [30, 60].iter()), 360);
+        assert_eq!(bank.execute(0, (&[10, 40][..], &[][..])), 80);
+        assert_eq!(bank.execute(1, (&[20, 50][..], &[][..])), 200);
+        assert_eq!(bank.execute(2, (&[30, 60][..], &[][..])), 360);
     }
 
     /// Bundled coefficients can produce an output type different from the input sample type.
@@ -666,7 +657,7 @@ mod tests {
             ],
         });
 
-        let out: Pair = bank.execute(0, [7, 11].iter());
+        let out: Pair = bank.execute(0, (&[7, 11][..], &[][..]));
         assert_eq!(
             out,
             Pair {
@@ -685,7 +676,7 @@ mod tests {
             coefficients: [1, 3, 2, 4],
         });
 
-        let _ = bank.execute(2, [10, 20].iter());
+        let _ = bank.execute(2, (&[10, 20][..], &[][..]));
     }
 
     #[test]
@@ -697,7 +688,32 @@ mod tests {
             coefficients: [1, 3, 2, 4],
         });
 
-        let _ = bank.execute(0, [10].iter());
+        let _ = bank.execute(0, (&[10][..], &[][..]));
+    }
+
+    #[test]
+    fn execute_matches_across_split_boundary() {
+        let bank = PolyphaseFilterBankArray::<i32, 4>::from_parts(Config {
+            num_phases: 2,
+            taps_per_phase: 2,
+            coefficients: [1, 4, 2, 5],
+        });
+
+        assert_eq!(bank.execute(0, (&[10, 40][..], &[][..])), 80);
+        assert_eq!(bank.execute(0, (&[10][..], &[40][..])), 80);
+        assert_eq!(bank.execute(1, (&[20][..], &[50][..])), 200);
+    }
+
+    #[test]
+    #[should_panic(expected = "taps count must equal taps_per_phase")]
+    fn execute_taps_count_mismatch_split_across_slices_panics() {
+        let bank = PolyphaseFilterBankArray::<i32, 4>::from_parts(Config {
+            num_phases: 2,
+            taps_per_phase: 2,
+            coefficients: [1, 3, 2, 4],
+        });
+
+        let _ = bank.execute(0, (&[10][..], &[20, 30][..]));
     }
 
     #[test]
