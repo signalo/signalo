@@ -349,3 +349,47 @@ fn convolve_ref_mut_filters_correctly() {
     assert_eq!(filter.filter(4.0), 4.0);
     assert_eq!(filter.filter(6.0), 10.0);
 }
+
+#[test]
+fn slice_pair_traversal_matches_iterator_fold() {
+    let coefficients = [0.5_f32, -0.25, 0.125, 1.0];
+    let mut filter = ConvolveArray::with_config(Config { coefficients });
+    let mut window = vec![0.0_f32; coefficients.len()];
+
+    for input in get_input().into_iter().take(24) {
+        window.remove(0);
+        window.push(input);
+
+        let expected = window
+            .iter()
+            .zip(coefficients.iter().rev())
+            .fold(0.0_f32, |sum, (sample, coefficient)| {
+                sum + sample * coefficient
+            });
+
+        assert_abs_diff_eq!(filter.filter(input), expected, epsilon = 1e-6);
+    }
+
+    let integer_coefficients = [1_i32, -2, 3, -4];
+    let mut integer_filter = ConvolveArray::with_config(Config {
+        coefficients: integer_coefficients,
+    });
+    let mut integer_window = vec![0_i32; integer_coefficients.len()];
+
+    for input in get_input().into_iter().take(24) {
+        #[allow(clippy::cast_possible_truncation)]
+        let input = input as i32;
+
+        integer_window.remove(0);
+        integer_window.push(input);
+
+        let expected = integer_window
+            .iter()
+            .zip(integer_coefficients.iter().rev())
+            .fold(0_i32, |sum, (sample, coefficient)| {
+                sum + sample * coefficient
+            });
+
+        assert_eq!(integer_filter.filter(input), expected);
+    }
+}

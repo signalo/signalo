@@ -21,10 +21,12 @@
 //! `no_std`, zero-allocation use, and the `*Vec` aliases when runtime-sized
 //! storage is required.
 
+use core::ops::{Add, Mul};
+
 #[cfg(feature = "alloc")]
 use circular_buffer::HeapCircularBuffer;
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
-use num_traits::Num;
+use num_traits::{Num, Zero};
 
 /// A contiguous, flat storage backend.
 ///
@@ -362,6 +364,42 @@ pub(crate) fn zero_filled_fixed_ring<T: Num, const N: usize>() -> FixedCircularB
     let mut buf = FixedCircularBuffer::new();
     RingBuffer::fill_with(&mut buf, T::zero);
     buf
+}
+
+// Accumulates `sample * coefficient` oldest-to-newest into a single running
+// sum. The coefficients are reversed, so `h[N - 1]` pairs with the oldest
+// sample and `h[0]` with the newest. The samples arrive as two runs whose
+// concatenation is oldest-to-newest, so the split point in the coefficients
+// is the first run's length, counted from the end: the first run pairs with
+// the last `front.len()` coefficients (reversed) and the second run with the
+// remaining leading ones (reversed). Like `zip`, the pairing truncates to the
+// shorter of samples and coefficients. One accumulator is threaded through
+// both runs because floating-point addition is not associative.
+pub(crate) fn dot_product_reversed_coefficients<T, K, O>(
+    samples: (&[T], &[T]),
+    coefficients: &[K],
+) -> O
+where
+    T: Clone + Mul<K, Output = O>,
+    K: Clone,
+    O: Zero + Add<Output = O>,
+{
+    let (front, back) = samples;
+    let front_count = front.len().min(coefficients.len());
+    let (head, tail) = coefficients.split_at(coefficients.len() - front_count);
+
+    let sum = front
+        .iter()
+        .zip(tail.iter().rev())
+        .fold(O::zero(), |sum, (sample, coefficient)| {
+            sum + (sample.clone() * coefficient.clone())
+        });
+
+    back.iter()
+        .zip(head.iter().rev())
+        .fold(sum, |sum, (sample, coefficient)| {
+            sum + (sample.clone() * coefficient.clone())
+        })
 }
 
 #[cfg(test)]
@@ -710,6 +748,64 @@ mod tests {
             let empty: alloc::vec::Vec<i32> = alloc::vec::Vec::new();
             assert_eq!(AsSlice::len(&empty), 0);
             assert!(AsSlice::is_empty(&empty));
+        }
+    }
+
+    mod dot_product_reversed_coefficients_helper {
+        use super::super::dot_product_reversed_coefficients;
+
+        #[test]
+        fn empty_sample_pair_is_zero() {
+            assert_eq!(
+                dot_product_reversed_coefficients::<i32, i32, i32>((&[], &[]), &[1, 2, 3]),
+                0
+            );
+            assert_eq!(
+                dot_product_reversed_coefficients::<i32, i32, i32>((&[], &[]), &[]),
+                0
+            );
+        }
+
+        #[test]
+        fn contiguous_pair_matches_reversed_zip() {
+            let coefficients = [1, 2, 3];
+            let actual =
+                dot_product_reversed_coefficients((&[10, 20, 30][..], &[][..]), &coefficients);
+            let expected = [10, 20, 30]
+                .iter()
+                .zip(coefficients.iter().rev())
+                .fold(0, |sum, (sample, coefficient)| sum + sample * coefficient);
+
+            assert_eq!(actual, 100);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn wrapped_pair_matches_reversed_zip() {
+            let coefficients = [1, 2, 3];
+            let actual =
+                dot_product_reversed_coefficients((&[10, 20][..], &[30][..]), &coefficients);
+            let expected = [10, 20, 30]
+                .iter()
+                .zip(coefficients.iter().rev())
+                .fold(0, |sum, (sample, coefficient)| sum + sample * coefficient);
+
+            assert_eq!(actual, 100);
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn single_element_matches_reversed_zip() {
+            let actual = dot_product_reversed_coefficients((&[3][..], &[][..]), &[7]);
+
+            assert_eq!(actual, 21);
+        }
+
+        #[test]
+        fn fewer_samples_than_coefficients_truncates_like_zip() {
+            let actual = dot_product_reversed_coefficients((&[10][..], &[][..]), &[1, 2, 3, 4]);
+
+            assert_eq!(actual, 40);
         }
     }
 }

@@ -10,7 +10,9 @@ use core::ops::{Add, Mul};
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{Num, Zero};
 
-use crate::storage::{zero_filled_fixed_ring, AsSlice, RingBuffer};
+use crate::storage::{
+    dot_product_reversed_coefficients, zero_filled_fixed_ring, AsSlice, RingBuffer,
+};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -327,16 +329,10 @@ where
     fn filter(&mut self, input: T) -> Self::Output {
         self.state.taps.push_back(input);
 
-        let state_iter = self.state.taps.iter();
-        // See "Coefficient ordering" in the struct-level documentation.
-        // coeff_iter.rev(): state iterates oldest->newest; reversing pairs h[N-1] with oldest, h[0] with newest.
-        let coeff_iter = self.config.coefficients.as_slice().iter().rev();
-
-        state_iter
-            .zip(coeff_iter)
-            .fold(T::zero(), |sum, (state, coeff)| {
-                sum + ((*state).clone() * (*coeff).clone())
-            })
+        dot_product_reversed_coefficients(
+            self.state.taps.as_slices(),
+            self.config.coefficients.as_slice(),
+        )
     }
 }
 
