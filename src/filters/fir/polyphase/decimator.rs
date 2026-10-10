@@ -340,7 +340,7 @@ where
                 let decimated = (0..self.num_phases())
                     .map(|phase| {
                         self.bank
-                            .execute(phase, self.state.taps.as_slice()[phase].iter())
+                            .execute(phase, self.state.taps.as_slice()[phase].as_slices())
                     })
                     .fold(T::zero(), |sum, partial| sum + partial);
                 output[output_produced] = decimated;

@@ -158,7 +158,7 @@ impl<T, C, R, K> PolyphaseFir<T, C, R, K> {
         R: RingBuffer<T>,
         O: Zero + Add<Output = O>,
     {
-        self.bank.execute(phase, self.state.taps.iter())
+        self.bank.execute(phase, self.state.taps.as_slices())
     }
 }
 
