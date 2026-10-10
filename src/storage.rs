@@ -127,6 +127,16 @@ pub trait RingBuffer<T> {
     where
         T: 'a;
 
+    /// Returns a pair of slices over the elements, from oldest to newest.
+    ///
+    /// The first slice holds the older run and the second the newer run; the
+    /// second is empty when the contents are contiguous. Their concatenation
+    /// is in the same order [`iter`](Self::iter) yields, so folding the first
+    /// and then the second into one accumulator is equivalent to folding
+    /// `iter()`, while giving each slice as a counted loop that can be
+    /// unrolled and vectorized.
+    fn as_slices(&self) -> (&[T], &[T]);
+
     /// Returns the number of elements currently in the buffer.
     fn len(&self) -> usize;
 
@@ -193,6 +203,10 @@ impl<T, const N: usize> RingBuffer<T> for FixedCircularBuffer<T, N> {
         (**self).iter_mut()
     }
 
+    fn as_slices(&self) -> (&[T], &[T]) {
+        (**self).as_slices()
+    }
+
     fn len(&self) -> usize {
         (**self).len()
     }
@@ -253,6 +267,10 @@ impl<T> RingBuffer<T> for HeapCircularBuffer<T> {
         (**self).iter_mut()
     }
 
+    fn as_slices(&self) -> (&[T], &[T]) {
+        (**self).as_slices()
+    }
+
     fn len(&self) -> usize {
         (**self).len()
     }
@@ -310,6 +328,10 @@ impl<T> RingBuffer<T> for &mut CircularBuffer<T> {
         T: 'a,
     {
         (**self).iter_mut()
+    }
+
+    fn as_slices(&self) -> (&[T], &[T]) {
+        (**self).as_slices()
     }
 
     fn len(&self) -> usize {
@@ -443,6 +465,48 @@ mod tests {
                     assert_eq!(ring.len(), 2);
                     assert_eq!(ring.back(), Some(&20));
                 }
+
+                #[test]
+                fn as_slices_empty_yields_two_empty_slices() {
+                    let ring = make();
+                    assert_eq!(ring.as_slices(), (&[][..], &[][..]));
+                    assert_eq!(ring.len(), 0);
+                }
+
+                #[test]
+                fn as_slices_contiguous_leaves_second_empty() {
+                    let mut ring = make();
+                    ring.push_back(1);
+                    ring.push_back(2);
+                    assert_eq!(ring.as_slices(), (&[1, 2][..], &[][..]));
+                }
+
+                #[test]
+                fn as_slices_wrapped_splits_oldest_first() {
+                    let mut ring = make();
+                    ring.push_back(1);
+                    ring.push_back(2);
+                    ring.push_back(3);
+                    ring.push_back(4); // evicts 1
+                    let (front, back) = ring.as_slices();
+                    assert_eq!((front, back), (&[2, 3][..], &[4][..]));
+                    assert_eq!(front.len() + back.len(), ring.len());
+                }
+
+                #[test]
+                fn as_slices_concatenation_matches_iter() {
+                    let mut ring = make();
+                    ring.push_back(1);
+                    ring.push_back(2);
+                    ring.push_back(3);
+                    ring.push_back(4);
+                    let (front, back) = ring.as_slices();
+                    let concatenated: alloc::vec::Vec<i32> =
+                        front.iter().chain(back.iter()).copied().collect();
+                    let iterated: alloc::vec::Vec<i32> = ring.iter().copied().collect();
+                    assert_eq!(concatenated, iterated);
+                    assert_eq!(concatenated, [2, 3, 4]);
+                }
             }
         };
     }
@@ -537,6 +601,52 @@ mod tests {
             assert_eq!(ring.pop_back(), Some(30));
             assert_eq!(ring.len(), 2);
             assert_eq!(ring.back(), Some(&20));
+        }
+
+        #[test]
+        fn as_slices_empty_yields_two_empty_slices() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let ring: &mut CircularBuffer<i32> = &mut *owned;
+            assert_eq!(RingBuffer::as_slices(&ring), (&[][..], &[][..]));
+            assert_eq!(RingBuffer::len(&ring), 0);
+        }
+
+        #[test]
+        fn as_slices_contiguous_leaves_second_empty() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let ring: &mut CircularBuffer<i32> = &mut *owned;
+            ring.push_back(1);
+            ring.push_back(2);
+            assert_eq!(RingBuffer::as_slices(&ring), (&[1, 2][..], &[][..]));
+        }
+
+        #[test]
+        fn as_slices_wrapped_splits_oldest_first() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let ring: &mut CircularBuffer<i32> = &mut *owned;
+            ring.push_back(1);
+            ring.push_back(2);
+            ring.push_back(3);
+            ring.push_back(4);
+            let (front, back) = RingBuffer::as_slices(&ring);
+            assert_eq!((front, back), (&[2, 3][..], &[4][..]));
+            assert_eq!(front.len() + back.len(), RingBuffer::len(&ring));
+        }
+
+        #[test]
+        fn as_slices_concatenation_matches_iter() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let ring: &mut CircularBuffer<i32> = &mut *owned;
+            ring.push_back(1);
+            ring.push_back(2);
+            ring.push_back(3);
+            ring.push_back(4);
+            let (front, back) = RingBuffer::as_slices(&ring);
+            let concatenated: alloc::vec::Vec<i32> =
+                front.iter().chain(back.iter()).copied().collect();
+            let iterated: alloc::vec::Vec<i32> = RingBuffer::iter(&ring).copied().collect();
+            assert_eq!(concatenated, iterated);
+            assert_eq!(concatenated, [2, 3, 4]);
         }
     }
 
