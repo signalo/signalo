@@ -158,3 +158,67 @@ fn test() {
     let result = sink.finalize();
     assert_eq!(result, Some(137.5));
 }
+
+#[test]
+fn differently_aligned_buffers_match_zip_semantics() {
+    let mut buffer_x = FixedCircularBuffer::<f32, 4>::new();
+    let mut buffer_y = FixedCircularBuffer::<f32, 4>::new();
+
+    for value in [0.5, 1.75, 3.0, 4.25, 5.5, 6.75, 8.0] {
+        buffer_x.push_back(value);
+    }
+
+    for value in [2.0, 1.25, 0.5, -0.25, -1.0] {
+        buffer_y.push_back(value);
+    }
+
+    // The rings must split at different physical offsets for this test to
+    // distinguish a walk over a common boundary from a pairwise zip of the
+    // first slices.
+    assert_ne!(buffer_x.as_slices().0.len(), buffer_y.as_slices().0.len());
+    assert_eq!(buffer_x.as_slices().0.len(), 1);
+    assert_eq!(buffer_y.as_slices().0.len(), 3);
+
+    let expected = buffer_x
+        .iter()
+        .zip(buffer_y.iter())
+        .fold(0.0_f32, |sum, (x, y)| sum + x * y)
+        / 4.0;
+
+    let mut sink = Correlation::<f32, _, _>::from_parts(buffer_x, buffer_y);
+    sink.state_mut().len = 4;
+
+    let actual = sink.finalize().expect("len is non-zero");
+
+    assert_abs_diff_eq!(actual, expected, epsilon = 1e-6);
+}
+
+#[test]
+fn filter_matches_zip_reference_across_wraps() {
+    let inputs: [(f32, f32); 11] = [
+        (1.0, 2.0),
+        (-3.0, 0.5),
+        (4.5, -1.5),
+        (2.0, 2.0),
+        (-1.0, 7.0),
+        (0.25, 3.0),
+        (6.0, -2.0),
+        (5.0, 1.0),
+        (-4.0, -4.0),
+        (3.5, 0.75),
+        (1.5, 9.0),
+    ];
+    let mut sink: CorrelationArray<f32, 3> = CorrelationArray::default();
+    let mut count = 0.0_f32;
+
+    for (index, input) in inputs.iter().enumerate() {
+        count = (count + 1.0).min(3.0);
+
+        let actual = sink.filter(*input);
+        let start = (index + 1).saturating_sub(3);
+        let window = &inputs[start..=index];
+        let expected = window.iter().fold(0.0_f32, |sum, (x, y)| sum + x * y) / count;
+
+        assert_abs_diff_eq!(actual, expected, epsilon = 1e-6);
+    }
+}
