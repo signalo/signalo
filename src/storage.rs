@@ -402,6 +402,23 @@ where
         })
 }
 
+// Sums the samples oldest-to-newest into a single running sum. The samples
+// arrive as two runs whose concatenation is oldest-to-newest, so one
+// accumulator is threaded through the first run and then the second. This
+// order keeps the result bit-identical to a single fold over the whole
+// window, which matters because floating-point addition is not associative.
+pub(crate) fn sum_slice_pair<T>(samples: (&[T], &[T])) -> T
+where
+    T: Clone + Zero + Add<Output = T>,
+{
+    let (front, back) = samples;
+    let sum = front
+        .iter()
+        .fold(T::zero(), |sum, sample| sum + sample.clone());
+
+    back.iter().fold(sum, |sum, sample| sum + sample.clone())
+}
+
 #[cfg(test)]
 mod tests {
     use circular_buffer::{CircularBuffer, FixedCircularBuffer};
@@ -806,6 +823,34 @@ mod tests {
             let actual = dot_product_reversed_coefficients((&[10][..], &[][..]), &[1, 2, 3, 4]);
 
             assert_eq!(actual, 40);
+        }
+    }
+
+    mod sum_slice_pair_helper {
+        use super::super::sum_slice_pair;
+
+        #[test]
+        fn empty_pair_is_zero() {
+            assert_eq!(sum_slice_pair::<i32>((&[], &[])), 0);
+        }
+
+        // The explicit `fold` mirrors the helper's accumulation order.
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn contiguous_pair_matches_single_fold() {
+            let expected = [1, 2, 3].iter().fold(0, |acc, x| acc + x);
+
+            assert_eq!(sum_slice_pair((&[1, 2, 3][..], &[][..])), 6);
+            assert_eq!(sum_slice_pair((&[1, 2, 3][..], &[][..])), expected);
+        }
+
+        #[test]
+        #[allow(clippy::unnecessary_fold)]
+        fn wrapped_pair_matches_single_fold() {
+            let expected = [1, 2, 3, 4].iter().fold(0, |acc, x| acc + x);
+
+            assert_eq!(sum_slice_pair((&[1, 2][..], &[3, 4][..])), 10);
+            assert_eq!(sum_slice_pair((&[1, 2][..], &[3, 4][..])), expected);
         }
     }
 }

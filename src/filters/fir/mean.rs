@@ -9,7 +9,7 @@ use core::fmt;
 use circular_buffer::{CircularBuffer, FixedCircularBuffer};
 use num_traits::{Num, Zero};
 
-use crate::storage::RingBuffer;
+use crate::storage::{sum_slice_pair, RingBuffer};
 use crate::traits::{
     guts::{FromGuts, HasGuts, IntoGuts},
     Config as ConfigTrait, ConfigClone, ConfigRef, Filter, Reset, State as StateTrait, StateMut,
@@ -266,11 +266,7 @@ where
 
         #[allow(clippy::option_if_let_else)]
         let (mean, weight) = if let Some(_old_input) = self.state.taps.push_back(input.clone()) {
-            let sum = self
-                .state
-                .taps
-                .iter()
-                .fold(T::zero(), |acc, x| acc + x.clone());
+            let sum = sum_slice_pair(self.state.taps.as_slices());
             (sum, old_weight)
         } else {
             let old_mean = self.state.mean.clone().unwrap_or_else(T::zero);
@@ -366,5 +362,47 @@ mod tests {
     fn from_parts_zero_capacity_panics() {
         let taps = FixedCircularBuffer::<f32, 0>::new();
         let _ = Mean::<f32, _>::from_parts(Config::default(), taps);
+    }
+
+    #[test]
+    fn slice_pair_sum_matches_iterator_fold() {
+        // The weight is the number of samples held, capped at the window
+        // size, so the reference is the mean over the trailing window.
+        let mut float_filter: MeanArray<f32, 3> = MeanArray::default();
+        let mut float_window: Vec<f32> = Vec::new();
+
+        let mut float_weight = 0.0_f32;
+
+        for step in 1..=12_u8 {
+            let input = f32::from(step);
+            float_window.push(input);
+            if float_window.len() > 3 {
+                float_window.remove(0);
+            } else {
+                float_weight += 1.0;
+            }
+
+            let expected = float_window.iter().sum::<f32>() / float_weight;
+
+            assert_abs_diff_eq!(float_filter.filter(input), expected, epsilon = 1e-6);
+        }
+
+        let mut integer_filter: MeanArray<i32, 3> = MeanArray::default();
+        let mut integer_window: Vec<i32> = Vec::new();
+
+        let mut integer_weight = 0;
+
+        for input in 1..=12 {
+            integer_window.push(input);
+            if integer_window.len() > 3 {
+                integer_window.remove(0);
+            } else {
+                integer_weight += 1;
+            }
+
+            let expected = integer_window.iter().sum::<i32>() / integer_weight;
+
+            assert_eq!(integer_filter.filter(input), expected);
+        }
     }
 }
