@@ -20,6 +20,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
+- Added seven self-contained examples under `examples/` covering real-valued synthesis, robust outlier removal, event detection, wavelets, custom filters, digital downconversion, and RRC pulse shaping.
 - Exposed `filters::fir::design::len_from_span`, the `span * sps + 1` tap count expected by the pulse-shaping `taps` helpers, so callers can size their tap storage at compile time
 - Added turns and radians phase units to `Nco`: `from_turns`, `from_radians`, and `from_turns_per_sample` constructors; `set_turns_per_sample` and `set_radians_per_sample` setters; `turns_per_sample`, `radians_per_sample`, `phase_turns`, and `phase_radians` getters
 - Added `Nco` phase-step conversion functions: `phase_step_from_turns_per_sample`, `phase_step_from_radians_per_sample`, `turns_per_sample_from_phase_step`, `radians_per_sample_from_phase_step`, `phase_word_from_turns`, `phase_word_from_radians`, `turns_from_phase_word`, and `radians_from_phase_word`
