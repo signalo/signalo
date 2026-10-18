@@ -45,6 +45,25 @@ default-features = false
 # features = ["libm"] # <- Uncomment if you wish to use float math functions without `std`
 ```
 
+## Examples
+
+Each example is a standalone binary assembled from manual `Source`/`Filter`/`Sink` composition, and can be run with `cargo run --example <name>`:
+
+| Example | Demonstrates | Features |
+|---|---|---|
+| `audio_synth` | Two oscillators, arithmetic mixing, envelope, peak hold | `alloc` |
+| `outlier_removal` | Hampel filter, spike removal, integrating sink | `alloc` |
+| `heartbeat` | Cyclic source, peak detection, R-wave level discrimination | `alloc` |
+| `wavelet` | Daubechies analysis and synthesis, impulse reconstruction | `alloc` |
+| `custom_filter` | Custom `Filter` implementation, step input | `alloc` |
+| `ddc` | NCO mixing, low-pass filtering, decimation | `complex` |
+| `rrc_pulse_shaping` | Root-raised-cosine taps, polyphase interpolation | `default` |
+
+```sh
+cargo run --example audio_synth --features alloc
+cargo run --example ddc --features complex
+```
+
 ## Versioning
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/signalo/signalo/tags).
