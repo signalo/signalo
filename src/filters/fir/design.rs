@@ -347,11 +347,30 @@ where
 /// The length is `span * sps + 1`. `span * sps` must be even so the resulting
 /// impulse response has odd length and can be centered on one tap.
 ///
+/// This is the length expected by the pulse-shaping `taps` helpers, so it can
+/// size their caller-provided storage at compile time.
+///
+/// # Examples
+///
+/// ```
+/// use signalo::filters::fir::design::{self, root_raised_cosine};
+///
+/// const SPAN: usize = 4;
+/// const SPS: usize = 4;
+/// const LEN: usize = design::len_from_span(SPAN, SPS);
+///
+/// assert_eq!(LEN, 17);
+///
+/// let mut taps = [0.0_f32; LEN];
+/// root_raised_cosine::taps(&mut taps, SPAN, SPS, 0.35);
+/// ```
+///
 /// # Panics
 ///
 /// Panics if `span == 0`, `sps < 2`, `span * sps` is odd, `span * sps`
 /// overflows, or `span * sps + 1` overflows.
-pub(crate) const fn len_from_span(span: usize, sps: usize) -> usize {
+#[must_use]
+pub const fn len_from_span(span: usize, sps: usize) -> usize {
     assert!(span > 0, "span must be > 0");
     assert!(sps >= 2, "samples per symbol must be >= 2");
     let samples = span.checked_mul(sps).expect("span * sps overflowed");
