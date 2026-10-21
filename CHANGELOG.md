@@ -27,6 +27,7 @@ Please make sure to add your changes to the appropriate categories:
 - Added `math::phase::phasor_from_radians` (behind `complex` feature), converting an angle to a phase word and looking its phasor up in one call
 - Exposed `math::phase::MAX_ABS_ERROR`, the absolute-error bound of `sin`, `cos`, `sin_cos` and `phasor`, and documented that those are quarter-wave-table approximations rather than exact, so a caller can size a tolerance against the bound instead of copying a literal
 - Moved every phase-word, phase-step and frequency conversion from `Nco` to `math::phase` as free functions: `phase_word_from_turns`, `phase_word_from_radians`, `turns_from_phase_word`, `radians_from_phase_word`, `phase_step_from_turns_per_sample`, `phase_step_from_radians_per_sample`, `phase_step_from_frequency`, `turns_per_sample_from_phase_step`, `radians_per_sample_from_phase_step` and `frequency_from_phase_step`. `math::phase` owns the phase-word representation, and none of these involve the oscillator's scalar type, so calling them through `Nco` needed a turbofish for a type parameter they never used. The `Nco` associated functions remain and delegate, so existing callers are unaffected and agree bit for bit
+- Added `polyphase::halfband_decimator::HalfbandDecimator`, a 2-to-1 decimator through a `4 J - 1` tap half-band prototype that takes `2 J + 1` multiplications per output, with `HalfbandDecimatorArray`, `HalfbandDecimatorVec` (and `from_prototype_taps`) and `HalfbandDecimatorRefMut`
 
 ### Changed
 
