@@ -10,6 +10,8 @@
 //! [`MultirateFilter`](crate::traits::MultirateFilter) adapters on top of those
 //! primitives. [`fractional_delay`] provides sizing, design, and packing helpers
 //! for fractional-delay PFBs, which execute on [`fir`] at an unchanged rate.
+//! [`halfband_decimator`] is the two-phase decimator specialized to half-band
+//! prototypes.
 //!
 //! # Prototype design rates
 //!
@@ -52,6 +54,7 @@ pub mod decimator;
 pub mod filter_bank;
 pub mod fir;
 pub mod fractional_delay;
+pub mod halfband_decimator;
 pub mod interpolator;
 pub mod rational_resampler;
 
