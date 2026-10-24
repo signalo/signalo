@@ -20,22 +20,11 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- Added seven self-contained examples under `examples/` covering real-valued synthesis, robust outlier removal, event detection, wavelets, custom filters, digital downconversion, and RRC pulse shaping.
-- Exposed `filters::fir::design::len_from_span`, the `span * sps + 1` tap count expected by the pulse-shaping `taps` helpers, so callers can size their tap storage at compile time
-- Added turns and radians phase units to `Nco`: `from_turns`, `from_radians`, and `from_turns_per_sample` constructors; `set_turns_per_sample` and `set_radians_per_sample` setters; `turns_per_sample`, `radians_per_sample`, `phase_turns`, and `phase_radians` getters
-- Added `Nco` phase-step conversion functions: `phase_step_from_turns_per_sample`, `phase_step_from_radians_per_sample`, `turns_per_sample_from_phase_step`, `radians_per_sample_from_phase_step`, `phase_word_from_turns`, `phase_word_from_radians`, `turns_from_phase_word`, and `radians_from_phase_word`
-- Added `Config::from_turns_per_sample` and `Config::from_radians_per_sample` constructors for creating NCO configs from turns-per-sample and radians-per-sample rates
-- Added `Nco::phasor_then_step` (behind `complex` feature), returning the current phasor and then advancing one sample — the correct order for derotating a stream
-- Added `math::phase::phasor_from_radians` (behind `complex` feature), converting an angle to a phase word and looking its phasor up in one call
-- Exposed `math::phase::MAX_ABS_ERROR`, the absolute-error bound of `sin`, `cos`, `sin_cos` and `phasor`, and documented that those are quarter-wave-table approximations rather than exact, so a caller can size a tolerance against the bound instead of copying a literal
-- Moved every phase-word, phase-step and frequency conversion from `Nco` to `math::phase` as free functions: `phase_word_from_turns`, `phase_word_from_radians`, `turns_from_phase_word`, `radians_from_phase_word`, `phase_step_from_turns_per_sample`, `phase_step_from_radians_per_sample`, `phase_step_from_frequency`, `turns_per_sample_from_phase_step`, `radians_per_sample_from_phase_step` and `frequency_from_phase_step`. `math::phase` owns the phase-word representation, and none of these involve the oscillator's scalar type, so calling them through `Nco` needed a turbofish for a type parameter they never used. The `Nco` associated functions remain and delegate, so existing callers are unaffected and agree bit for bit
-- Added `polyphase::halfband_decimator::HalfbandDecimator`, a 2-to-1 decimator through a `4 J - 1` tap half-band prototype that takes `2 J + 1` multiplications per output, with `HalfbandDecimatorArray`, `HalfbandDecimatorVec` (and `from_prototype_taps`) and `HalfbandDecimatorRefMut`
+- n/a
 
 ### Changed
 
-- `Nco::phase_step_from_frequency` now delegates to the shared turns-per-sample conversion (behavior unchanged; tested as bit-for-bit equivalent)
-- `storage::RingBuffer` has a new required method `as_slices`, returning a pair of slices over the elements from oldest to newest: the first slice holds the older run and the second is empty when the contents are contiguous. All three in-crate backends implement it; out-of-crate implementors of the trait must add it
-- `PolyphaseFilterBank::execute` now takes taps as a `(&[T], &[T])` slice pair instead of an `IntoIterator<Item = &T>`. The concatenation of the pair is still ordered oldest to newest, with `h[phase]` multiplying the newest sample, and both panic conditions and their messages are unchanged. Callers pass the ring buffer's slice pair directly instead of an iterator over it
+- n/a
 
 ### Deprecated
 
@@ -60,6 +49,27 @@ Please make sure to add your changes to the appropriate categories:
 ### Other
 
 - n/a
+
+## [0.11.0] - 2026-10-24
+
+### Added
+
+- Added seven self-contained examples under `examples/` covering real-valued synthesis, robust outlier removal, event detection, wavelets, custom filters, digital downconversion, and RRC pulse shaping.
+- Exposed `filters::fir::design::len_from_span`, the `span * sps + 1` tap count expected by the pulse-shaping `taps` helpers, so callers can size their tap storage at compile time
+- Added turns and radians phase units to `Nco`: `from_turns`, `from_radians`, and `from_turns_per_sample` constructors; `set_turns_per_sample` and `set_radians_per_sample` setters; `turns_per_sample`, `radians_per_sample`, `phase_turns`, and `phase_radians` getters
+- Added `Nco` phase-step conversion functions: `phase_step_from_turns_per_sample`, `phase_step_from_radians_per_sample`, `turns_per_sample_from_phase_step`, `radians_per_sample_from_phase_step`, `phase_word_from_turns`, `phase_word_from_radians`, `turns_from_phase_word`, and `radians_from_phase_word`
+- Added `Config::from_turns_per_sample` and `Config::from_radians_per_sample` constructors for creating NCO configs from turns-per-sample and radians-per-sample rates
+- Added `Nco::phasor_then_step` (behind `complex` feature), returning the current phasor and then advancing one sample — the correct order for derotating a stream
+- Added `math::phase::phasor_from_radians` (behind `complex` feature), converting an angle to a phase word and looking its phasor up in one call
+- Exposed `math::phase::MAX_ABS_ERROR`, the absolute-error bound of `sin`, `cos`, `sin_cos` and `phasor`, and documented that those are quarter-wave-table approximations rather than exact, so a caller can size a tolerance against the bound instead of copying a literal
+- Moved every phase-word, phase-step and frequency conversion from `Nco` to `math::phase` as free functions: `phase_word_from_turns`, `phase_word_from_radians`, `turns_from_phase_word`, `radians_from_phase_word`, `phase_step_from_turns_per_sample`, `phase_step_from_radians_per_sample`, `phase_step_from_frequency`, `turns_per_sample_from_phase_step`, `radians_per_sample_from_phase_step` and `frequency_from_phase_step`. `math::phase` owns the phase-word representation, and none of these involve the oscillator's scalar type, so calling them through `Nco` needed a turbofish for a type parameter they never used. The `Nco` associated functions remain and delegate, so existing callers are unaffected and agree bit for bit
+- Added `polyphase::halfband_decimator::HalfbandDecimator`, a 2-to-1 decimator through a `4 J - 1` tap half-band prototype that takes `2 J + 1` multiplications per output, with `HalfbandDecimatorArray`, `HalfbandDecimatorVec` (and `from_prototype_taps`) and `HalfbandDecimatorRefMut`
+
+### Changed
+
+- `Nco::phase_step_from_frequency` now delegates to the shared turns-per-sample conversion (behavior unchanged; tested as bit-for-bit equivalent)
+- `storage::RingBuffer` has a new required method `as_slices`, returning a pair of slices over the elements from oldest to newest: the first slice holds the older run and the second is empty when the contents are contiguous. All three in-crate backends implement it; out-of-crate implementors of the trait must add it
+- `PolyphaseFilterBank::execute` now takes taps as a `(&[T], &[T])` slice pair instead of an `IntoIterator<Item = &T>`. The concatenation of the pair is still ordered oldest to newest, with `h[phase]` multiplying the newest sample, and both panic conditions and their messages are unchanged. Callers pass the ring buffer's slice pair directly instead of an iterator over it
 
 ## [0.10.0] - 2026-07-29
 
