@@ -24,7 +24,8 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Changed
 
-- n/a
+- `Convolve`, `PolyphaseDecimator`, `PolyphaseInterpolator`, `RationalResampler` and `HalfbandDecimator` now output `T * K`, the type a sample times a tap gives, instead of requiring it to be `T`. For example, `i16` samples with taps whose products are `i32` now give `i32` outputs. Filters where `T * K` is `T` are unchanged
+- `ConvolveArray::with_config` and `ConvolveVec::with_config` no longer require `K: Num`, which they never used
 
 ### Deprecated
 

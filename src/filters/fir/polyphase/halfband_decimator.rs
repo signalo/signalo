@@ -283,15 +283,16 @@ where
 #[cfg(feature = "derive")]
 impl<T, C, D, R, K> ResetMut for HalfbandDecimator<T, C, D, R, K> where Self: Reset {}
 
-impl<T, C, D, R, K> MultirateFilter<T> for HalfbandDecimator<T, C, D, R, K>
+impl<T, C, D, R, K, O> MultirateFilter<T> for HalfbandDecimator<T, C, D, R, K>
 where
-    T: Clone + Zero + Add<Output = T> + Mul<K, Output = T>,
+    T: Clone + Zero + Mul<K, Output = O>,
     K: Clone,
     C: AsSlice<K>,
     D: RingBuffer<T>,
     R: RingBuffer<T>,
+    O: Zero + Add<Output = O>,
 {
-    type Output = T;
+    type Output = O;
 
     fn process(&mut self, input: &[T], output: &mut [Self::Output]) -> (usize, usize) {
         let taps = self.config.coefficients.as_slice();

@@ -24,3 +24,16 @@ pub(crate) fn collatz() -> Vec<f32> {
         11.0, 24.0, 24.0,
     ]
 }
+
+/// An `i16` tap whose products with `i16` samples are `i32`, so a filter's sums can exceed the
+/// sample range.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct WideningTap(pub(crate) i16);
+
+impl core::ops::Mul<WideningTap> for i16 {
+    type Output = i32;
+
+    fn mul(self, tap: WideningTap) -> i32 {
+        i32::from(self) * i32::from(tap.0)
+    }
+}
