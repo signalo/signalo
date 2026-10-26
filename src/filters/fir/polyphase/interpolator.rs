@@ -271,14 +271,15 @@ where
 #[cfg(feature = "derive")]
 impl<T, C, R, K> ResetMut for PolyphaseInterpolator<T, C, R, K> where Self: Reset {}
 
-impl<T, C, R, K> MultirateFilter<T> for PolyphaseInterpolator<T, C, R, K>
+impl<T, C, R, K, O> MultirateFilter<T> for PolyphaseInterpolator<T, C, R, K>
 where
-    T: Clone + Zero + Add<Output = T> + Mul<K, Output = T>,
+    T: Clone + Mul<K, Output = O>,
     K: Clone,
     C: AsSlice<K>,
     R: RingBuffer<T>,
+    O: Zero + Add<Output = O>,
 {
-    type Output = T;
+    type Output = O;
 
     fn process(&mut self, input: &[T], output: &mut [Self::Output]) -> (usize, usize) {
         let mut input_consumed = 0;

@@ -106,6 +106,17 @@ fn integer_convolution() {
     assert_eq!(filter2.filter(2), 3);
 }
 
+#[test]
+fn accumulates_in_the_sample_tap_product_type() {
+    use crate::util::test_fixtures::WideningTap;
+
+    let mut filter = ConvolveArray::<i16, 2, WideningTap>::with_config(Config {
+        coefficients: [WideningTap(3), WideningTap(2)],
+    });
+    let output: [i32; 3] = [30_000, 30_000, -30_000].map(|x| filter.filter(x));
+    assert_eq!(output, [90_000, 150_000, -30_000]);
+}
+
 #[cfg(feature = "complex")]
 #[test]
 fn real_taps_complex_samples_match_independent_real_filters() {

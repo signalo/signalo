@@ -209,7 +209,6 @@ impl<T, C, R, K> StateTrait for Convolve<T, C, R, K> {
 impl<T, const N: usize, K> WithConfig for ConvolveArray<T, N, K>
 where
     T: Num,
-    K: Num,
 {
     type Output = Self;
 
@@ -241,7 +240,6 @@ where
 impl<T, K> WithConfig for ConvolveVec<T, K>
 where
     T: Num,
-    K: Num,
 {
     type Output = Self;
 
@@ -317,14 +315,15 @@ where
 #[cfg(feature = "derive")]
 impl<T, C, R, K> ResetMut for Convolve<T, C, R, K> where Self: Reset {}
 
-impl<T, C, R, K> Filter<T> for Convolve<T, C, R, K>
+impl<T, C, R, K, O> Filter<T> for Convolve<T, C, R, K>
 where
-    T: Clone + Zero + Add<Output = T> + Mul<K, Output = T>,
+    T: Clone + Mul<K, Output = O>,
     K: Clone,
     C: AsSlice<K>,
     R: RingBuffer<T>,
+    O: Zero + Add<Output = O>,
 {
-    type Output = T;
+    type Output = O;
 
     fn filter(&mut self, input: T) -> Self::Output {
         self.state.taps.push_back(input);

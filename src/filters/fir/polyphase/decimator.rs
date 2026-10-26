@@ -306,15 +306,16 @@ where
 #[cfg(feature = "derive")]
 impl<T, C, R, B, K> ResetMut for PolyphaseDecimator<T, C, R, B, K> where Self: Reset {}
 
-impl<T, C, R, B, K> MultirateFilter<T> for PolyphaseDecimator<T, C, R, B, K>
+impl<T, C, R, B, K, O> MultirateFilter<T> for PolyphaseDecimator<T, C, R, B, K>
 where
-    T: Clone + Zero + Add<Output = T> + Mul<K, Output = T>,
+    T: Clone + Mul<K, Output = O>,
     K: Clone,
     C: AsSlice<K>,
     R: AsSlice<B>,
     B: RingBuffer<T>,
+    O: Zero + Add<Output = O>,
 {
-    type Output = T;
+    type Output = O;
 
     fn process(&mut self, input: &[T], output: &mut [Self::Output]) -> (usize, usize) {
         let mut input_consumed = 0;
@@ -342,7 +343,7 @@ where
                         self.bank
                             .execute(phase, self.state.taps.as_slice()[phase].as_slices())
                     })
-                    .fold(T::zero(), |sum, partial| sum + partial);
+                    .fold(O::zero(), |sum, partial| sum + partial);
                 output[output_produced] = decimated;
                 output_produced += 1;
             }
@@ -374,6 +375,23 @@ mod tests {
 
         assert_eq!(decimator.process(&input, &mut output), (6, 2));
         assert_eq!(output, [100, 560]);
+    }
+
+    #[test]
+    fn process_accumulates_in_the_sample_tap_product_type() {
+        use crate::util::test_fixtures::WideningTap;
+
+        let mut decimator =
+            PolyphaseDecimatorArray::<i16, 6, 2, 3, WideningTap>::with_config(Config {
+                num_phases: 3,
+                taps_per_phase: 2,
+                coefficients: [1, 4, 2, 5, 3, 6].map(WideningTap),
+            });
+        let input = [5_000, 10_000, 15_000, 20_000, 25_000, 30_000];
+        let mut output = [0_i32; 2];
+
+        assert_eq!(decimator.process(&input, &mut output), (6, 2));
+        assert_eq!(output, [50_000, 280_000]);
     }
 
     #[test]
