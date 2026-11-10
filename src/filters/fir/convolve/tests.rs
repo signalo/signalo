@@ -404,3 +404,76 @@ fn slice_pair_traversal_matches_iterator_fold() {
         assert_eq!(integer_filter.filter(input), expected);
     }
 }
+
+#[test]
+fn filter_slice_matches_filter_for_any_slice_sizes() {
+    const COEFFICIENTS: [i64; 5] = [3, -1, 4, 1, -5];
+    let input: Vec<i64> = (0..40).map(|k| (k * 37) % 23 - 11).collect();
+    let mut reference = ConvolveArray::<i64, 5>::with_config(Config {
+        coefficients: COEFFICIENTS,
+    });
+    let expected: Vec<i64> = input.iter().map(|&x| reference.filter(x)).collect();
+    // Sizes below, at and above the tap count of 5, and ones that leave a short last chunk.
+    for size in [1, 2, 3, 4, 5, 6, 7, 13, 40, 64] {
+        let mut filter = ConvolveArray::<i64, 5>::with_config(Config {
+            coefficients: COEFFICIENTS,
+        });
+        let mut output = Vec::new();
+        for chunk in input.chunks(size) {
+            let mut block = vec![0; chunk.len()];
+            assert_eq!(filter.filter_slice(chunk, &mut block), chunk.len());
+            output.extend(block);
+        }
+        assert_eq!(output, expected, "slice size {size}");
+    }
+}
+
+#[test]
+fn filter_slice_with_a_single_tap_scales_each_input() {
+    let mut filter = ConvolveArray::<i64, 1>::with_config(Config { coefficients: [3] });
+    let mut output = [0; 4];
+    assert_eq!(filter.filter_slice(&[1, -2, 5, 7], &mut output), 4);
+    assert_eq!(output, [3, -6, 15, 21]);
+    assert_eq!(filter.filter(4), 12);
+}
+
+#[test]
+fn filter_slice_float_output_is_bit_identical_to_filter() {
+    let coefficients: [f32; 9] = [0.9, -0.4, 0.25, 0.7, -0.15, 0.55, -0.8, 0.3, 0.1];
+    let input: Vec<f32> = (0..50_u8).map(|k| f32::from(k).sin()).collect();
+    let mut reference = ConvolveArray::<f32, 9>::with_config(Config { coefficients });
+    let expected: Vec<u32> = input
+        .iter()
+        .map(|&x| reference.filter(x).to_bits())
+        .collect();
+    for size in [1, 8, 9, 10, 17, 50] {
+        let mut filter = ConvolveArray::<f32, 9>::with_config(Config { coefficients });
+        let mut output = Vec::new();
+        for chunk in input.chunks(size) {
+            let mut block = vec![0.0; chunk.len()];
+            filter.filter_slice(chunk, &mut block);
+            output.extend(block.iter().map(|y: &f32| y.to_bits()));
+        }
+        assert_eq!(output, expected, "slice size {size}");
+    }
+}
+
+#[test]
+fn filter_slice_stops_at_the_shorter_slice_and_resumes() {
+    const COEFFICIENTS: [i64; 3] = [1, 2, 3];
+    let input: Vec<i64> = (1..=10).collect();
+    let mut reference = ConvolveArray::<i64, 3>::with_config(Config {
+        coefficients: COEFFICIENTS,
+    });
+    let expected: Vec<i64> = input.iter().map(|&x| reference.filter(x)).collect();
+    let mut filter = ConvolveArray::<i64, 3>::with_config(Config {
+        coefficients: COEFFICIENTS,
+    });
+    let mut output = [0; 4];
+    assert_eq!(filter.filter_slice(&input, &mut output), 4);
+    assert_eq!(output.as_slice(), &expected[..4]);
+    let mut rest = [0; 6];
+    assert_eq!(filter.filter_slice(&input[4..], &mut rest), 6);
+    assert_eq!(rest.as_slice(), &expected[4..]);
+    assert_eq!(filter.filter_slice(&[], &mut rest), 0);
+}

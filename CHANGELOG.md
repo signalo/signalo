@@ -20,6 +20,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
+- Added `Filter::filter_slice`, which processes a slice of inputs into a slice of outputs and returns how many it wrote. Its default calls `filter` on each input, and filters that work faster on blocks override it
 - Added `RingBuffer::extend_from_slice`, which appends clones of a slice and evicts the oldest elements as needed. Its default pushes each value, and the circular-buffer backends copy the slice in bulk
 
 ### Changed
@@ -41,7 +42,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Performance
 
-- n/a
+- `Convolve::filter_slice` reads the window of every output after the first `N - 1` straight from the input slice, and refills the delay line with only the newest `N` samples, instead of pushing every input through it
 
 ### Security
 
