@@ -168,6 +168,22 @@ pub trait RingBuffer<T> {
     fn fill_with<F>(&mut self, f: F)
     where
         F: FnMut() -> T;
+
+    /// Clones and appends all the elements from the slice to the back of the buffer.
+    ///
+    /// If the slice contains more values than the available capacity, the elements at the
+    /// front of the buffer are dropped.
+    ///
+    /// The default implementation pushes one value at a time. Implementors can override it
+    /// with a bulk copy, as the backends in this crate do.
+    fn extend_from_slice(&mut self, values: &[T])
+    where
+        T: Clone,
+    {
+        for value in values {
+            self.push_back(value.clone());
+        }
+    }
 }
 
 impl<T, const N: usize> RingBuffer<T> for FixedCircularBuffer<T, N> {
@@ -230,6 +246,13 @@ impl<T, const N: usize> RingBuffer<T> for FixedCircularBuffer<T, N> {
         F: FnMut() -> T,
     {
         (**self).fill_with(f);
+    }
+
+    fn extend_from_slice(&mut self, values: &[T])
+    where
+        T: Clone,
+    {
+        (**self).extend_from_slice(values);
     }
 }
 
@@ -295,6 +318,13 @@ impl<T> RingBuffer<T> for HeapCircularBuffer<T> {
     {
         (**self).fill_with(f);
     }
+
+    fn extend_from_slice(&mut self, values: &[T])
+    where
+        T: Clone,
+    {
+        (**self).extend_from_slice(values);
+    }
 }
 
 impl<T> RingBuffer<T> for &mut CircularBuffer<T> {
@@ -357,6 +387,13 @@ impl<T> RingBuffer<T> for &mut CircularBuffer<T> {
         F: FnMut() -> T,
     {
         (**self).fill_with(f);
+    }
+
+    fn extend_from_slice(&mut self, values: &[T])
+    where
+        T: Clone,
+    {
+        (**self).extend_from_slice(values);
     }
 }
 
@@ -528,6 +565,25 @@ mod tests {
                 }
 
                 #[test]
+                fn extend_from_slice_keeps_the_newest_values() {
+                    let mut ring = make();
+                    ring.push_back(1);
+                    ring.extend_from_slice(&[2]);
+                    let items: alloc::vec::Vec<i32> = ring.iter().copied().collect();
+                    assert_eq!(items, [1, 2]);
+                    // Fills the ring and evicts the oldest value.
+                    ring.extend_from_slice(&[3, 4]);
+                    let items: alloc::vec::Vec<i32> = ring.iter().copied().collect();
+                    assert_eq!(items, [2, 3, 4]);
+                    // Longer than the capacity: only the newest three survive.
+                    ring.extend_from_slice(&[5, 6, 7, 8, 9]);
+                    let items: alloc::vec::Vec<i32> = ring.iter().copied().collect();
+                    assert_eq!(items, [7, 8, 9]);
+                    ring.extend_from_slice(&[]);
+                    assert_eq!(ring.len(), 3);
+                }
+
+                #[test]
                 fn clear_makes_empty() {
                     let mut ring = make();
                     ring.push_back(1);
@@ -623,6 +679,20 @@ mod tests {
     // Trait`, so we test it via a separate inline block instead of the macro.
     mod borrowed {
         use super::*;
+
+        #[test]
+        fn extend_from_slice_keeps_the_newest_values() {
+            let mut owned = FixedCircularBuffer::<i32, 3>::new();
+            let mut ring: &mut CircularBuffer<i32> = &mut owned;
+            // Called through the trait, since the inherent method would otherwise win.
+            RingBuffer::push_back(&mut ring, 1);
+            RingBuffer::extend_from_slice(&mut ring, &[2, 3, 4]);
+            let items: alloc::vec::Vec<i32> = RingBuffer::iter(&ring).copied().collect();
+            assert_eq!(items, [2, 3, 4]);
+            RingBuffer::extend_from_slice(&mut ring, &[5, 6, 7, 8, 9]);
+            let items: alloc::vec::Vec<i32> = RingBuffer::iter(&ring).copied().collect();
+            assert_eq!(items, [7, 8, 9]);
+        }
 
         #[test]
         fn push_past_full_len_capacity_is_full() {
