@@ -20,7 +20,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- n/a
+- Added `RingBuffer::extend_from_slice`, which appends clones of a slice and evicts the oldest elements as needed. Its default pushes each value, and the circular-buffer backends copy the slice in bulk
 
 ### Changed
 
