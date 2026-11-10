@@ -333,6 +333,29 @@ where
             self.config.coefficients.as_slice(),
         )
     }
+
+    /// Reads the window of every output after the first `N - 1` straight from `input`, and
+    /// leaves only the newest `N` samples in the delay line.
+    fn filter_slice(&mut self, input: &[T], output: &mut [O]) -> usize {
+        let count = input.len().min(output.len());
+        let (input, output) = (&input[..count], &mut output[..count]);
+        let taps = self.config.coefficients.as_slice();
+        // The first `N - 1` outputs reach back into the delay line.
+        let (early, late) = input.split_at((taps.len() - 1).min(count));
+        let (early_output, late_output) = output.split_at_mut(early.len());
+        for (y, x) in early_output.iter_mut().zip(early) {
+            self.state.taps.push_back(x.clone());
+            *y = dot_product_reversed_coefficients(self.state.taps.as_slices(), taps);
+        }
+        // Every later window lies within `input`.
+        for (y, window) in late_output.iter_mut().zip(input.windows(taps.len())) {
+            *y = dot_product_reversed_coefficients((window, &[]), taps);
+        }
+        // The delay line keeps only the newest `N` of the remaining inputs, and older ones are
+        // dropped without a push.
+        self.state.taps.extend_from_slice(late);
+        count
+    }
 }
 
 #[cfg(test)]

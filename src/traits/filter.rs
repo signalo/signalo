@@ -17,6 +17,23 @@ pub trait Filter<Input>: Sized {
 
     /// Processes the input value, returning a corresponding output.
     fn filter(&mut self, input: Input) -> Self::Output;
+
+    /// Processes `input` into `output`, one output per input, and returns how many it wrote.
+    ///
+    /// It stops at the shorter of the two slices. The outputs are those of calling
+    /// [`filter`](Self::filter) on each input in turn, whatever the slice sizes. Filters that
+    /// work faster on blocks override it.
+    fn filter_slice(&mut self, input: &[Input], output: &mut [Self::Output]) -> usize
+    where
+        Input: Clone,
+    {
+        let mut count = 0;
+        for (y, x) in output.iter_mut().zip(input) {
+            *y = self.filter(x.clone());
+            count += 1;
+        }
+        count
+    }
 }
 
 /// Trait for **arbitrarily phase shifting** systems.
@@ -150,3 +167,30 @@ pub trait DiscreteTime: Sized {}
 /// over **some subset of it**. Thus **time is viewed as a continuous variable**.
 /// <sup>[Wikipedia](https://en.wikipedia.org/wiki/Discrete_time_and_continuous_time#Continuous_time_2)</sup>
 pub trait ContinuousTime: Sized {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A running sum, which leaves `filter_slice` at its default.
+    struct Accumulate(i32);
+
+    impl Filter<i32> for Accumulate {
+        type Output = i32;
+
+        fn filter(&mut self, input: i32) -> i32 {
+            self.0 += input;
+            self.0
+        }
+    }
+
+    #[test]
+    fn default_filter_slice_calls_filter_and_stops_at_the_shorter_slice() {
+        let mut filter = Accumulate(0);
+        let mut output = [0; 3];
+        assert_eq!(filter.filter_slice(&[1, 2, 3, 4, 5], &mut output), 3);
+        assert_eq!(output, [1, 3, 6]);
+        assert_eq!(filter.filter_slice(&[4, 5], &mut output), 2);
+        assert_eq!(output, [10, 15, 6]);
+    }
+}
