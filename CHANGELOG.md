@@ -20,13 +20,11 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Added
 
-- Added `Filter::filter_slice`, which processes a slice of inputs into a slice of outputs and returns how many it wrote. Its default calls `filter` on each input, and filters that work faster on blocks override it
-- Added `RingBuffer::extend_from_slice`, which appends clones of a slice and evicts the oldest elements as needed. Its default pushes each value, and the circular-buffer backends copy the slice in bulk
+- n/a
 
 ### Changed
 
-- `Convolve`, `PolyphaseDecimator`, `PolyphaseInterpolator`, `RationalResampler` and `HalfbandDecimator` now output `T * K`, the type a sample times a tap gives, instead of requiring it to be `T`. For example, `i16` samples with taps whose products are `i32` now give `i32` outputs. Filters where `T * K` is `T` are unchanged
-- `ConvolveArray::with_config` and `ConvolveVec::with_config` no longer require `K: Num`, which they never used
+- n/a
 
 ### Deprecated
 
@@ -42,7 +40,7 @@ Please make sure to add your changes to the appropriate categories:
 
 ### Performance
 
-- `Convolve::filter_slice` reads the window of every output after the first `N - 1` straight from the input slice, and refills the delay line with only the newest `N` samples, instead of pushing every input through it
+- n/a
 
 ### Security
 
@@ -51,6 +49,22 @@ Please make sure to add your changes to the appropriate categories:
 ### Other
 
 - n/a
+
+## [0.12.0] - 2026-11-13
+
+### Added
+
+- Added `Filter::filter_slice`, which processes a slice of inputs into a slice of outputs and returns how many it wrote. Its default calls `filter` on each input, and filters that work faster on blocks override it
+- Added `RingBuffer::extend_from_slice`, which appends clones of a slice and evicts the oldest elements as needed. Its default pushes each value, and the circular-buffer backends copy the slice in bulk
+
+### Changed
+
+- `Convolve`, `PolyphaseDecimator`, `PolyphaseInterpolator`, `RationalResampler` and `HalfbandDecimator` now output `T * K`, the type a sample times a tap gives, instead of requiring it to be `T`. For example, `i16` samples with taps whose products are `i32` now give `i32` outputs. Filters where `T * K` is `T` are unchanged
+- `ConvolveArray::with_config` and `ConvolveVec::with_config` no longer require `K: Num`, which they never used
+
+### Performance
+
+- `Convolve::filter_slice` reads the window of every output after the first `N - 1` straight from the input slice, and refills the delay line with only the newest `N` samples, instead of pushing every input through it
 
 ## [0.11.0] - 2026-10-24
 
